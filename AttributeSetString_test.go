@@ -15,13 +15,13 @@ func TestAttributeString(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	errSetString := store.AttributeSetString("default", "hello", "world")
 
 	if errSetString != nil {
-		t.Fatalf("Attribute could not be created: " + err.Error())
+		t.Fatal("Attribute could not be created:", errSetString)
 	}
 
 	// store.EnableDebug(true)
@@ -29,11 +29,11 @@ func TestAttributeString(t *testing.T) {
 	attr, err := store.AttributeFind("default", "hello")
 
 	if err != nil {
-		t.Fatalf("Attribute could not be retrieved: " + err.Error())
+		t.Fatal("Attribute could not be retrieved:", err)
 	}
 
 	if attr == nil {
-		t.Fatalf("Attribute could not be retrieved")
+		t.Fatal("Attribute could not be retrieved")
 	}
 
 	if attr.GetString() != "world" {

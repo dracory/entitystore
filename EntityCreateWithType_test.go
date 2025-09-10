@@ -16,35 +16,35 @@ func TestEntityCreateWithType(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	entity, err := store.EntityCreateWithType("post")
 	if entity == nil {
-		t.Fatalf("Entity could not be created")
+		t.Fatal("Entity could not be created")
 	}
 
 	if err != nil {
-		t.Fatalf("Entity could not be created: " + err.Error())
+		t.Fatal("Entity could not be created:", err)
 	}
 
 	if len(entity.ID()) < 32 {
-		t.Fatalf("Entity ID:" + entity.ID() + "is less than 32 characters")
+		t.Fatal("Entity ID is less than 32 characters", entity.ID())
 	}
 
 	if entity.CreatedAt().Before(time.Now().Add(-1 * time.Minute)) {
-		t.Fatalf("Entity CreatedAt is not recent (before 1 min):" + entity.CreatedAt().String())
+		t.Fatal("Entity CreatedAt is not recent (before 1 min):", entity.CreatedAt())
 	}
 
 	if entity.CreatedAt().After(time.Now().Add(1 * time.Minute)) {
-		t.Fatalf("Entity CreatedAt is not recent (after 1 min):" + entity.CreatedAt().String())
+		t.Fatal("Entity CreatedAt is not recent (after 1 min):", entity.CreatedAt())
 	}
 
 	if entity.UpdatedAt().Before(time.Now().Add(-1 * time.Minute)) {
-		t.Fatalf("Entity UpdatedAt is not recent (before 1 min):" + entity.CreatedAt().String())
+		t.Fatal("Entity UpdatedAt is not recent (before 1 min):", entity.UpdatedAt())
 	}
 
 	if entity.UpdatedAt().After(time.Now().Add(1 * time.Minute)) {
-		t.Fatalf("Entity UpdatedAt is not recent (after 1 min):" + entity.CreatedAt().String())
+		t.Fatal("Entity UpdatedAt is not recent (after 1 min):", entity.UpdatedAt())
 	}
 }

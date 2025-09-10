@@ -13,7 +13,7 @@ func TestEntityFindByAttribute(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal("Must be NIL:", err.Error())
+		t.Fatal("Must be NIL:", err)
 	}
 
 	entity, err := store.EntityCreateWithTypeAndAttributes("post", map[string]string{
@@ -21,12 +21,12 @@ func TestEntityFindByAttribute(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf("Entity could not be created" + err.Error())
+		t.Fatal("Entity could not be created:", err)
 	}
 
 	val, _ := entity.GetString("path", "")
 	if val != "/" {
-		t.Fatalf("Entity attribute mismatch")
+		t.Fatal("Entity attribute mismatch")
 	}
 
 	// store.SetDebug(true)
@@ -34,10 +34,10 @@ func TestEntityFindByAttribute(t *testing.T) {
 	homePage, err := store.EntityFindByAttribute("post", "path", "/")
 
 	if err != nil {
-		t.Fatalf("Entity find by attribute failed: " + err.Error())
+		t.Fatal("Entity find by attribute failed:", err)
 	}
 
 	if homePage == nil {
-		t.Fatalf("Entity could not be found")
+		t.Fatal("Entity could not be found")
 	}
 }

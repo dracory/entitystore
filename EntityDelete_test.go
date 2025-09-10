@@ -13,42 +13,42 @@ func TestEntityDelete(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal("Must be NIL:", err.Error())
+		t.Fatal("Must be NIL:", err)
 	}
 
 	entity, err := store.EntityCreateWithType("post")
 
 	if err != nil {
-		t.Fatalf("Entity could not be created: " + err.Error())
+		t.Fatal("Entity could not be created:", err)
 	}
 
 	if entity == nil {
-		t.Fatalf("Entity could not be created")
+		t.Fatal("Entity could not be created")
 	}
 
 	err = entity.SetString("title", "Hello world")
 
 	if err != nil {
-		t.Fatalf("Entity title could not be created: " + err.Error())
+		t.Fatal("Entity title could not be created:", err)
 	}
 
 	isDeleted, err := store.EntityDelete(entity.ID())
 
 	if err != nil {
-		t.Fatalf("Entity could not be soft deleted: " + err.Error())
+		t.Fatal("Entity could not be soft deleted:", err)
 	}
 
 	if isDeleted == false {
-		t.Fatalf("Entity could not be soft deleted")
+		t.Fatal("Entity could not be soft deleted")
 	}
 
 	val, err := store.EntityFindByID(entity.ID())
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	if val != nil {
-		t.Fatalf("Entity should no longer be present")
+		t.Fatal("Entity should no longer be present")
 	}
 }

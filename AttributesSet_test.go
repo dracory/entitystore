@@ -13,7 +13,7 @@ func TestAttributesSet(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	attributes := map[string]string{
@@ -25,22 +25,22 @@ func TestAttributesSet(t *testing.T) {
 	errSet := store.AttributesSet("ENTITY_ID", attributes)
 
 	if errSet != nil {
-		t.Fatal("Attribute could not be created:", errSet.Error())
+		t.Fatal(errSet)
 	}
 
 	for key, value := range attributes {
 		attr, err := store.AttributeFind("ENTITY_ID", key)
 
 		if err != nil {
-			t.Fatal("Attribute could not be created:", err.Error())
+			t.Fatal(err)
 		}
 
 		if attr == nil {
-			t.Fatal("Attribute could not be nil:", key, value)
+			t.Fatal("Attribute could not be nil")
 		}
 
 		if attr.GetString() != value {
-			t.Fatal("Attribute value mismatch:", value, " but MUST be: ", attr.GetString())
+			t.Fatal("Attribute value mismatch")
 		}
 
 	}

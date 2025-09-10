@@ -3,7 +3,7 @@ package entitystore
 import (
 	"time"
 
-	"github.com/gouniverse/uid"
+	"github.com/dracory/uid"
 )
 
 // EntityCreateWithType quick shortcut method

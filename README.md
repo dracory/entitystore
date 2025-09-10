@@ -1,8 +1,8 @@
-# Entity Store <a href="https://gitpod.io/#https://github.com/gouniverse/entitystore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# Entity Store <a href="https://gitpod.io/#https://github.com/dracory/entitystore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
 
-![tests](https://github.com/gouniverse/entitystore/workflows/tests/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gouniverse/entitystore)](https://goreportcard.com/report/github.com/gouniverse/entitystore)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/gouniverse/entitystore)](https://pkg.go.dev/github.com/gouniverse/entitystore)
+![tests](https://github.com/dracory/entitystore/workflows/tests/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dracory/entitystore)](https://goreportcard.com/report/github.com/dracory/entitystore)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/entitystore)](https://pkg.go.dev/github.com/dracory/entitystore)
 
 Modern "schemaless" storage using a relational (SQL) database. Document database interface for relational databases. 
 
@@ -19,7 +19,7 @@ Modern "schemaless" storage using a relational (SQL) database. Document database
 
 ## Installation
 ```
-go get -u github.com/gouniverse/entitystore
+go get -u github.com/dracory/entitystore
 ```
 
 ## Setup

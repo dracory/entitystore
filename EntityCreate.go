@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/gouniverse/uid"
+	"github.com/dracory/uid"
 )
 
 // EntityCreate creates a new entity

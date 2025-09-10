@@ -13,7 +13,7 @@ func TestAttributeCreateWithKeyAndValue(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	errSet := store.AttributeSetString("default", "hello", "world")

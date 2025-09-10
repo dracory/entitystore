@@ -3,7 +3,7 @@ package entitystore
 import (
 	"time"
 
-	"github.com/gouniverse/uid"
+	"github.com/dracory/uid"
 )
 
 // AttributeCreateWithKeyAndValue shortcut to create a new attribute

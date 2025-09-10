@@ -13,7 +13,7 @@ func TestEntityTrash(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatal("Must be NIL:", err.Error())
+		t.Fatal("Must be NIL:", err)
 	}
 
 	entity, err := store.EntityCreateWithTypeAndAttributes("post", map[string]string{
@@ -22,50 +22,50 @@ func TestEntityTrash(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf("Entity could not be created: " + err.Error())
+		t.Fatal("Entity could not be created:", err)
 	}
 
 	if entity == nil {
-		t.Fatalf("Entity could not be created")
+		t.Fatal("Entity could not be created")
 	}
 
 	attr, err := store.AttributeFind(entity.ID(), "title")
 
 	if err != nil {
-		t.Fatalf("Attribute could not be found: " + err.Error())
+		t.Fatal("Attribute could not be found:", err)
 	}
 
 	if attr == nil {
-		t.Fatalf("Attribute should not be nil")
+		t.Fatal("Attribute should not be nil")
 	}
 
 	isDeleted, err := store.EntityTrash(entity.ID())
 
 	if err != nil {
-		t.Fatalf("Entity could not be deleted: " + err.Error())
+		t.Fatal("Entity could not be deleted:", err)
 	}
 
 	if isDeleted == false {
-		t.Fatalf("Entity could not be soft deleted")
+		t.Fatal("Entity could not be soft deleted")
 	}
 
 	val, err := store.EntityFindByID(entity.ID())
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	if val != nil {
-		t.Fatalf("Entity should no longer be present")
+		t.Fatal("Entity should no longer be present")
 	}
 
 	attr, err = store.AttributeFind(entity.ID(), "title")
 
 	if err != nil {
-		t.Fatalf("Attribute could not be found: " + err.Error())
+		t.Fatal("Attribute could not be found:", err)
 	}
 
 	if attr != nil {
-		t.Fatalf("Attribute should be nil")
+		t.Fatal("Attribute should be nil")
 	}
 }

@@ -13,32 +13,28 @@ func TestAttributeFind(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	for _, entityID := range []string{"entity1", "entity2", "entity3", "entity4", "entity5", "entity6", "entity7", "entity8"} {
 		errSet1 := store.AttributeSetString(entityID, "attr1", "val1")
 		if errSet1 != nil {
-			t.Fatalf(errSet1.Error())
+			t.Fatal(errSet1)
 		}
 		errSet2 := store.AttributeSetString(entityID, "attr2", "val2")
 		if errSet2 != nil {
-			t.Fatalf(errSet2.Error())
+			t.Fatal(errSet2)
 		}
 		errSet3 := store.AttributeSetString(entityID, "attr3", "val3")
 		if errSet3 != nil {
-			t.Fatalf(errSet3.Error())
+			t.Fatal(errSet3)
 		}
-	}
-
-	if err != nil {
-		t.Fatalf(err.Error())
 	}
 
 	attr, errFind := store.AttributeFind("entity3", "attr2")
 
 	if errFind != nil {
-		t.Fatal("Error MUST BE nil:", errFind.Error())
+		t.Fatal("Error MUST BE nil:", errFind)
 	}
 
 	if attr == nil {

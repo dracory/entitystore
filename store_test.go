@@ -36,11 +36,11 @@ func TestStoreCreate(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf("Store could not be created: " + err.Error())
+		t.Fatal("Store could not be created:", err)
 	}
 
 	if store == nil {
-		t.Fatalf("Store could not be created")
+		t.Fatal("Store could not be created")
 	}
 }
 
@@ -54,12 +54,12 @@ func TestStoreAutomigrate(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Fatalf("Store could not be created: " + err.Error())
+		t.Fatal("Store could not be created:", err)
 	}
 
 	errAutomigrate := store.AutoMigrate()
 
 	if errAutomigrate != nil {
-		t.Fatal("Automigrate failed: ", err.Error())
+		t.Fatal("Automigrate failed:", errAutomigrate)
 	}
 }
