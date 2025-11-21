@@ -3,16 +3,15 @@ package entitystore
 import (
 	"context"
 	"database/sql"
-	"os"
 	"testing"
 
 	_ "modernc.org/sqlite"
 )
 
 func InitDB(filepath string) *sql.DB {
-	_ = os.Remove(filepath) // remove database
-
-	dsn := filepath
+	// Use a shared in-memory SQLite database per logical filepath so
+	// all connections see the same schema during tests.
+	dsn := "file:" + filepath + "?mode=memory&cache=shared"
 	db, err := sql.Open("sqlite", dsn)
 
 	if err != nil {
