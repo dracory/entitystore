@@ -1,9 +1,12 @@
 package entitystore
 
-import "strconv"
+import (
+	"context"
+	"strconv"
+)
 
 // AttributeSetFloat creates a new attribute or updates existing
-func (st *storeImplementation) AttributeSetFloat(entityID string, attributeKey string, attributeValue float64) error {
+func (st *storeImplementation) AttributeSetFloat(ctx context.Context, entityID string, attributeKey string, attributeValue float64) error {
 	attributeValueAsString := strconv.FormatFloat(attributeValue, 'f', 30, 64)
-	return st.AttributeSetString(entityID, attributeKey, attributeValueAsString)
+	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }

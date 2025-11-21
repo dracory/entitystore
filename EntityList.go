@@ -1,11 +1,12 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 )
 
 // EntityList lists entities
-func (st *storeImplementation) EntityList(options EntityQueryOptions) (entityList []Entity, err error) {
+func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) (entityList []Entity, err error) {
 	q := st.EntityQuery(options)
 
 	sqlStr, _, errSql := q.ToSQL()
@@ -18,7 +19,7 @@ func (st *storeImplementation) EntityList(options EntityQueryOptions) (entityLis
 		log.Println(sqlStr)
 	}
 
-	entityMaps, errSelect := st.database.SelectToMapString(sqlStr)
+	entityMaps, errSelect := st.database.SelectToMapString(ctx, sqlStr)
 	// errScan := sqlscan.Select(context.Background(), st.db, &entityMaps, sqlStr)
 	// if errScan != nil {
 	// 	if errScan == sql.ErrNoRows {

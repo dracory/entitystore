@@ -1,6 +1,9 @@
 package entitystore
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestEntityFindByAttribute(t *testing.T) {
 	db := InitDB("test_entity_find_by_attribute.db")
@@ -16,7 +19,7 @@ func TestEntityFindByAttribute(t *testing.T) {
 		t.Fatal("Must be NIL:", err)
 	}
 
-	entity, err := store.EntityCreateWithTypeAndAttributes("post", map[string]string{
+	entity, err := store.EntityCreateWithTypeAndAttributes(context.Background(), "post", map[string]string{
 		"path": "/",
 	})
 
@@ -31,7 +34,7 @@ func TestEntityFindByAttribute(t *testing.T) {
 
 	// store.SetDebug(true)
 
-	homePage, err := store.EntityFindByAttribute("post", "path", "/")
+	homePage, err := store.EntityFindByAttribute(context.Background(), "post", "path", "/")
 
 	if err != nil {
 		t.Fatal("Entity find by attribute failed:", err)

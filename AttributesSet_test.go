@@ -1,6 +1,9 @@
 package entitystore
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestAttributesSet(t *testing.T) {
 	db := InitDB("test_attributes_set.db")
@@ -22,14 +25,14 @@ func TestAttributesSet(t *testing.T) {
 		"attribute 3": "value 3",
 	}
 
-	errSet := store.AttributesSet("ENTITY_ID", attributes)
+	errSet := store.AttributesSet(context.Background(), "ENTITY_ID", attributes)
 
 	if errSet != nil {
 		t.Fatal(errSet)
 	}
 
 	for key, value := range attributes {
-		attr, err := store.AttributeFind("ENTITY_ID", key)
+		attr, err := store.AttributeFind(context.Background(), "ENTITY_ID", key)
 
 		if err != nil {
 			t.Fatal(err)

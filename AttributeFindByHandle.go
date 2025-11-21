@@ -1,9 +1,12 @@
 package entitystore
 
-import "errors"
+import (
+	"context"
+	"errors"
+)
 
 // AttributeFind finds an entity by ID
-func (st *storeImplementation) AttributeFindByHandle(entityType string, entityHandle string, attributeKey string) (*Attribute, error) {
+func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (*Attribute, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
 	}
@@ -16,7 +19,7 @@ func (st *storeImplementation) AttributeFindByHandle(entityType string, entityHa
 		return nil, errors.New("attribute key cannot be empty")
 	}
 
-	list, err := st.AttributeList(AttributeQueryOptions{
+	list, err := st.AttributeList(ctx, AttributeQueryOptions{
 		EntityType:   entityType,
 		EntityHandle: entityHandle,
 		AttributeKey: attributeKey,

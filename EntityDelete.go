@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"errors"
 	"log"
 
@@ -8,7 +9,7 @@ import (
 )
 
 // EntityDelete deletes an entity and all attributes
-func (st *storeImplementation) EntityDelete(entityID string) (bool, error) {
+func (st *storeImplementation) EntityDelete(ctx context.Context, entityID string) (bool, error) {
 	if entityID == "" {
 		if st.GetDebug() {
 			log.Println("in EntityDelete entity ID cannot be empty")
@@ -37,7 +38,7 @@ func (st *storeImplementation) EntityDelete(entityID string) (bool, error) {
 
 	sqlStr1, _, _ := goqu.Dialect(st.dbDriverName).From(st.attributeTableName).Where(goqu.C("entity_id").Eq(entityID)).Delete().ToSQL()
 
-	if _, err := st.database.Exec(sqlStr1); err != nil {
+	if _, err := st.database.Exec(ctx, sqlStr1); err != nil {
 		if st.GetDebug() {
 			log.Println(err)
 		}
@@ -50,7 +51,7 @@ func (st *storeImplementation) EntityDelete(entityID string) (bool, error) {
 
 	sqlStr2, _, _ := goqu.Dialect(st.dbDriverName).From(st.entityTableName).Where(goqu.C("id").Eq(entityID)).Delete().ToSQL()
 
-	if _, err := st.database.Exec(sqlStr2); err != nil {
+	if _, err := st.database.Exec(ctx, sqlStr2); err != nil {
 		if st.GetDebug() {
 			log.Println(err)
 		}

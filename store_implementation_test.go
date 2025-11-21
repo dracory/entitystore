@@ -1,22 +1,19 @@
 package entitystore
 
 import (
-	//"log"
-	// "log"
+	"context"
 	"database/sql"
 	"os"
 	"testing"
 
-	//"database/sql"
-	_ "github.com/mattn/go-sqlite3"
-	// _ "modernc.org/sqlite"
+	_ "modernc.org/sqlite"
 )
 
 func InitDB(filepath string) *sql.DB {
 	_ = os.Remove(filepath) // remove database
 
 	dsn := filepath
-	db, err := sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite", dsn)
 
 	if err != nil {
 		panic(err)
@@ -57,7 +54,7 @@ func TestStoreAutomigrate(t *testing.T) {
 		t.Fatal("Store could not be created:", err)
 	}
 
-	errAutomigrate := store.AutoMigrate()
+	errAutomigrate := store.AutoMigrate(context.Background())
 
 	if errAutomigrate != nil {
 		t.Fatal("Automigrate failed:", errAutomigrate)

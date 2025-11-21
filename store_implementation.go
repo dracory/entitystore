@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 
@@ -24,7 +25,7 @@ type storeImplementation struct {
 type StoreOption func(*storeImplementation)
 
 // AutoMigrate auto migrate
-func (st *storeImplementation) AutoMigrate() error {
+func (st *storeImplementation) AutoMigrate(ctx context.Context) error {
 	sqlArray, err := st.SqlCreateTable()
 
 	if err != nil {
@@ -32,9 +33,9 @@ func (st *storeImplementation) AutoMigrate() error {
 	}
 
 	for _, sql := range sqlArray {
-		_, err := st.database.Exec(sql)
+		_, err := st.database.Exec(ctx, sql)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 

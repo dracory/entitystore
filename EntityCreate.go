@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
@@ -10,7 +11,7 @@ import (
 )
 
 // EntityCreate creates a new entity
-func (st *storeImplementation) EntityCreate(entity *Entity) error {
+func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity) error {
 	if entity == nil {
 		return errors.New("entity cannot be nil")
 	}
@@ -40,7 +41,7 @@ func (st *storeImplementation) EntityCreate(entity *Entity) error {
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr)
 
 	if err != nil {
 		return err

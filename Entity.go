@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 	"time"
 )
@@ -87,12 +88,12 @@ func (e *Entity) GetInt(attributeKey string, defaultValue int64) (int64, error) 
 
 // GetAttribute return specified attribute
 func (e *Entity) GetAttribute(attributeKey string) (*Attribute, error) {
-	return e.st.AttributeFind(e.ID(), attributeKey)
+	return e.st.AttributeFind(context.Background(), e.ID(), attributeKey)
 }
 
 // GetAttributes all the attributes of the entity
 func (e *Entity) GetAttributes() ([]Attribute, error) {
-	return e.st.EntityAttributeList(e.ID())
+	return e.st.EntityAttributeList(context.Background(), e.ID())
 }
 
 // GetFloat the value of the attribute as float or the default value if it does not exist
@@ -133,20 +134,20 @@ func (e *Entity) GetString(attributeKey string, defaultValue string) (string, er
 
 // SetAll upserts the attributes
 func (e *Entity) SetAll(attributes map[string]string) error {
-	return e.st.AttributesSet(e.ID(), attributes)
+	return e.st.AttributesSet(context.Background(), e.ID(), attributes)
 }
 
 // SetFloat sets an attribute with float value
 func (e *Entity) SetFloat(attributeKey string, attributeValue float64) error {
-	return e.st.AttributeSetFloat(e.ID(), attributeKey, attributeValue)
+	return e.st.AttributeSetFloat(context.Background(), e.ID(), attributeKey, attributeValue)
 }
 
 // SetInt sets an attribute with int value
 func (e *Entity) SetInt(attributeKey string, attributeValue int64) error {
-	return e.st.AttributeSetInt(e.ID(), attributeKey, attributeValue)
+	return e.st.AttributeSetInt(context.Background(), e.ID(), attributeKey, attributeValue)
 }
 
 // SetString sets an attribute with string value
 func (e *Entity) SetString(attributeKey string, attributeValue string) error {
-	return e.st.AttributeSetString(e.ID(), attributeKey, attributeValue)
+	return e.st.AttributeSetString(context.Background(), e.ID(), attributeKey, attributeValue)
 }

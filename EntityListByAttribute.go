@@ -1,13 +1,14 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 
 	"github.com/doug-martin/goqu/v9"
 )
 
 // EntityListByAttribute finds an entity by attribute
-func (st *storeImplementation) EntityListByAttribute(entityType string, attributeKey string, attributeValue string) (entityList []Entity, err error) {
+func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (entityList []Entity, err error) {
 	var entityIDs []string
 
 	q := goqu.Dialect(st.dbDriverName).From(st.attributeTableName).
@@ -29,7 +30,7 @@ func (st *storeImplementation) EntityListByAttribute(entityType string, attribut
 		log.Println(sqlStr)
 	}
 
-	rows, err := st.database.Query(sqlStr)
+	rows, err := st.database.Query(ctx, sqlStr)
 
 	if err != nil {
 		return []Entity{}, err
@@ -48,7 +49,7 @@ func (st *storeImplementation) EntityListByAttribute(entityType string, attribut
 		return entityList, nil
 	}
 
-	return st.EntityList(EntityQueryOptions{
+	return st.EntityList(ctx, EntityQueryOptions{
 		EntityType: entityType,
 		IDs:        entityIDs,
 		SortBy:     COLUMN_ID,

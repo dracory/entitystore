@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestAttributeString(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	errSetString := store.AttributeSetString("default", "hello", "world")
+	errSetString := store.AttributeSetString(context.Background(), "default", "hello", "world")
 
 	if errSetString != nil {
 		t.Fatal("Attribute could not be created:", errSetString)
@@ -26,7 +27,7 @@ func TestAttributeString(t *testing.T) {
 
 	// store.EnableDebug(true)
 
-	attr, err := store.AttributeFind("default", "hello")
+	attr, err := store.AttributeFind(context.Background(), "default", "hello")
 
 	if err != nil {
 		t.Fatal("Attribute could not be retrieved:", err)

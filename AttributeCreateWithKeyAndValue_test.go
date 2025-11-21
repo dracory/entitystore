@@ -1,6 +1,9 @@
 package entitystore
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestAttributeCreateWithKeyAndValue(t *testing.T) {
 	db := InitDB("test_attribute_create_with_key_and_value.db")
@@ -16,7 +19,7 @@ func TestAttributeCreateWithKeyAndValue(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	errSet := store.AttributeSetString("default", "hello", "world")
+	errSet := store.AttributeSetString(context.Background(), "default", "hello", "world")
 
 	if errSet != nil {
 		t.Fatal("Attribute could not be created:", errSet.Error())

@@ -1,9 +1,12 @@
 package entitystore
 
-import "errors"
+import (
+	"context"
+	"errors"
+)
 
 // EntityFindByHandle finds an entity by handle
-func (st *storeImplementation) EntityFindByHandle(entityType string, entityHandle string) (*Entity, error) {
+func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (*Entity, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
 	}
@@ -12,7 +15,7 @@ func (st *storeImplementation) EntityFindByHandle(entityType string, entityHandl
 		return nil, errors.New("entity handle cannot be empty")
 	}
 
-	list, err := st.EntityList(EntityQueryOptions{
+	list, err := st.EntityList(ctx, EntityQueryOptions{
 		EntityType:   entityType,
 		EntityHandle: entityHandle,
 		Limit:        1,

@@ -1,12 +1,15 @@
 package entitystore
 
-import "log"
+import (
+	"context"
+	"log"
+)
 
 // EntityCreateWithTypeAndAttributes quick shortcut method
 // to create an entity by providing only the type as string
 // and the attributes as map
 // NB. The IDs will be auto-assigned
-func (st *storeImplementation) EntityCreateWithTypeAndAttributes(entityType string, attributes map[string]string) (*Entity, error) {
+func (st *storeImplementation) EntityCreateWithTypeAndAttributes(ctx context.Context, entityType string, attributes map[string]string) (*Entity, error) {
 	err := st.database.BeginTransaction()
 
 	if err != nil {
@@ -24,7 +27,7 @@ func (st *storeImplementation) EntityCreateWithTypeAndAttributes(entityType stri
 		}
 	}()
 
-	entity, err := st.EntityCreateWithType(entityType)
+	entity, err := st.EntityCreateWithType(ctx, entityType)
 
 	if err != nil {
 		_ = st.database.RollbackTransaction()
@@ -32,7 +35,7 @@ func (st *storeImplementation) EntityCreateWithTypeAndAttributes(entityType stri
 	}
 
 	for k, v := range attributes {
-		_, err := st.AttributeCreateWithKeyAndValue(entity.ID(), k, v)
+		_, err := st.AttributeCreateWithKeyAndValue(ctx, entity.ID(), k, v)
 
 		if err != nil {
 			_ = st.database.RollbackTransaction()

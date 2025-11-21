@@ -11,7 +11,7 @@ import (
 
 // EntityCount counts the entities of a specified type
 // EntityCount counts entities
-func (st *storeImplementation) EntityCount(options EntityQueryOptions) (int64, error) {
+func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
 	options.CountOnly = true
 
 	q := st.EntityQuery(options)
@@ -30,7 +30,7 @@ func (st *storeImplementation) EntityCount(options EntityQueryOptions) (int64, e
 	}
 
 	var result countResult
-	err := sqlscan.Get(context.Background(), st.database.DB(), &result, sqlStr)
+	err := sqlscan.Get(ctx, st.database.DB(), &result, sqlStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// sqlscan does not use this anymore

@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -25,7 +26,7 @@ func (st *storeImplementation) AttributeUpdate(attr Attribute) error {
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(sqlStr)
+	_, err := st.database.Exec(context.Background(), sqlStr)
 
 	if err != nil {
 		if st.GetDebug() {

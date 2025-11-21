@@ -1,11 +1,12 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 )
 
 // AttributesSet upserts an entity attribute
-func (st *storeImplementation) AttributesSet(entityID string, attributes map[string]string) error {
+func (st *storeImplementation) AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error {
 	// err := st.database.BeginTransaction()
 
 	// if err != nil {
@@ -25,7 +26,7 @@ func (st *storeImplementation) AttributesSet(entityID string, attributes map[str
 	// }()
 
 	for k, v := range attributes {
-		err := st.AttributeSetString(entityID, k, v)
+		err := st.AttributeSetString(ctx, entityID, k, v)
 
 		if err != nil {
 			if st.GetDebug() {

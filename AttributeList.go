@@ -1,11 +1,12 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 )
 
 // AttributeList lists attributes
-func (st *storeImplementation) AttributeList(options AttributeQueryOptions) (attributeList []Attribute, err error) {
+func (st *storeImplementation) AttributeList(ctx context.Context, options AttributeQueryOptions) (attributeList []Attribute, err error) {
 	q := st.AttributeQuery(options)
 
 	sqlStr, _, errSql := q.ToSQL()
@@ -18,7 +19,7 @@ func (st *storeImplementation) AttributeList(options AttributeQueryOptions) (att
 		log.Println(sqlStr)
 	}
 
-	attributeMaps, errSelect := st.database.SelectToMapString(sqlStr)
+	attributeMaps, errSelect := st.database.SelectToMapString(ctx, sqlStr)
 
 	if errSelect != nil {
 		return nil, err

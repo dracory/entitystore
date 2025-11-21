@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
@@ -9,11 +10,12 @@ import (
 )
 
 // EntityTrash moves an entity and all attributes to the trash bin
-func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
+func (st *storeImplementation) EntityTrash(ctx context.Context, entityID string) (bool, error) {
 	if entityID == "" {
 		return false, errors.New("entity ID cannot be empty")
 	}
 
+	_ = ctx
 	// Note the use of tx as the database handle once you are within a transaction
 	err := st.database.BeginTransaction()
 
@@ -30,7 +32,7 @@ func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
 		return false, err
 	}
 
-	ent, err := st.EntityFindByID(entityID)
+	ent, err := st.EntityFindByID(ctx, entityID)
 
 	if err != nil {
 		_ = st.database.RollbackTransaction()
@@ -58,7 +60,7 @@ func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
 		log.Println(sqlStr)
 	}
 
-	if _, err := st.database.Exec(sqlStr); err != nil {
+	if _, err := st.database.Exec(ctx, sqlStr); err != nil {
 		if st.GetDebug() {
 			log.Println(err)
 		}
@@ -66,7 +68,7 @@ func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
 		return false, err
 	}
 
-	attrs, err := st.EntityAttributeList(entityID)
+	attrs, err := st.EntityAttributeList(ctx, entityID)
 
 	if err != nil {
 		if st.GetDebug() {
@@ -95,7 +97,7 @@ func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
 			log.Println(sqlStrAttr)
 		}
 
-		if _, err := st.database.Exec(sqlStrAttr); err != nil {
+		if _, err := st.database.Exec(ctx, sqlStrAttr); err != nil {
 			if st.GetDebug() {
 				log.Println(err)
 			}
@@ -107,7 +109,7 @@ func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
 	q1 := goqu.Dialect(st.dbDriverName).From(st.attributeTableName).Where(goqu.C(COLUMN_ENTITY_ID).Eq(entityID)).Delete()
 	sqlStr1, _, _ := q1.ToSQL()
 
-	if _, err := st.database.Exec(sqlStr1); err != nil {
+	if _, err := st.database.Exec(ctx, sqlStr1); err != nil {
 		if st.GetDebug() {
 			log.Println(err)
 		}
@@ -118,7 +120,7 @@ func (st *storeImplementation) EntityTrash(entityID string) (bool, error) {
 	q2 := goqu.Dialect(st.dbDriverName).From(st.entityTableName).Where(goqu.C(COLUMN_ID).Eq(entityID)).Delete()
 	sqlStr2, _, _ := q2.ToSQL()
 
-	if _, err := st.database.Exec(sqlStr2); err != nil {
+	if _, err := st.database.Exec(ctx, sqlStr2); err != nil {
 		if st.GetDebug() {
 			log.Println(err)
 		}

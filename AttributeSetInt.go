@@ -1,9 +1,12 @@
 package entitystore
 
-import "strconv"
+import (
+	"context"
+	"strconv"
+)
 
 // AttributeSetInt creates a new attribute or updates existing
-func (st *storeImplementation) AttributeSetInt(entityID string, attributeKey string, attributeValue int64) error {
+func (st *storeImplementation) AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attributeValue int64) error {
 	attributeValueAsString := strconv.FormatInt(attributeValue, 10)
-	return st.AttributeSetString(entityID, attributeKey, attributeValueAsString)
+	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }

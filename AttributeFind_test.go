@@ -1,6 +1,9 @@
 package entitystore
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestAttributeFind(t *testing.T) {
 	db := InitDB("test_attribute_find.db")
@@ -17,21 +20,21 @@ func TestAttributeFind(t *testing.T) {
 	}
 
 	for _, entityID := range []string{"entity1", "entity2", "entity3", "entity4", "entity5", "entity6", "entity7", "entity8"} {
-		errSet1 := store.AttributeSetString(entityID, "attr1", "val1")
+		errSet1 := store.AttributeSetString(context.Background(), entityID, "attr1", "val1")
 		if errSet1 != nil {
 			t.Fatal(errSet1)
 		}
-		errSet2 := store.AttributeSetString(entityID, "attr2", "val2")
+		errSet2 := store.AttributeSetString(context.Background(), entityID, "attr2", "val2")
 		if errSet2 != nil {
 			t.Fatal(errSet2)
 		}
-		errSet3 := store.AttributeSetString(entityID, "attr3", "val3")
+		errSet3 := store.AttributeSetString(context.Background(), entityID, "attr3", "val3")
 		if errSet3 != nil {
 			t.Fatal(errSet3)
 		}
 	}
 
-	attr, errFind := store.AttributeFind("entity3", "attr2")
+	attr, errFind := store.AttributeFind(context.Background(), "entity3", "attr2")
 
 	if errFind != nil {
 		t.Fatal("Error MUST BE nil:", errFind)

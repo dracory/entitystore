@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
@@ -10,7 +11,7 @@ import (
 )
 
 // AttributeCreate creates a new attribute
-func (st *storeImplementation) AttributeCreate(attr *Attribute) error {
+func (st *storeImplementation) AttributeCreate(ctx context.Context, attr *Attribute) error {
 	if attr == nil {
 		return errors.New("attribute is required")
 	}
@@ -39,7 +40,7 @@ func (st *storeImplementation) AttributeCreate(attr *Attribute) error {
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr)
 
 	if err != nil {
 		if st.GetDebug() {

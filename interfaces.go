@@ -1,9 +1,12 @@
 package entitystore
 
-import "database/sql"
+import (
+	"context"
+	"database/sql"
+)
 
 type StoreInterface interface {
-	AutoMigrate() error
+	AutoMigrate(ctx context.Context) error
 
 	GetAttributeTableName() string
 	GetAttributeTrashTableName() string
@@ -12,30 +15,30 @@ type StoreInterface interface {
 	GetEntityTrashTableName() string
 
 	// AttributeCount(entityID string) uint64
-	AttributeCreate(attr *Attribute) error
-	AttributeCreateWithKeyAndValue(entityID string, attributeKey string, attributeValue string) (*Attribute, error)
-	AttributeFind(entityID string, attributeKey string) (*Attribute, error)
-	AttributeFindByHandle(entityID string, attributeKey string, attributeValue string) (*Attribute, error)
-	AttributeList(options AttributeQueryOptions) ([]Attribute, error)
-	AttributesSet(entityID string, attributes map[string]string) error
-	AttributeSetFloat(entityID string, attributeKey string, attributeValue float64) error
-	AttributeSetInt(entityID string, attributeKey string, attributeValue int64) error
-	AttributeSetString(entityID string, attributeKey string, attributeValue string) error
+	AttributeCreate(ctx context.Context, attr *Attribute) error
+	AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (*Attribute, error)
+	AttributeFind(ctx context.Context, entityID string, attributeKey string) (*Attribute, error)
+	AttributeFindByHandle(ctx context.Context, entityID string, attributeKey string, attributeValue string) (*Attribute, error)
+	AttributeList(ctx context.Context, options AttributeQueryOptions) ([]Attribute, error)
+	AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error
+	AttributeSetFloat(ctx context.Context, entityID string, attributeKey string, attributeValue float64) error
+	AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attributeValue int64) error
+	AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error
 	// AttributeTrash(attr *Attribute) error
 
-	EntityAttributeList(entityID string) ([]Attribute, error)
-	EntityCount(options EntityQueryOptions) (int64, error)
-	EntityCreate(entity *Entity) error
-	EntityCreateWithType(entityType string) (*Entity, error)
-	EntityCreateWithTypeAndAttributes(entityType string, attributes map[string]string) (*Entity, error)
-	EntityDelete(entityID string) (bool, error)
-	EntityFindByAttribute(entityType string, attributeKey string, attributeValue string) (*Entity, error)
-	EntityFindByHandle(entityType string, entityHandle string) (*Entity, error)
-	EntityFindByID(entityID string) (*Entity, error)
-	EntityList(options EntityQueryOptions) ([]Entity, error)
-	EntityListByAttribute(entityType string, attributeKey string, attributeValue string) ([]Entity, error)
-	EntityTrash(entityID string) (bool, error)
-	EntityUpdate(entity Entity) error
+	EntityAttributeList(ctx context.Context, entityID string) ([]Attribute, error)
+	EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error)
+	EntityCreate(ctx context.Context, entity *Entity) error
+	EntityCreateWithType(ctx context.Context, entityType string) (*Entity, error)
+	EntityCreateWithTypeAndAttributes(ctx context.Context, entityType string, attributes map[string]string) (*Entity, error)
+	EntityDelete(ctx context.Context, entityID string) (bool, error)
+	EntityFindByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (*Entity, error)
+	EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (*Entity, error)
+	EntityFindByID(ctx context.Context, entityID string) (*Entity, error)
+	EntityList(ctx context.Context, options EntityQueryOptions) ([]Entity, error)
+	EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]Entity, error)
+	EntityTrash(ctx context.Context, entityID string) (bool, error)
+	EntityUpdate(ctx context.Context, entity Entity) error
 
 	NewAttribute(opts NewAttributeOptions) Attribute
 	NewAttributeFromMap(entityMap map[string]string) Attribute

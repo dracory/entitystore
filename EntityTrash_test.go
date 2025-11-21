@@ -1,6 +1,9 @@
 package entitystore
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestEntityTrash(t *testing.T) {
 	db := InitDB("test_entity_trash.db")
@@ -16,7 +19,7 @@ func TestEntityTrash(t *testing.T) {
 		t.Fatal("Must be NIL:", err)
 	}
 
-	entity, err := store.EntityCreateWithTypeAndAttributes("post", map[string]string{
+	entity, err := store.EntityCreateWithTypeAndAttributes(context.Background(), "post", map[string]string{
 		"title": "Test Post Title",
 		"text":  "Test Post Text",
 	})
@@ -29,7 +32,7 @@ func TestEntityTrash(t *testing.T) {
 		t.Fatal("Entity could not be created")
 	}
 
-	attr, err := store.AttributeFind(entity.ID(), "title")
+	attr, err := store.AttributeFind(context.Background(), entity.ID(), "title")
 
 	if err != nil {
 		t.Fatal("Attribute could not be found:", err)
@@ -39,7 +42,7 @@ func TestEntityTrash(t *testing.T) {
 		t.Fatal("Attribute should not be nil")
 	}
 
-	isDeleted, err := store.EntityTrash(entity.ID())
+	isDeleted, err := store.EntityTrash(context.Background(), entity.ID())
 
 	if err != nil {
 		t.Fatal("Entity could not be deleted:", err)
@@ -49,7 +52,7 @@ func TestEntityTrash(t *testing.T) {
 		t.Fatal("Entity could not be soft deleted")
 	}
 
-	val, err := store.EntityFindByID(entity.ID())
+	val, err := store.EntityFindByID(context.Background(), entity.ID())
 
 	if err != nil {
 		t.Fatal(err)
@@ -59,7 +62,7 @@ func TestEntityTrash(t *testing.T) {
 		t.Fatal("Entity should no longer be present")
 	}
 
-	attr, err = store.AttributeFind(entity.ID(), "title")
+	attr, err = store.AttributeFind(context.Background(), entity.ID(), "title")
 
 	if err != nil {
 		t.Fatal("Attribute could not be found:", err)

@@ -1,6 +1,9 @@
 package entitystore
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestEntityDelete(t *testing.T) {
 	db := InitDB("test_entity_delete.db")
@@ -16,7 +19,7 @@ func TestEntityDelete(t *testing.T) {
 		t.Fatal("Must be NIL:", err)
 	}
 
-	entity, err := store.EntityCreateWithType("post")
+	entity, err := store.EntityCreateWithType(context.Background(), "post")
 
 	if err != nil {
 		t.Fatal("Entity could not be created:", err)
@@ -32,7 +35,7 @@ func TestEntityDelete(t *testing.T) {
 		t.Fatal("Entity title could not be created:", err)
 	}
 
-	isDeleted, err := store.EntityDelete(entity.ID())
+	isDeleted, err := store.EntityDelete(context.Background(), entity.ID())
 
 	if err != nil {
 		t.Fatal("Entity could not be soft deleted:", err)
@@ -42,7 +45,7 @@ func TestEntityDelete(t *testing.T) {
 		t.Fatal("Entity could not be soft deleted")
 	}
 
-	val, err := store.EntityFindByID(entity.ID())
+	val, err := store.EntityFindByID(context.Background(), entity.ID())
 
 	if err != nil {
 		t.Fatal(err)

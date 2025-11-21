@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 )
 
 // EntityUpdate updates an entity
-func (st *storeImplementation) EntityUpdate(ent Entity) error {
+func (st *storeImplementation) EntityUpdate(ctx context.Context, ent Entity) error {
 	ent.SetUpdatedAt(time.Now())
 
 	q := goqu.Dialect(st.dbDriverName).
@@ -26,7 +27,7 @@ func (st *storeImplementation) EntityUpdate(ent Entity) error {
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr)
 
 	if err != nil {
 		if st.GetDebug() {

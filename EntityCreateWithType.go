@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"time"
 
 	"github.com/dracory/uid"
@@ -9,7 +10,7 @@ import (
 // EntityCreateWithType quick shortcut method
 // to create an entity by providing only the type
 // NB. The ID will be auto-assigned
-func (st *storeImplementation) EntityCreateWithType(entityType string) (*Entity, error) {
+func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityType string) (*Entity, error) {
 	entity := st.NewEntity(NewEntityOptions{
 		ID:        uid.HumanUid(),
 		Type:      entityType,
@@ -18,7 +19,7 @@ func (st *storeImplementation) EntityCreateWithType(entityType string) (*Entity,
 		UpdatedAt: time.Now(),
 	})
 
-	err := st.EntityCreate(&entity)
+	err := st.EntityCreate(ctx, &entity)
 
 	if err != nil {
 		return &entity, err

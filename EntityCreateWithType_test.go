@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -19,7 +20,7 @@ func TestEntityCreateWithType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entity, err := store.EntityCreateWithType("post")
+	entity, err := store.EntityCreateWithType(context.Background(), "post")
 	if entity == nil {
 		t.Fatal("Entity could not be created")
 	}
