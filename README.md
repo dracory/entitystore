@@ -1,4 +1,4 @@
-# Entity Store <a href="https://gitpod.io/#https://github.com/dracory/entitystore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# Entity Store
 
 ![tests](https://github.com/dracory/entitystore/workflows/tests/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dracory/entitystore)](https://goreportcard.com/report/github.com/dracory/entitystore)
