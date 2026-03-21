@@ -212,22 +212,23 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqls := []string{}
 
-	if st.dbDriverName == "mysql" {
+	switch st.dbDriverName {
+	case "mysql":
 		sqls = append(sqls, sqlMysql1)
 		sqls = append(sqls, sqlMysql2)
 		sqls = append(sqls, sqlMysql3)
 		sqls = append(sqls, sqlMysql4)
-	} else if st.dbDriverName == "postgres" {
+	case "postgres":
 		sqls = append(sqls, sqlPostgres1)
 		sqls = append(sqls, sqlPostgres2)
 		sqls = append(sqls, sqlPostgres3)
 		sqls = append(sqls, sqlPostgres4)
-	} else if st.dbDriverName == "sqlite" {
+	case "sqlite":
 		sqls = append(sqls, sqlSqlite1)
 		sqls = append(sqls, sqlSqlite2)
 		sqls = append(sqls, sqlSqlite3)
 		sqls = append(sqls, sqlSqlite4)
-	} else {
+	default:
 		return nil, errors.New("unsupported driver " + st.dbDriverName)
 	}
 
