@@ -3,7 +3,6 @@ package entitystore
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/dracory/sb"
 )
@@ -71,165 +70,35 @@ func (st *storeImplementation) GetEntityTrashTableName() string {
 }
 
 func (st *storeImplementation) SqlCreateTable() ([]string, error) {
-
-	sqlMysql1 := `
-	CREATE TABLE IF NOT EXISTS ` + st.entityTableName + ` (
-		id varchar(9) NOT NULL PRIMARY KEY,
-		entity_type varchar(40) NOT NULL,
-		entity_handle varchar(60) DEFAULT '',
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL
-	 );
-	`
-
-	sqlMysql2 := `
-	CREATE TABLE IF NOT EXISTS ` + st.attributeTableName + ` (
-		id varchar(9) NOT NULL PRIMARY KEY,
-		entity_id varchar(9) NOT NULL,
-		attribute_key varchar(255) NOT NULL,
-		attribute_value text,
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL
-	);
-	`
-
-	sqlMysql3 := `
-	CREATE TABLE IF NOT EXISTS ` + st.entityTrashTableName + ` (
-		id varchar(9) NOT NULL PRIMARY KEY,
-		entity_type varchar(40) NOT NULL,
-		entity_handle varchar(60) DEFAULT '',
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL,
-		deleted_at datetime NOT NULL,
-		deleted_by varchar(9)
-	);
-	`
-
-	sqlMysql4 := `
-	CREATE TABLE IF NOT EXISTS ` + st.attributeTrashTableName + ` (
-		id varchar(9) NOT NULL PRIMARY KEY,
-		entity_id varchar(9) NOT NULL,
-		attribute_key varchar(255) NOT NULL,
-		attribute_value text,
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL,
-		deleted_at datetime NOT NULL,
-		deleted_by varchar(9)
-	);
-	`
-
-	sqlPostgres1 := `
-	CREATE TABLE IF NOT EXISTS ` + st.attributeTableName + ` (
-		"id" varchar(9) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(9) NOT NULL,
-		"attribute_key" varchar(255) NOT NULL,
-		"attribute_value" text,
-		"created_at" timestamptz(6) NOT NULL,
-		"updated_at" timestamptz(6) NOT NULL
-	);
-	`
-
-	sqlPostgres2 := `
-	CREATE TABLE IF NOT EXISTS ` + st.entityTableName + ` (
-	   "id" varchar(9) NOT NULL PRIMARY KEY,
-	   "entity_type" varchar(40) NOT NULL,
-	   "entity_handle" varchar(60) DEFAULT '',
-	   "created_at" timestamptz(6),
-	   "updated_at" timestamptz(6)
-	);
-	`
-
-	sqlPostgres3 := `
-	CREATE TABLE IF NOT EXISTS ` + st.entityTrashTableName + ` (
-		"id" varchar(9) NOT NULL PRIMARY KEY,
-		"entity_type" varchar(40) NOT NULL,
-		"entity_handle" varchar(60) DEFAULT '',
-		"created_at" timestamptz(6) NOT NULL,
-		"updated_at" timestamptz(6) NOT NULL,
-		"deleted_at" timestamptz(6) NOT NULL,
-		"deleted_by" varchar(9)
-	);
-	`
-
-	sqlPostgres4 := `
-	CREATE TABLE IF NOT EXISTS ` + st.attributeTrashTableName + ` (
-		"id" varchar(9) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(9) NOT NULL,
-		"attribute_key" varchar(255) NOT NULL,
-		"attribute_value" text,
-		"created_at" timestamptz(6) NOT NULL,
-		"updated_at" timestamptz(6) NOT NULL,
-		"deleted_at" timestamptz(6) NOT NULL,
-		"deleted_by" varchar(9)
-	);
-	`
-
-	sqlSqlite1 := `
-	CREATE TABLE IF NOT EXISTS "` + st.attributeTableName + `" (
-		"id" varchar(9) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(9) NOT NULL,
-		"attribute_key" varchar(255) NOT NULL,
-		"attribute_value" text,
-		"created_at" datetime NOT NULL,
-		"updated_at" datetime NOT NULL
-	);
-	`
-	sqlSqlite2 := `
-	CREATE TABLE IF NOT EXISTS "` + st.entityTableName + `" (
-	   "id" varchar(9) NOT NULL PRIMARY KEY,
-	   "entity_type" varchar(40) NOT NULL,
-	   "entity_handle" varchar(60) DEFAULT '',
-	   "created_at" datetime NOT NULL,
-	   "updated_at" datetime NOT NULL
-	);
-	`
-
-	sqlSqlite3 := `
-	CREATE TABLE IF NOT EXISTS "` + st.entityTrashTableName + `" (
-		"id" varchar(9) NOT NULL PRIMARY KEY,
-		"entity_type" varchar(40) NOT NULL,
-		"entity_handle" varchar(60) DEFAULT '',
-		"created_at" datetime NOT NULL,
-		"updated_at" datetime NOT NULL,
-		"deleted_at" datetime NOT NULL,
-		"deleted_by" varchar(9)
-	);
-	`
-
-	sqlSqlite4 := `
-	CREATE TABLE IF NOT EXISTS "` + st.attributeTrashTableName + `" (
-		"id" varchar(9) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(9) NOT NULL,
-		"attribute_key" varchar(255) NOT NULL,
-		"attribute_value" text,
-		"created_at" datetime NOT NULL,
-		"updated_at" datetime NOT NULL,
-		"deleted_at" datetime NOT NULL,
-		"deleted_by" varchar(9)
-	);
-	`
-
 	sqls := []string{}
 
-	switch st.dbDriverName {
-	case "mysql":
-		sqls = append(sqls, sqlMysql1)
-		sqls = append(sqls, sqlMysql2)
-		sqls = append(sqls, sqlMysql3)
-		sqls = append(sqls, sqlMysql4)
-	case "postgres":
-		sqls = append(sqls, sqlPostgres1)
-		sqls = append(sqls, sqlPostgres2)
-		sqls = append(sqls, sqlPostgres3)
-		sqls = append(sqls, sqlPostgres4)
-	case "sqlite":
-		sqls = append(sqls, sqlSqlite1)
-		sqls = append(sqls, sqlSqlite2)
-		sqls = append(sqls, sqlSqlite3)
-		sqls = append(sqls, sqlSqlite4)
-	default:
-		return nil, errors.New("unsupported driver " + st.dbDriverName)
+	// Create entities table
+	sql1, err := st.entityTableCreateSql()
+	if err != nil {
+		return nil, err
 	}
+	sqls = append(sqls, sql1)
+
+	// Create attributes table
+	sql2, err := st.attributeTableCreateSql()
+	if err != nil {
+		return nil, err
+	}
+	sqls = append(sqls, sql2)
+
+	// Create entities_trash table
+	sql3, err := st.entityTrashTableCreateSql()
+	if err != nil {
+		return nil, err
+	}
+	sqls = append(sqls, sql3)
+
+	// Create attributes_trash table
+	sql4, err := st.attributeTrashTableCreateSql()
+	if err != nil {
+		return nil, err
+	}
+	sqls = append(sqls, sql4)
 
 	return sqls, nil
 }
