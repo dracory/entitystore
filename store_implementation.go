@@ -16,6 +16,12 @@ type storeImplementation struct {
 	relationshipTableName      string
 	relationshipTrashTableName string
 	relationshipsEnabled       bool
+	taxonomyTableName          string
+	taxonomyTrashTableName     string
+	taxonomyTermTableName      string
+	taxonomyTermTrashTableName string
+	entityTaxonomyTableName    string
+	taxonomiesEnabled          bool
 	database                   sb.DatabaseInterface
 	dbDriverName               string
 	automigrateEnabled         bool
@@ -80,6 +86,26 @@ func (st *storeImplementation) GetRelationshipTrashTableName() string {
 	return st.relationshipTrashTableName
 }
 
+func (st *storeImplementation) GetTaxonomyTableName() string {
+	return st.taxonomyTableName
+}
+
+func (st *storeImplementation) GetTaxonomyTrashTableName() string {
+	return st.taxonomyTrashTableName
+}
+
+func (st *storeImplementation) GetTaxonomyTermTableName() string {
+	return st.taxonomyTermTableName
+}
+
+func (st *storeImplementation) GetTaxonomyTermTrashTableName() string {
+	return st.taxonomyTermTrashTableName
+}
+
+func (st *storeImplementation) GetEntityTaxonomyTableName() string {
+	return st.entityTaxonomyTableName
+}
+
 func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 	sqls := []string{}
 
@@ -140,6 +166,58 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 			return nil, err
 		}
 		sqls = append(sqls, sql8...)
+	}
+
+	// Create taxonomy tables if enabled
+	if st.taxonomiesEnabled {
+		// Create taxonomies table
+		sql9, err := st.taxonomyTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql9)
+
+		// Create taxonomy_terms table
+		sql10, err := st.taxonomyTermTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql10)
+
+		// Create entity_taxonomies table
+		sql11, err := st.entityTaxonomyTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql11)
+
+		// Create taxonomies_trash table
+		sql12, err := st.taxonomyTrashTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql12)
+
+		// Create taxonomy_terms_trash table
+		sql13, err := st.taxonomyTermTrashTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql13)
+
+		// Create indexes for taxonomy_terms table
+		sql14, err := st.taxonomyTermIndexesCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql14...)
+
+		// Create indexes for entity_taxonomies table
+		sql15, err := st.entityTaxonomyIndexesCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql15...)
 	}
 
 	return sqls, nil

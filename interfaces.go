@@ -170,6 +170,136 @@ type RelationshipTrashInterface interface {
 	SetDeletedBy(deletedBy string) RelationshipTrashInterface
 }
 
+// == TAXONOMY INTERFACES =====================================================
+
+// TaxonomyInterface defines the contract for taxonomies (classification systems)
+type TaxonomyInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	Name() string
+	Slug() string
+	Description() string
+	ParentID() string
+	EntityTypes() []string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetName(name string) TaxonomyInterface
+	SetSlug(slug string) TaxonomyInterface
+	SetDescription(desc string) TaxonomyInterface
+	SetParentID(parentID string) TaxonomyInterface
+	SetEntityTypes(types []string) TaxonomyInterface
+	SetCreatedAt(createdAt string) TaxonomyInterface
+	SetUpdatedAt(updatedAt string) TaxonomyInterface
+}
+
+// TaxonomyTermInterface defines the contract for taxonomy terms
+type TaxonomyTermInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	TaxonomyID() string
+	Name() string
+	Slug() string
+	ParentID() string
+	SortOrder() int
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetTaxonomyID(taxonomyID string) TaxonomyTermInterface
+	SetName(name string) TaxonomyTermInterface
+	SetSlug(slug string) TaxonomyTermInterface
+	SetParentID(parentID string) TaxonomyTermInterface
+	SetSortOrder(order int) TaxonomyTermInterface
+	SetCreatedAt(createdAt string) TaxonomyTermInterface
+	SetUpdatedAt(updatedAt string) TaxonomyTermInterface
+}
+
+// EntityTaxonomyInterface defines the contract for entity-taxonomy assignments
+type EntityTaxonomyInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	EntityID() string
+	TaxonomyID() string
+	TermID() string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetEntityID(entityID string) EntityTaxonomyInterface
+	SetTaxonomyID(taxonomyID string) EntityTaxonomyInterface
+	SetTermID(termID string) EntityTaxonomyInterface
+	SetCreatedAt(createdAt string) EntityTaxonomyInterface
+}
+
+// TaxonomyTrashInterface defines the contract for trashed taxonomies
+type TaxonomyTrashInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	Name() string
+	Slug() string
+	Description() string
+	ParentID() string
+	EntityTypes() []string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+	DeletedAt() string
+	DeletedAtCarbon() *carbon.Carbon
+	DeletedBy() string
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetName(name string) TaxonomyTrashInterface
+	SetSlug(slug string) TaxonomyTrashInterface
+	SetDescription(desc string) TaxonomyTrashInterface
+	SetParentID(parentID string) TaxonomyTrashInterface
+	SetEntityTypes(types []string) TaxonomyTrashInterface
+	SetCreatedAt(createdAt string) TaxonomyTrashInterface
+	SetUpdatedAt(updatedAt string) TaxonomyTrashInterface
+	SetDeletedAt(deletedAt string) TaxonomyTrashInterface
+	SetDeletedBy(deletedBy string) TaxonomyTrashInterface
+}
+
+// TaxonomyTermTrashInterface defines the contract for trashed taxonomy terms
+type TaxonomyTermTrashInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	TaxonomyID() string
+	Name() string
+	Slug() string
+	ParentID() string
+	SortOrder() int
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+	DeletedAt() string
+	DeletedAtCarbon() *carbon.Carbon
+	DeletedBy() string
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetTaxonomyID(taxonomyID string) TaxonomyTermTrashInterface
+	SetName(name string) TaxonomyTermTrashInterface
+	SetSlug(slug string) TaxonomyTermTrashInterface
+	SetParentID(parentID string) TaxonomyTermTrashInterface
+	SetSortOrder(order int) TaxonomyTermTrashInterface
+	SetCreatedAt(createdAt string) TaxonomyTermTrashInterface
+	SetUpdatedAt(updatedAt string) TaxonomyTermTrashInterface
+	SetDeletedAt(deletedAt string) TaxonomyTermTrashInterface
+	SetDeletedBy(deletedBy string) TaxonomyTermTrashInterface
+}
+
 // == STORE INTERFACE ========================================================
 
 type StoreInterface interface {
@@ -223,4 +353,43 @@ type StoreInterface interface {
 	RelationshipRestore(ctx context.Context, relationshipID string) (bool, error)
 	RelationshipTrash(ctx context.Context, relationshipID string, deletedBy string) (bool, error)
 	RelationshipTrashList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipTrashInterface, error)
+
+	// Taxonomy CRUD + helpers
+	TaxonomyCreate(ctx context.Context, taxonomy TaxonomyInterface) error
+	TaxonomyCreateByOptions(ctx context.Context, options TaxonomyOptions) (TaxonomyInterface, error)
+	TaxonomyCount(ctx context.Context, options TaxonomyQueryOptions) (int64, error)
+	TaxonomyDelete(ctx context.Context, taxonomyID string) (bool, error)
+	TaxonomyFind(ctx context.Context, taxonomyID string) (TaxonomyInterface, error)
+	TaxonomyFindBySlug(ctx context.Context, slug string) (TaxonomyInterface, error)
+	TaxonomyList(ctx context.Context, options TaxonomyQueryOptions) ([]TaxonomyInterface, error)
+	TaxonomyRestore(ctx context.Context, taxonomyID string) (bool, error)
+	TaxonomyTrash(ctx context.Context, taxonomyID string, deletedBy string) (bool, error)
+	TaxonomyTrashList(ctx context.Context, options TaxonomyQueryOptions) ([]TaxonomyTrashInterface, error)
+	TaxonomyUpdate(ctx context.Context, taxonomy TaxonomyInterface) error
+
+	// TaxonomyTerm CRUD + helpers
+	TaxonomyTermCreate(ctx context.Context, term TaxonomyTermInterface) error
+	TaxonomyTermCreateByOptions(ctx context.Context, options TaxonomyTermOptions) (TaxonomyTermInterface, error)
+	TaxonomyTermCount(ctx context.Context, options TaxonomyTermQueryOptions) (int64, error)
+	TaxonomyTermDelete(ctx context.Context, termID string) (bool, error)
+	TaxonomyTermFind(ctx context.Context, termID string) (TaxonomyTermInterface, error)
+	TaxonomyTermFindBySlug(ctx context.Context, taxonomyID string, slug string) (TaxonomyTermInterface, error)
+	TaxonomyTermList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermInterface, error)
+	TaxonomyTermRestore(ctx context.Context, termID string) (bool, error)
+	TaxonomyTermTrash(ctx context.Context, termID string, deletedBy string) (bool, error)
+	TaxonomyTermTrashList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermTrashInterface, error)
+	TaxonomyTermUpdate(ctx context.Context, term TaxonomyTermInterface) error
+
+	// EntityTaxonomy CRUD + helpers
+	EntityTaxonomyAssign(ctx context.Context, entityID string, taxonomyID string, termID string) error
+	EntityTaxonomyCount(ctx context.Context, options EntityTaxonomyQueryOptions) (int64, error)
+	EntityTaxonomyList(ctx context.Context, options EntityTaxonomyQueryOptions) ([]EntityTaxonomyInterface, error)
+	EntityTaxonomyRemove(ctx context.Context, entityID string, taxonomyID string, termID string) error
+
+	// Getters for table names
+	GetTaxonomyTableName() string
+	GetTaxonomyTrashTableName() string
+	GetTaxonomyTermTableName() string
+	GetTaxonomyTermTrashTableName() string
+	GetEntityTaxonomyTableName() string
 }

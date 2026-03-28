@@ -17,6 +17,12 @@ type NewStoreOptions struct {
 	RelationshipTableName      string
 	RelationshipTrashTableName string
 	RelationshipsEnabled       bool
+	TaxonomyTableName          string
+	TaxonomyTrashTableName     string
+	TaxonomyTermTableName      string
+	TaxonomyTermTrashTableName string
+	EntityTaxonomyTableName    string
+	TaxonomiesEnabled          bool
 	DB                         *sql.DB
 	Database                   sb.DatabaseInterface
 	DbDriverName               string
@@ -51,6 +57,12 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 		relationshipTableName:      opts.RelationshipTableName,
 		relationshipTrashTableName: opts.RelationshipTrashTableName,
 		relationshipsEnabled:       opts.RelationshipsEnabled,
+		taxonomyTableName:          opts.TaxonomyTableName,
+		taxonomyTrashTableName:     opts.TaxonomyTrashTableName,
+		taxonomyTermTableName:      opts.TaxonomyTermTableName,
+		taxonomyTermTrashTableName: opts.TaxonomyTermTrashTableName,
+		entityTaxonomyTableName:    opts.EntityTaxonomyTableName,
+		taxonomiesEnabled:          opts.TaxonomiesEnabled,
 		automigrateEnabled:         opts.AutomigrateEnabled,
 		database:                   opts.Database,
 		dbDriverName:               opts.DbDriverName,
@@ -80,6 +92,25 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 		}
 		if store.relationshipTrashTableName == "" {
 			store.relationshipTrashTableName = DEFAULT_RELATIONSHIP_TRASH_TABLE_NAME
+		}
+	}
+
+	// Set default taxonomy table names if taxonomies are enabled
+	if store.taxonomiesEnabled {
+		if store.taxonomyTableName == "" {
+			store.taxonomyTableName = DEFAULT_TAXONOMY_TABLE_NAME
+		}
+		if store.taxonomyTrashTableName == "" {
+			store.taxonomyTrashTableName = DEFAULT_TAXONOMY_TRASH_TABLE_NAME
+		}
+		if store.taxonomyTermTableName == "" {
+			store.taxonomyTermTableName = DEFAULT_TAXONOMY_TERM_TABLE_NAME
+		}
+		if store.taxonomyTermTrashTableName == "" {
+			store.taxonomyTermTrashTableName = DEFAULT_TAXONOMY_TERM_TRASH_TABLE_NAME
+		}
+		if store.entityTaxonomyTableName == "" {
+			store.entityTaxonomyTableName = DEFAULT_ENTITY_TAXONOMY_TABLE_NAME
 		}
 	}
 

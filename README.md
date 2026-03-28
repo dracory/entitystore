@@ -14,6 +14,7 @@ Modern "schemaless" storage using a relational (SQL) database. Document database
 - Multiple stores can be used to store specific types
 - Attributes can store any type of data - strings, integers, floating point numbers, any interfaces
 - **Entity Relationships** - Link entities together (belongs_to, has_many, many_to_many) with optional hierarchical support
+- **Entity Taxonomies** - Categorize entities with hierarchical taxonomies (categories, tags, labels) with full referential integrity
 - 99% of required storage functionality provided out of the box
 - Full SQL available for more sophisticated cases - reporting, diagrams, etc.
 - Supports soft deletes via separate trash bin tables
@@ -47,6 +48,20 @@ entityStore, err := NewStore(NewStoreOptions{
 	AttributeTableName:   "entities_attribute",
 	RelationshipsEnabled: true,  // Enable relationships
 	AutomigrateEnabled:   true,
+})
+```
+
+### Setup with Taxonomies (Optional)
+
+Enable entity taxonomies by setting `TaxonomiesEnabled: true`. See [docs/proposals/2026-03-28-entity-taxonomy.md](docs/proposals/2026-03-28-entity-taxonomy.md) for full documentation.
+
+```golang
+entityStore, err := NewStore(NewStoreOptions{
+	DB:                 db,
+	EntityTableName:    "entities_entity",
+	AttributeTableName: "entities_attribute",
+	TaxonomiesEnabled:  true,  // Enable taxonomies
+	AutomigrateEnabled: true,
 })
 ```
 
@@ -87,6 +102,35 @@ store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 relationships, _ := store.RelationshipListRelated(ctx, author.ID(), RELATIONSHIP_TYPE_BELONGS_TO)
 ```
 
+### 4. Entity Taxonomies (Optional)
+
+Categorize entities with hierarchical taxonomies. See [docs/proposals/2026-03-28-entity-taxonomy.md](docs/proposals/2026-03-28-entity-taxonomy.md) for full documentation.
+
+```golang
+// Create taxonomy
+categories, _ := store.TaxonomyCreateByOptions(ctx, TaxonomyOptions{
+    Name:        "Product Categories",
+    Slug:        "product_categories",
+    EntityTypes: []string{"product"},
+})
+
+// Create taxonomy term
+electronics, _ := store.TaxonomyTermCreateByOptions(ctx, TaxonomyTermOptions{
+    TaxonomyID: categories.ID(),
+    Name:       "Electronics",
+    Slug:       "electronics",
+})
+
+// Assign entity to taxonomy term
+store.EntityTaxonomyAssign(ctx, product.ID(), categories.ID(), electronics.ID())
+
+// Query entities by taxonomy
+assignments, _ := store.EntityTaxonomyList(ctx, EntityTaxonomyQueryOptions{
+    TaxonomyID: categories.ID(),
+    TermID:     electronics.ID(),
+})
+```
+
 
 ## Database Schema
 
@@ -99,6 +143,7 @@ relationships, _ := store.RelationshipListRelated(ctx, author.ID(), RELATIONSHIP
 | **Entities** | [docs/entities.md](docs/entities.md) - Creating, updating, deleting entities |
 | **Attributes** | [docs/attributes.md](docs/attributes.md) - Working with typed attributes |
 | **Relationships** | [docs/entity-relationships.md](docs/entity-relationships.md) - Linking entities together |
+| **Taxonomies** | [docs/proposals/2026-03-28-entity-taxonomy.md](docs/proposals/2026-03-28-entity-taxonomy.md) - Categorizing entities with hierarchical taxonomies |
 
 ## Methods Overview
 
@@ -125,6 +170,20 @@ These methods may be subject to change. See documentation links above for comple
 - `RelationshipCreateByOptions(ctx, options)` - Create relationship
 - `RelationshipList(ctx, options)` - List relationships
 - `RelationshipListRelated(ctx, relatedID, type)` - List by related entity
+
+### Taxonomy Store Methods (requires `TaxonomiesEnabled: true`)
+
+- `TaxonomyCreateByOptions(ctx, options)` - Create taxonomy
+- `TaxonomyFind(ctx, id)` / `TaxonomyFindBySlug(ctx, slug)` - Find taxonomy
+- `TaxonomyList(ctx, options)` - List taxonomies
+- `TaxonomyUpdate(ctx, taxonomy)` - Update taxonomy
+- `TaxonomyDelete(ctx, id)` / `TaxonomyTrash(ctx, id, deletedBy)` - Delete / Soft delete
+- `TaxonomyTermCreateByOptions(ctx, options)` - Create taxonomy term
+- `TaxonomyTermFind(ctx, id)` / `TaxonomyTermFindBySlug(ctx, taxonomyID, slug)` - Find term
+- `TaxonomyTermList(ctx, options)` - List terms
+- `EntityTaxonomyAssign(ctx, entityID, taxonomyID, termID)` - Assign entity to term
+- `EntityTaxonomyRemove(ctx, entityID, taxonomyID, termID)` - Remove assignment
+- `EntityTaxonomyList(ctx, options)` - List entity-taxonomy assignments
 
 ## Similar Packages
 - https://github.com/sebastienros/yessql (.NET)
