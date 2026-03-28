@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strconv"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
@@ -195,4 +196,60 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 	}
 
 	return list, nil
+}
+
+// AttributeSetString upserts a string attribute value for an entity
+func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error {
+	attr, err := st.AttributeFind(ctx, entityID, attributeKey)
+	if err != nil {
+		return err
+	}
+
+	if attr == nil {
+		_, err := st.AttributeCreateWithKeyAndValue(ctx, entityID, attributeKey, attributeValue)
+		return err
+	}
+
+	attr.SetAttributeValue(attributeValue)
+	return st.AttributeUpdate(ctx, attr)
+}
+
+// AttributeSetInt creates a new attribute or updates existing with int value
+func (st *storeImplementation) AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attributeValue int64) error {
+	attributeValueAsString := strconv.FormatInt(attributeValue, 10)
+	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
+}
+
+// AttributeSetFloat creates a new attribute or updates existing with float value
+func (st *storeImplementation) AttributeSetFloat(ctx context.Context, entityID string, attributeKey string, attributeValue float64) error {
+	attributeValueAsString := strconv.FormatFloat(attributeValue, 'f', 30, 64)
+	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
+}
+
+// AttributeCreateWithKeyAndValue creates a new attribute with the given key and value
+func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error) {
+	attr := NewAttribute()
+	attr.SetEntityID(entityID)
+	attr.SetAttributeKey(attributeKey)
+	attr.SetAttributeValue(attributeValue)
+
+	if err := st.AttributeCreate(ctx, attr); err != nil {
+		return nil, err
+	}
+
+	return attr, nil
+}
+
+// AttributesSet upserts multiple entity attributes
+func (st *storeImplementation) AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error {
+	for k, v := range attributes {
+		err := st.AttributeSetString(ctx, entityID, k, v)
+		if err != nil {
+			if st.GetDebug() {
+				log.Println(err)
+			}
+			return err
+		}
+	}
+	return nil
 }
