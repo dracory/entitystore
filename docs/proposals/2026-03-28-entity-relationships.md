@@ -316,7 +316,19 @@ type RelationshipInterface interface {
 
 // Options struct:
 
+**Store Options (enable/disable feature):**
+
 ```go
+type NewStoreOptions struct {
+    DB                  *sql.DB
+    EntityTableName     string
+    AttributeTableName  string
+    
+    // Feature flags - relationships are optional
+    RelationshipsEnabled bool   // Enable relationship support
+    RelationshipTableName string // Default: "entities_relationships"
+}
+
 type RelationshipOptions struct {
     EntityID         string
     RelatedEntityID  string
@@ -337,25 +349,30 @@ Uses **9-char short IDs** (varchar(9)) for space efficiency, matching cmsstore p
 func (st *storeImplementation) SqlCreateTable() ([]string, error) {
     // ... existing entity and attribute tables ...
     
-    sqlRelationship := `
-    CREATE TABLE IF NOT EXISTS ` + st.entityTableName + `_relationships (
-        id varchar(9) NOT NULL PRIMARY KEY,
-        entity_id varchar(9) NOT NULL,
-        related_entity_id varchar(9) NOT NULL,
-        relationship_type varchar(50) NOT NULL,
-        parent_id varchar(9) DEFAULT NULL,
-        sequence int DEFAULT 0,
-        metadata text,
-        created_at datetime NOT NULL,
-        INDEX idx_entity (entity_id),
-        INDEX idx_related (related_entity_id),
-        INDEX idx_type (relationship_type),
-        INDEX idx_entity_type (entity_id, relationship_type),
-        INDEX idx_parent (parent_id),
-        INDEX idx_sequence (entity_id, sequence)
-    );`
+    sqlArray := existingSQL
     
-    sqlArray := append(existingSQL, sqlRelationship)
+    // Only create relationships table if enabled
+    if st.relationshipsEnabled {
+        sqlRelationship := `
+        CREATE TABLE IF NOT EXISTS ` + st.relationshipTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            entity_id varchar(9) NOT NULL,
+            related_entity_id varchar(9) NOT NULL,
+            relationship_type varchar(50) NOT NULL,
+            parent_id varchar(9) DEFAULT NULL,
+            sequence int DEFAULT 0,
+            metadata text,
+            created_at datetime NOT NULL,
+            INDEX idx_entity (entity_id),
+            INDEX idx_related (related_entity_id),
+            INDEX idx_type (relationship_type),
+            INDEX idx_entity_type (entity_id, relationship_type),
+            INDEX idx_parent (parent_id),
+            INDEX idx_sequence (entity_id, sequence)
+        );`
+        sqlArray = append(sqlArray, sqlRelationship)
+    }
+    
     return sqlArray, nil
 }
 ```
@@ -384,7 +401,28 @@ Plus column constants in `consts.go` and interface in `interfaces.go`.
 
 ## 4. Usage Examples
 
-### 4.1 Basic Relationship
+### 4.1 Enabling Relationships (Optional Feature)
+
+```go
+// Create store WITH relationship support
+store, _ := entitystore.NewStore(entitystore.NewStoreOptions{
+    DB:                   db,
+    EntityTableName:      "entities",
+    AttributeTableName:   "attributes",
+    RelationshipsEnabled: true,                    // Enable relationships
+    RelationshipTableName: "my_relationships",     // Optional: custom table name
+})
+
+// Create store WITHOUT relationships (default behavior)
+storeMinimal, _ := entitystore.NewStore(entitystore.NewStoreOptions{
+    DB:                  db,
+    EntityTableName:     "entities",
+    AttributeTableName:  "attributes",
+    // RelationshipsEnabled defaults to false
+})
+```
+
+### 4.2 Basic Relationship
 
 ```go
 store, _ := entitystore.NewStore(entitystore.NewStoreOptions{
@@ -592,6 +630,7 @@ func TestRelationshipMetadata(t *testing.T) {
 | Relationship query performance | Proper indexing on entity_id, related_entity_id columns |
 | Circular relationships | Document best practices, provide validation helpers |
 | Cascade delete confusion | Document that relationships don't cascade (by design) |
+| Feature bloat for simple use cases | Optional flag - only create tables if enabled |
 
 ---
 

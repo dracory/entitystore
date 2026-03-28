@@ -441,7 +441,22 @@ func (o *entityTaxonomyImplementation) SetCreatedAt(createdAt string) EntityTaxo
 
 **Options structs:**
 
+**Store Options (enable/disable feature):**
+
 ```go
+type NewStoreOptions struct {
+    DB                  *sql.DB
+    EntityTableName     string
+    AttributeTableName  string
+    
+    // Feature flags - taxonomies are optional
+    TaxonomiesEnabled bool   // Enable taxonomy support
+    TaxonomyTableName string // Default: "entities_taxonomies"
+    TaxonomyTermTableName string // Default: "entities_taxonomy_terms"
+    EntityTaxonomyTableName string // Default: "entities_entity_taxonomies"
+}
+```
+
 type TaxonomyOptions struct {
     Name        string
     Slug        string
@@ -686,48 +701,54 @@ Uses **9-char short IDs** (varchar(9)) for space efficiency, matching cmsstore p
 func (st *storeImplementation) SqlCreateTable() ([]string, error) {
     // ... existing entity and attribute tables ...
     
-    sqlTaxonomy := `
-    CREATE TABLE IF NOT EXISTS ` + st.entityTableName + `_taxonomies (
-        id varchar(9) NOT NULL PRIMARY KEY,
-        name varchar(255) NOT NULL,
-        slug varchar(255) NOT NULL,
-        description text,
-        parent_id varchar(9),
-        entity_types text,
-        created_at datetime NOT NULL,
-        updated_at datetime NOT NULL,
-        UNIQUE KEY unique_slug (slug)
-    );`
+    sqlArray := existingSQL
     
-    sqlTaxonomyTerm := `
-    CREATE TABLE IF NOT EXISTS ` + st.entityTableName + `_taxonomy_terms (
-        id varchar(9) NOT NULL PRIMARY KEY,
-        taxonomy_id varchar(9) NOT NULL,
-        name varchar(255) NOT NULL,
-        slug varchar(255) NOT NULL,
-        parent_id varchar(9),
-        sort_order int DEFAULT 0,
-        created_at datetime NOT NULL,
-        updated_at datetime NOT NULL,
-        UNIQUE KEY unique_taxonomy_slug (taxonomy_id, slug),
-        INDEX idx_taxonomy (taxonomy_id),
-        INDEX idx_parent (parent_id)
-    );`
+    // Only create taxonomy tables if enabled
+    if st.taxonomiesEnabled {
+        sqlTaxonomy := `
+        CREATE TABLE IF NOT EXISTS ` + st.taxonomyTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            name varchar(255) NOT NULL,
+            slug varchar(255) NOT NULL,
+            description text,
+            parent_id varchar(9),
+            entity_types text,
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
+            UNIQUE KEY unique_slug (slug)
+        );`
+        
+        sqlTaxonomyTerm := `
+        CREATE TABLE IF NOT EXISTS ` + st.taxonomyTermTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            taxonomy_id varchar(9) NOT NULL,
+            name varchar(255) NOT NULL,
+            slug varchar(255) NOT NULL,
+            parent_id varchar(9),
+            sort_order int DEFAULT 0,
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
+            UNIQUE KEY unique_taxonomy_slug (taxonomy_id, slug),
+            INDEX idx_taxonomy (taxonomy_id),
+            INDEX idx_parent (parent_id)
+        );`
+        
+        sqlEntityTaxonomy := `
+        CREATE TABLE IF NOT EXISTS ` + st.entityTaxonomyTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            entity_id varchar(9) NOT NULL,
+            taxonomy_id varchar(9) NOT NULL,
+            term_id varchar(9) NOT NULL,
+            created_at datetime NOT NULL,
+            UNIQUE KEY unique_entity_term (entity_id, taxonomy_id, term_id),
+            INDEX idx_entity (entity_id),
+            INDEX idx_taxonomy (taxonomy_id),
+            INDEX idx_term (term_id)
+        );`
+        
+        sqlArray = append(sqlArray, sqlTaxonomy, sqlTaxonomyTerm, sqlEntityTaxonomy)
+    }
     
-    sqlEntityTaxonomy := `
-    CREATE TABLE IF NOT EXISTS ` + st.entityTableName + `_entity_taxonomies (
-        id varchar(9) NOT NULL PRIMARY KEY,
-        entity_id varchar(9) NOT NULL,
-        taxonomy_id varchar(9) NOT NULL,
-        term_id varchar(9) NOT NULL,
-        created_at datetime NOT NULL,
-        UNIQUE KEY unique_entity_term (entity_id, taxonomy_id, term_id),
-        INDEX idx_entity (entity_id),
-        INDEX idx_taxonomy (taxonomy_id),
-        INDEX idx_term (term_id)
-    );`
-    
-    sqlArray := append(existingSQL, sqlTaxonomy, sqlTaxonomyTerm, sqlEntityTaxonomy)
     return sqlArray, nil
 }
 ```
@@ -760,7 +781,30 @@ Plus column constants in `consts.go` and interfaces in `interfaces.go`.
 
 ## 4. Usage Examples
 
-### 4.1 Basic Taxonomy (Categories)
+### 4.1 Enabling Taxonomies (Optional Feature)
+
+```go
+// Create store WITH taxonomy support
+store, _ := entitystore.NewStore(entitystore.NewStoreOptions{
+    DB:                      db,
+    EntityTableName:         "entities",
+    AttributeTableName:      "attributes",
+    TaxonomiesEnabled:       true,                      // Enable taxonomies
+    TaxonomyTableName:       "my_taxonomies",           // Optional: custom table names
+    TaxonomyTermTableName:   "my_taxonomy_terms",
+    EntityTaxonomyTableName: "my_entity_taxonomies",
+})
+
+// Create store WITHOUT taxonomies (default behavior)
+storeMinimal, _ := entitystore.NewStore(entitystore.NewStoreOptions{
+    DB:                  db,
+    EntityTableName:     "entities",
+    AttributeTableName:  "attributes",
+    // TaxonomiesEnabled defaults to false
+})
+```
+
+### 4.2 Basic Taxonomy (Categories)
 
 ```go
 store, _ := entitystore.NewStore(entitystore.NewStoreOptions{
@@ -960,6 +1004,7 @@ Existing code continues to work unchanged.
 | Duplicate term slugs | Unique constraint on (taxonomy_id, slug) |
 | Orphaned entity associations | FK constraints or cleanup job |
 | Many-to-many complexity | Clear documentation with examples |
+| Feature bloat for simple use cases | Optional flag - only create tables if enabled |
 
 ---
 
