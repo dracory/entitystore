@@ -8,32 +8,7 @@ import (
 	"github.com/dracory/sb"
 )
 
-// NewStore creates a new entity store
-// func NewStore(opts ...StoreOption) (*Store, error) {
-// 	store := &Store{}
-// 	for _, opt := range opts {
-// 		opt(store)
-// 	}
-
-// 	if store.entityTableName == "" {
-// 		return nil, errors.New("Entity store: entityTableName is required")
-// 	}
-
-// 	if store.attributeTableName == "" {
-// 		return nil, errors.New("Entity store: attributeTableName is required")
-// 	}
-
-// 	store.entityTrashTableName = store.entityTableName + "_trash"
-// 	store.attributeTrashTableName = store.attributeTableName + "_trash"
-
-// 	if store.automigrateEnabled == true {
-// 		store.AutoMigrate()
-// 	}
-
-// 	return store, nil
-// }
-
-// NewStoreOptions define the options for creating a new session store
+// NewStoreOptions define the options for creating a new entity store
 type NewStoreOptions struct {
 	EntityTableName         string
 	AttributeTableName      string
@@ -46,6 +21,7 @@ type NewStoreOptions struct {
 	DebugEnabled            bool
 }
 
+// NewStore creates a new entity store
 func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	if opts.DB == nil && opts.Database == nil {
 		return nil, errors.New("entity store: DB or Database is required")
@@ -70,7 +46,6 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 		entityTrashTableName:    opts.EntityTrashTableName,
 		attributeTrashTableName: opts.AttributeTrashTableName,
 		automigrateEnabled:      opts.AutomigrateEnabled,
-		db:                      opts.DB,
 		database:                opts.Database,
 		dbDriverName:            opts.DbDriverName,
 		debugEnabled:            opts.DebugEnabled,
@@ -93,9 +68,7 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	}
 
 	if store.automigrateEnabled {
-		err := store.AutoMigrate(context.Background())
-
-		if err != nil {
+		if err := store.AutoMigrate(context.Background()); err != nil {
 			return nil, err
 		}
 	}

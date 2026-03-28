@@ -42,7 +42,7 @@ func TestAttributesSet(t *testing.T) {
 			t.Fatal("Attribute could not be nil")
 		}
 
-		if attr.GetString() != value {
+		if attr.AttributeValue() != value {
 			t.Fatal("Attribute value mismatch")
 		}
 

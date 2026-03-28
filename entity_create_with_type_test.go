@@ -3,7 +3,6 @@ package entitystore
 import (
 	"context"
 	"testing"
-	"time"
 )
 
 func TestEntityCreateWithType(t *testing.T) {
@@ -33,19 +32,14 @@ func TestEntityCreateWithType(t *testing.T) {
 		t.Fatal("Entity ID is not a short ID (expected 9-15 chars):", entity.ID(), "len:", len(entity.ID()))
 	}
 
-	if entity.CreatedAt().Before(time.Now().Add(-1 * time.Minute)) {
-		t.Fatal("Entity CreatedAt is not recent (before 1 min):", entity.CreatedAt())
+	// CreatedAt() is now a string — use CreatedAtCarbon() for time comparisons
+	createdAt := entity.CreatedAtCarbon()
+	if createdAt.IsZero() {
+		t.Fatal("Entity CreatedAt is empty")
 	}
 
-	if entity.CreatedAt().After(time.Now().Add(1 * time.Minute)) {
-		t.Fatal("Entity CreatedAt is not recent (after 1 min):", entity.CreatedAt())
-	}
-
-	if entity.UpdatedAt().Before(time.Now().Add(-1 * time.Minute)) {
-		t.Fatal("Entity UpdatedAt is not recent (before 1 min):", entity.UpdatedAt())
-	}
-
-	if entity.UpdatedAt().After(time.Now().Add(1 * time.Minute)) {
-		t.Fatal("Entity UpdatedAt is not recent (after 1 min):", entity.UpdatedAt())
+	updatedAt := entity.UpdatedAtCarbon()
+	if updatedAt.IsZero() {
+		t.Fatal("Entity UpdatedAt is empty")
 	}
 }

@@ -5,6 +5,7 @@ go 1.26
 require github.com/doug-martin/goqu/v9 v9.19.0
 
 require (
+	github.com/dracory/dataobject v1.6.0
 	github.com/dracory/sb v0.20.0
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/georgysavva/scany v1.2.3

@@ -37,7 +37,7 @@ func TestAttributeString(t *testing.T) {
 		t.Fatal("Attribute could not be retrieved")
 	}
 
-	if attr.GetString() != "world" {
-		t.Fatal("Attribute value incorrect", "must be 'world'", "found", attr.GetString())
+	if attr.AttributeValue() != "world" {
+		t.Fatal("Attribute value incorrect", "must be 'world'", "found", attr.AttributeValue())
 	}
 }

@@ -6,10 +6,11 @@ import (
 	"log"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/dromara/carbon/v2"
 )
 
-// EntityCreate creates a new entity
-func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity) error {
+// EntityCreate persists a new entity record
+func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityInterface) error {
 	if entity == nil {
 		return errors.New("entity cannot be nil")
 	}
@@ -18,11 +19,22 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 		entity.SetID(GenerateShortID())
 	}
 
-	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTableName)
-	q = q.Rows(entity.ToMap())
+	if entity.CreatedAt() == "" {
+		entity.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
+	}
+
+	if entity.UpdatedAt() == "" {
+		entity.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
+	}
+
+	record := goqu.Record{}
+	for k, v := range entity.Data() {
+		record[k] = v
+	}
+
+	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTableName).Rows(record)
 
 	sqlStr, _, errSql := q.ToSQL()
-
 	if errSql != nil {
 		return errSql
 	}
@@ -32,10 +44,5 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 	}
 
 	_, err := st.database.Exec(ctx, sqlStr)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

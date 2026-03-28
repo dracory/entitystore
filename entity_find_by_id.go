@@ -5,8 +5,8 @@ import (
 	"errors"
 )
 
-// EntityFindByID finds an entity by ID
-func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID string) (*Entity, error) {
+// EntityFindByID finds an entity by its ID
+func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID string) (EntityInterface, error) {
 	if entityID == "" {
 		return nil, errors.New("entity ID cannot be empty")
 	}
@@ -21,7 +21,7 @@ func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID stri
 	}
 
 	if len(list) > 0 {
-		return &list[0], nil
+		return list[0], nil
 	}
 
 	return nil, nil

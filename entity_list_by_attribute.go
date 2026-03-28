@@ -7,8 +7,8 @@ import (
 	"github.com/doug-martin/goqu/v9"
 )
 
-// EntityListByAttribute finds an entity by attribute
-func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (entityList []Entity, err error) {
+// EntityListByAttribute finds entities by attribute key/value within a given type
+func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error) {
 	var entityIDs []string
 
 	q := goqu.Dialect(st.dbDriverName).From(st.attributeTableName).
@@ -18,7 +18,6 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 		Select(COLUMN_ENTITY_ID)
 
 	sqlStr, _, err := q.ToSQL()
-
 	if err != nil {
 		if st.GetDebug() {
 			log.Println(err.Error())
@@ -31,22 +30,20 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 	}
 
 	rows, err := st.database.Query(ctx, sqlStr)
-
 	if err != nil {
-		return []Entity{}, err
+		return nil, err
 	}
 
 	for rows.Next() {
 		var entityID string
-		err := rows.Scan(&entityID)
-		if err != nil {
-			return []Entity{}, err
+		if err := rows.Scan(&entityID); err != nil {
+			return nil, err
 		}
 		entityIDs = append(entityIDs, entityID)
 	}
 
 	if len(entityIDs) < 1 {
-		return entityList, nil
+		return nil, nil
 	}
 
 	return st.EntityList(ctx, EntityQueryOptions{

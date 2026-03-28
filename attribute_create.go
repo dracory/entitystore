@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"log"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/dromara/carbon/v2"
 )
 
-// AttributeCreate creates a new attribute
-func (st *storeImplementation) AttributeCreate(ctx context.Context, attr *Attribute) error {
+// AttributeCreate persists a new attribute record
+func (st *storeImplementation) AttributeCreate(ctx context.Context, attr AttributeInterface) error {
 	if attr == nil {
 		return errors.New("attribute is required")
 	}
@@ -23,16 +23,20 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attr *Attrib
 		attr.SetID(GenerateShortID())
 	}
 
-	if attr.CreatedAt().IsZero() {
-		attr.SetCreatedAt(time.Now())
+	if attr.CreatedAt() == "" {
+		attr.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	if attr.UpdatedAt().IsZero() {
-		attr.SetUpdatedAt(time.Now())
+	if attr.UpdatedAt() == "" {
+		attr.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	q := goqu.Dialect(st.dbDriverName).Insert(st.attributeTableName)
-	q = q.Rows(attr.ToMap())
+	record := goqu.Record{}
+	for k, v := range attr.Data() {
+		record[k] = v
+	}
+
+	q := goqu.Dialect(st.dbDriverName).Insert(st.attributeTableName).Rows(record)
 	sqlStr, _, _ := q.ToSQL()
 
 	if st.GetDebug() {
@@ -40,13 +44,9 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attr *Attrib
 	}
 
 	_, err := st.database.Exec(ctx, sqlStr)
-
-	if err != nil {
-		if st.GetDebug() {
-			log.Println(err)
-		}
-		return err
+	if err != nil && st.GetDebug() {
+		log.Println(err)
 	}
 
-	return nil
+	return err
 }

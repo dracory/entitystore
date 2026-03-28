@@ -8,8 +8,8 @@ import (
 	"github.com/doug-martin/goqu/v9"
 )
 
-// EntityFindByAttribute finds an entity by attribute
-func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (*Entity, error) {
+// EntityFindByAttribute finds an entity by attribute key/value within a given type
+func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (EntityInterface, error) {
 	q := goqu.Dialect(st.dbDriverName).From(st.attributeTableName)
 	q = q.LeftJoin(goqu.I(st.entityTableName), goqu.On(goqu.Ex{st.attributeTableName + "." + COLUMN_ENTITY_ID: goqu.I(st.entityTableName + "." + COLUMN_ID)}))
 	q = q.Where(goqu.C(COLUMN_ENTITY_TYPE).Eq(entityType))
@@ -27,7 +27,6 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-
 		if st.GetDebug() {
 			log.Println(err)
 		}

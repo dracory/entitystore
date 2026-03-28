@@ -5,8 +5,8 @@ import (
 	"errors"
 )
 
-// EntityFindByHandle finds an entity by handle
-func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (*Entity, error) {
+// EntityFindByHandle finds an entity by its type and handle
+func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (EntityInterface, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
 	}
@@ -26,7 +26,7 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 	}
 
 	if len(list) > 0 {
-		return &list[0], nil
+		return list[0], nil
 	}
 
 	return nil, nil

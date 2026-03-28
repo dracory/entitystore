@@ -3,21 +3,26 @@ package entitystore
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/dromara/carbon/v2"
 )
 
-// AttributeUpdate updates an attribute
-func (st *storeImplementation) AttributeUpdate(attr Attribute) error {
-	attr.SetUpdatedAt(time.Now())
+// AttributeUpdate persists changes to an existing attribute record
+func (st *storeImplementation) AttributeUpdate(ctx context.Context, attr AttributeInterface) error {
+	attr.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	q := goqu.Dialect(st.dbDriverName).Update(st.attributeTableName)
-	q = q.Where(goqu.C(COLUMN_ID).Eq(attr.ID()))
-	q = q.Set(attr.ToMap())
+	record := goqu.Record{}
+	for k, v := range attr.Data() {
+		record[k] = v
+	}
+
+	q := goqu.Dialect(st.dbDriverName).
+		Update(st.attributeTableName).
+		Where(goqu.C(COLUMN_ID).Eq(attr.ID())).
+		Set(record)
 
 	sqlStr, _, errSql := q.ToSQL()
-
 	if errSql != nil {
 		return errSql
 	}
@@ -26,15 +31,10 @@ func (st *storeImplementation) AttributeUpdate(attr Attribute) error {
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(context.Background(), sqlStr)
-
-	if err != nil {
-		if st.GetDebug() {
-			log.Println(err)
-		}
-
-		return err
+	_, err := st.database.Exec(ctx, sqlStr)
+	if err != nil && st.GetDebug() {
+		log.Println(err)
 	}
 
-	return nil
+	return err
 }

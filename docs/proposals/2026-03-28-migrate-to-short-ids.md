@@ -1,7 +1,7 @@
-# Migrate Entitystore to Short IDs (9-char) Proposal
+# Migrate Entitystore to Short IDs Proposal
 
 **Date:** 2026-03-28
-**Status:** Draft
+**Status:** Implemented
 **Author:** AI Assistant
 **Repository:** github.com/dracory/entitystore
 
@@ -9,15 +9,15 @@
 
 ## 1. Executive Summary
 
-**Problem:** `entitystore` currently uses 40-character IDs (`varchar(40)`) via `uid.HumanUid()`, while `cmsstore` uses more efficient 9-character short IDs. This inconsistency causes:
-- Larger index sizes (40 chars vs 9 chars = 4.4x overhead)
+**Problem:** `entitystore` currently uses 32-character IDs (`varchar(40)`) via `uid.HumanUid()`, while `cmsstore` uses more efficient 9-15 character short IDs. This inconsistency causes:
+- Larger index sizes (32 chars vs 9-15 chars = 2-3x overhead)
 - Incompatibility when integrating with cmsstore
 - Wasted storage and memory
 
-**Solution:** Migrate `entitystore` to use 9-character short IDs matching `cmsstore` pattern.
+**Solution:** Migrate `entitystore` to use 9-15 character short IDs matching `cmsstore` pattern.
 
 **Impact:**
-- 78% reduction in ID storage space
+- 70% reduction in ID storage space (32 bytes → 9-15 bytes)
 - Consistency with `cmsstore`
 - Faster index lookups
 - Breaking change requiring migration
@@ -29,9 +29,9 @@
 ### 2.1 Database Schema (Current)
 
 ```sql
--- 40-character IDs (current)
+-- 32-character IDs (current)
 CREATE TABLE entities (
-    id varchar(40) NOT NULL PRIMARY KEY,  -- e.g., "01HQJ2KQV9A7YXWMN8P5RF3T6D"
+    id varchar(40) NOT NULL PRIMARY KEY,  -- e.g., "01hqj2kqv9a7yxwmn8p5rf3t6d"
     entity_type varchar(40) NOT NULL,
     entity_handle varchar(60) DEFAULT '',
     created_at datetime NOT NULL,
@@ -80,10 +80,10 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 
 | Component | Per Row | 1M Rows | Index Size |
 |-----------|---------|---------|------------|
-| Entity PK | 40 bytes | 40 MB | ~40 MB |
-| Attribute PK | 40 bytes | 40 MB | ~40 MB |
-| Attribute FK | 40 bytes | 40 MB | ~40 MB |
-| **Total** | **120 bytes** | **120 MB** | **~120 MB** |
+| Entity PK | 32 bytes | 32 MB | ~32 MB |
+| Attribute PK | 32 bytes | 32 MB | ~32 MB |
+| Attribute FK | 32 bytes | 32 MB | ~32 MB |
+| **Total** | **96 bytes** | **96 MB** | **~96 MB** |
 
 ---
 
@@ -92,7 +92,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 ### 3.1 Database Schema (New)
 
 ```sql
--- 9-character short IDs (new)
+-- 9-15 character short IDs (new)
 CREATE TABLE entities (
     id varchar(9) NOT NULL PRIMARY KEY,   -- e.g., "86ccrtsgx"
     entity_type varchar(40) NOT NULL,
@@ -144,17 +144,17 @@ var (
 	idSequence int
 )
 
-// GenerateShortID generates a new shortened ID using TimestampMicro + Crockford Base32 (lowercase)
-// Returns a 9-character lowercase ID (e.g., "86ccrtsgx")
+// GenerateShortID generates a new shortened ID using TimestampNano + Crockford Base32 (lowercase)
+// Returns a 9-15 character lowercase ID
 // Thread-safe: Uses mutex to prevent duplicate IDs when called concurrently
 func GenerateShortID() string {
 	idMutex.Lock()
 	defer idMutex.Unlock()
 
-	// Get current microsecond timestamp
-	now := time.Now().UnixMicro()
+	// Get current nanosecond timestamp
+	now := time.Now().UnixNano()
 
-	// If same microsecond as last ID, add sequence number to ensure uniqueness
+	// If same nanosecond as last ID, add sequence number to ensure uniqueness
 	if now == lastIDTime {
 		idSequence++
 		now += int64(idSequence)
@@ -163,7 +163,7 @@ func GenerateShortID() string {
 		idSequence = 0
 	}
 
-	timestampID := uid.TimestampMicro()
+	timestampID := uid.TimestampNano()
 	shortened, _ := uid.ShortenCrockford(timestampID)
 	return strings.ToLower(shortened)
 }
@@ -173,9 +173,9 @@ func NormalizeID(id string) string {
 	return strings.ToLower(strings.TrimSpace(id))
 }
 
-// IsShortID checks if an ID appears to be a shortened ID (9 chars)
+// IsShortID checks if an ID appears to be a shortened ID (9-15 chars)
 func IsShortID(id string) bool {
-	return len(id) == 9
+	return len(id) >= 9 && len(id) <= 15
 }
 ```
 
@@ -191,19 +191,19 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 ```
 
 **ID Format:**
-- `GenerateShortID()` → "86ccrtsgx" (9 chars)
+- `GenerateShortID()` → "86ccrtsgx" or "1h87kz1fv0kyw" (9-15 chars)
 - Timestamp-based, sortable, URL-safe
 
 ### 3.3 Space Analysis (New)
 
 | Component | Per Row | 1M Rows | Index Size | Savings |
 |-----------|---------|---------|------------|---------|
-| Entity PK | 9 bytes | 9 MB | ~9 MB | 78% |
-| Attribute PK | 9 bytes | 9 MB | ~9 MB | 78% |
-| Attribute FK | 9 bytes | 9 MB | ~9 MB | 78% |
-| **Total** | **27 bytes** | **27 MB** | **~27 MB** | **78%** |
+| Entity PK | 12 bytes avg | 12 MB | ~12 MB | 63% |
+| Attribute PK | 12 bytes avg | 12 MB | ~12 MB | 63% |
+| Attribute FK | 12 bytes avg | 12 MB | ~12 MB | 63% |
+| **Total** | **36 bytes** | **36 MB** | **~36 MB** | **63%** |
 
-**Overall savings: 93 MB per 1M entities with attributes**
+**Overall savings: 60 MB per 1M entities with attributes**
 
 ---
 
@@ -237,8 +237,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 2. Update `entity_create_with_type.go` → `GenerateShortID()`
 3. Update `attribute_create.go` → `GenerateShortID()`
 4. Update `attribute_create_with_key_and_value.go` → `GenerateShortID()`
-5. Update `attributes_set.go` → `GenerateShortID()`
-6. Run tests, verify IDs are 9 chars
+5. Run tests, verify IDs are 9-15 chars
 
 ### Phase 3: Update Database Schema (1 day)
 
@@ -305,7 +304,7 @@ entity.ID() // "86ccrtsgx"
 **Breaking changes:**
 1. Database schema changes from `varchar(40)` to `varchar(9)`
 2. Existing databases must migrate or stay on v1.x
-3. ID format changes from HumanUid to TimestampMicro
+3. ID format changes from HumanUid (32-char) to TimestampNano short IDs
 
 **Migration options:**
 1. **New projects:** Use v2.0.0 directly
@@ -350,8 +349,8 @@ entity.ID() // "86ccrtsgx"
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| ID storage | 40 bytes | 9 bytes | **78% reduction** |
-| Index size | ~120 MB/M rows | ~27 MB/M rows | **78% reduction** |
+| ID storage | 32 bytes | 12 bytes avg | **63% reduction** |
+| Index size | ~96 MB/M rows | ~36 MB/M rows | **63% reduction** |
 | Query speed | Baseline | +15% est. | Smaller indexes |
 | Memory usage | Baseline | -78% IDs | Less RAM for caches |
 | URL-friendly | No | Yes | No encoding needed |
@@ -390,16 +389,16 @@ This is a foundational improvement that:
 
 ## 11. Appendix: ID Format Comparison
 
-| Aspect | HumanUid (40-char) | Short ID (9-char) |
-|--------|-------------------|-------------------|
-| **Example** | "ent_01HQJ2KQV9A7YXWMN8P5RF3T6D" | "86ccrtsgx" |
-| **Length** | 40 characters | 9 characters |
+| Aspect | HumanUid (32-char) | Short ID (9-15 char) |
+|--------|---------------------|-------------------|
+| **Example** | "01hqj2kqv9a7yxwmn8p5rf3t6d" | "86ccrtsgx" or "1h87kz1fv0kyw" |
+| **Length** | 32 characters | 9-15 characters |
 | **Alphabet** | Base32 | Crockford Base32 |
 | **Sortable** | Yes (timestamp) | Yes (timestamp) |
-| **Unique** | Yes (microsecond) | Yes (microsecond) |
+| **Unique** | Yes (microsecond) | Yes (nanosecond + sequence) |
 | **URL-safe** | Yes | Yes |
 | **Case** | Lowercase | Lowercase |
-| **Readable** | Medium | Short |
+| **Readable** | Long | Short |
 
 ---
 

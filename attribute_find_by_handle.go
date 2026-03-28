@@ -5,8 +5,8 @@ import (
 	"errors"
 )
 
-// AttributeFind finds an entity by ID
-func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (*Attribute, error) {
+// AttributeFindByHandle finds a single attribute by entity type, handle, and attribute key
+func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
 	}
@@ -31,7 +31,7 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 	}
 
 	if len(list) > 0 {
-		return &list[0], nil
+		return list[0], nil
 	}
 
 	return nil, nil

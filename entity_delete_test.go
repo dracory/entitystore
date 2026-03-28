@@ -29,7 +29,7 @@ func TestEntityDelete(t *testing.T) {
 		t.Fatal("Entity could not be created")
 	}
 
-	err = entity.SetString("title", "Hello world")
+	err = store.AttributeSetString(context.Background(), entity.ID(), "title", "Hello world")
 
 	if err != nil {
 		t.Fatal("Entity title could not be created:", err)

@@ -2,27 +2,19 @@ package entitystore
 
 import (
 	"context"
-	"time"
 )
 
-// AttributeCreateWithKeyAndValue shortcut to create a new attribute
-// by providing only the key and value
-// NN. The ID will be auto-assigned
-func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (*Attribute, error) {
-	newAttribute := st.NewAttribute(NewAttributeOptions{
-		ID:             GenerateShortID(),
-		EntityID:       entityID,
-		AttributeKey:   attributeKey,
-		AttributeValue: attributeValue,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-	})
+// AttributeCreateWithKeyAndValue creates a new attribute with the given key and value.
+// The ID and timestamps are auto-assigned.
+func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error) {
+	attr := NewAttribute()
+	attr.SetEntityID(entityID)
+	attr.SetAttributeKey(attributeKey)
+	attr.SetAttributeValue(attributeValue)
 
-	err := st.AttributeCreate(ctx, &newAttribute)
-
-	if err != nil {
+	if err := st.AttributeCreate(ctx, attr); err != nil {
 		return nil, err
 	}
 
-	return &newAttribute, nil
+	return attr, nil
 }

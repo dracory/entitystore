@@ -27,8 +27,8 @@ func TestEntityFindByAttribute(t *testing.T) {
 		t.Fatal("Entity could not be created:", err)
 	}
 
-	val, _ := entity.GetString("path", "")
-	if val != "/" {
+	attr, err := store.AttributeFind(context.Background(), entity.ID(), "path")
+	if err != nil || attr == nil || attr.AttributeValue() != "/" {
 		t.Fatal("Entity attribute mismatch")
 	}
 

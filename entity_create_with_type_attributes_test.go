@@ -31,8 +31,8 @@ func TestEntityCreateWithAttributes(t *testing.T) {
 		t.Fatalf("Entity could not be created")
 	}
 
-	val, _ := entity.GetString("name", "")
-	if val != "Hello world" {
+	attr, err := store.AttributeFind(context.Background(), entity.ID(), "name")
+	if err != nil || attr == nil || attr.AttributeValue() != "Hello world" {
 		t.Fatalf("Entity attribute mismatch")
 	}
 }

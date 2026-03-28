@@ -5,8 +5,8 @@ import (
 	"errors"
 )
 
-// AttributeFind finds an entity by ID
-func (st *storeImplementation) AttributeFind(ctx context.Context, entityID string, attributeKey string) (*Attribute, error) {
+// AttributeFind finds a single attribute by entity ID and attribute key
+func (st *storeImplementation) AttributeFind(ctx context.Context, entityID string, attributeKey string) (AttributeInterface, error) {
 	if entityID == "" {
 		return nil, errors.New("entity id cannot be empty")
 	}
@@ -26,7 +26,7 @@ func (st *storeImplementation) AttributeFind(ctx context.Context, entityID strin
 	}
 
 	if len(list) > 0 {
-		return &list[0], nil
+		return list[0], nil
 	}
 
 	return nil, nil

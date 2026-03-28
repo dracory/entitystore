@@ -14,7 +14,6 @@ type storeImplementation struct {
 	attributeTableName      string
 	entityTrashTableName    string
 	attributeTrashTableName string
-	db                      *sql.DB
 	database                sb.DatabaseInterface
 	dbDriverName            string
 	automigrateEnabled      bool

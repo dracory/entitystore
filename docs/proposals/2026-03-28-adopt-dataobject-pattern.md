@@ -114,20 +114,20 @@ import (
 
 // == TYPE ===================================================================
 
-// entity represents a schemaless entity
-type entity struct {
+// entityImplementation represents a schemaless entity
+type entityImplementation struct {
 	dataobject.DataObject
 }
 
 // == INTERFACES =============================================================
 
-var _ EntityInterface = (*entity)(nil)
+var _ EntityInterface = (*entityImplementation)(nil)
 
 // == CONSTRUCTORS ==========================================================
 
 // NewEntity creates a new entity with default values
 func NewEntity() EntityInterface {
-	o := &entity{}
+	o := &entityImplementation{}
 	o.SetEntityType("")
 	o.SetEntityHandle("")
 	o.SetID(GenerateShortID())
@@ -139,117 +139,117 @@ func NewEntity() EntityInterface {
 
 // NewEntityFromExistingData creates a new entity from existing data
 func NewEntityFromExistingData(data map[string]string) EntityInterface {
-	o := &entity{}
+	o := &entityImplementation{}
 	o.Hydrate(data)
 	return o
 }
 
 // == METHODS ===============================================================
 
-func (o *entity) IsActive() bool {
+func (o *entityImplementation) IsActive() bool {
 	return o.Status() == ENTITY_STATUS_ACTIVE
 }
 
-func (o *entity) IsInactive() bool {
+func (o *entityImplementation) IsInactive() bool {
 	return o.Status() == ENTITY_STATUS_INACTIVE
 }
 
-func (o *entity) IsSoftDeleted() bool {
+func (o *entityImplementation) IsSoftDeleted() bool {
 	return o.SoftDeletedAtCarbon().Compare("<", carbon.Now(carbon.UTC))
 }
 
 // == SETTERS AND GETTERS =====================================================
 
-func (o *entity) ID() string {
+func (o *entityImplementation) ID() string {
 	return o.Get(COLUMN_ID)
 }
 
-func (o *entity) SetID(id string) EntityInterface {
+func (o *entityImplementation) SetID(id string) EntityInterface {
 	o.Set(COLUMN_ID, id)
 	return o
 }
 
-func (o *entity) EntityType() string {
+func (o *entityImplementation) EntityType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }
 
-func (o *entity) SetEntityType(entityType string) EntityInterface {
+func (o *entityImplementation) SetEntityType(entityType string) EntityInterface {
 	o.Set(COLUMN_ENTITY_TYPE, entityType)
 	return o
 }
 
-func (o *entity) EntityHandle() string {
+func (o *entityImplementation) EntityHandle() string {
 	return o.Get(COLUMN_ENTITY_HANDLE)
 }
 
-func (o *entity) SetEntityHandle(handle string) EntityInterface {
+func (o *entityImplementation) SetEntityHandle(handle string) EntityInterface {
 	o.Set(COLUMN_ENTITY_HANDLE, handle)
 	return o
 }
 
-func (o *entity) Status() string {
+func (o *entityImplementation) Status() string {
 	return o.Get(COLUMN_STATUS)
 }
 
-func (o *entity) SetStatus(status string) EntityInterface {
+func (o *entityImplementation) SetStatus(status string) EntityInterface {
 	o.Set(COLUMN_STATUS, status)
 	return o
 }
 
-func (o *entity) CreatedAt() string {
+func (o *entityImplementation) CreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
-func (o *entity) SetCreatedAt(createdAt string) EntityInterface {
+func (o *entityImplementation) SetCreatedAt(createdAt string) EntityInterface {
 	o.Set(COLUMN_CREATED_AT, createdAt)
 	return o
 }
 
-func (o *entity) CreatedAtCarbon() *carbon.Carbon {
+func (o *entityImplementation) CreatedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.CreatedAt())
 }
 
-func (o *entity) UpdatedAt() string {
+func (o *entityImplementation) UpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
-func (o *entity) SetUpdatedAt(updatedAt string) EntityInterface {
+func (o *entityImplementation) SetUpdatedAt(updatedAt string) EntityInterface {
 	o.Set(COLUMN_UPDATED_AT, updatedAt)
 	return o
 }
 
-func (o *entity) UpdatedAtCarbon() *carbon.Carbon {
+func (o *entityImplementation) UpdatedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.UpdatedAt())
 }
 
-func (o *entity) SoftDeletedAt() string {
+func (o *entityImplementation) SoftDeletedAt() string {
 	return o.Get(COLUMN_SOFT_DELETED_AT)
 }
 
-func (o *entity) SetSoftDeletedAt(softDeletedAt string) EntityInterface {
+func (o *entityImplementation) SetSoftDeletedAt(softDeletedAt string) EntityInterface {
 	o.Set(COLUMN_SOFT_DELETED_AT, softDeletedAt)
 	return o
 }
 
-func (o *entity) SoftDeletedAtCarbon() *carbon.Carbon {
+func (o *entityImplementation) SoftDeletedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.SoftDeletedAt())
 }
 
 // == DYNAMIC ATTRIBUTES ======================================================
 
 // GetAttribute retrieves an attribute by key
-func (o *entity) GetAttribute(key string) string {
+func (o *entityImplementation) GetAttribute(key string) string {
 	return o.Get(key)
 }
 
 // SetAttribute sets an attribute value
-func (o *entity) SetAttribute(key string, value string) EntityInterface {
+func (o *entityImplementation) SetAttribute(key string, value string) EntityInterface {
 	o.Set(key, value)
 	return o
 }
 
 // GetAllAttributes returns all dynamic attributes (excludes system columns)
-func (o *entity) GetAllAttributes() map[string]string {
+func (o *entityImplementation) GetAllAttributes() map[string]string {
 	systemColumns := map[string]bool{
 		COLUMN_ID:              true,
 		COLUMN_ENTITY_TYPE:     true,
@@ -284,20 +284,20 @@ import (
 
 // == TYPE ===================================================================
 
-// attribute represents a single attribute of an entity
-type attribute struct {
+// attributeImplementation represents a single attribute of an entity
+type attributeImplementation struct {
 	dataobject.DataObject
 }
 
 // == INTERFACES =============================================================
 
-var _ AttributeInterface = (*attribute)(nil)
+var _ AttributeInterface = (*attributeImplementation)(nil)
 
 // == CONSTRUCTORS ==========================================================
 
 // NewAttribute creates a new attribute with default values
 func NewAttribute() AttributeInterface {
-	o := &attribute{}
+	o := &attributeImplementation{}
 	o.SetEntityID("")
 	o.SetAttributeKey("")
 	o.SetAttributeValue("")
@@ -309,95 +309,95 @@ func NewAttribute() AttributeInterface {
 
 // NewAttributeFromExistingData creates a new attribute from existing data
 func NewAttributeFromExistingData(data map[string]string) AttributeInterface {
-	o := &attribute{}
+	o := &attributeImplementation{}
 	o.Hydrate(data)
 	return o
 }
 
 // == SETTERS AND GETTERS =====================================================
 
-func (o *attribute) ID() string {
+func (o *attributeImplementation) ID() string {
 	return o.Get(COLUMN_ID)
 }
 
-func (o *attribute) SetID(id string) AttributeInterface {
+func (o *attributeImplementation) SetID(id string) AttributeInterface {
 	o.Set(COLUMN_ID, id)
 	return o
 }
 
-func (o *attribute) EntityID() string {
+func (o *attributeImplementation) EntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
 
-func (o *attribute) SetEntityID(entityID string) AttributeInterface {
+func (o *attributeImplementation) SetEntityID(entityID string) AttributeInterface {
 	o.Set(COLUMN_ENTITY_ID, entityID)
 	return o
 }
 
-func (o *attribute) AttributeKey() string {
+func (o *attributeImplementation) AttributeKey() string {
 	return o.Get(COLUMN_ATTRIBUTE_KEY)
 }
 
-func (o *attribute) SetAttributeKey(key string) AttributeInterface {
+func (o *attributeImplementation) SetAttributeKey(key string) AttributeInterface {
 	o.Set(COLUMN_ATTRIBUTE_KEY, key)
 	return o
 }
 
-func (o *attribute) AttributeValue() string {
+func (o *attributeImplementation) AttributeValue() string {
 	return o.Get(COLUMN_ATTRIBUTE_VALUE)
 }
 
-func (o *attribute) SetAttributeValue(value string) AttributeInterface {
+func (o *attributeImplementation) SetAttributeValue(value string) AttributeInterface {
 	o.Set(COLUMN_ATTRIBUTE_VALUE, value)
 	return o
 }
 
-func (o *attribute) CreatedAt() string {
+func (o *attributeImplementation) CreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
-func (o *attribute) SetCreatedAt(createdAt string) AttributeInterface {
+func (o *attributeImplementation) SetCreatedAt(createdAt string) AttributeInterface {
 	o.Set(COLUMN_CREATED_AT, createdAt)
 	return o
 }
 
-func (o *attribute) CreatedAtCarbon() *carbon.Carbon {
+func (o *attributeImplementation) CreatedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.CreatedAt())
 }
 
-func (o *attribute) UpdatedAt() string {
+func (o *attributeImplementation) UpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
-func (o *attribute) SetUpdatedAt(updatedAt string) AttributeInterface {
+func (o *attributeImplementation) SetUpdatedAt(updatedAt string) AttributeInterface {
 	o.Set(COLUMN_UPDATED_AT, updatedAt)
 	return o
 }
 
-func (o *attribute) UpdatedAtCarbon() *carbon.Carbon {
+func (o *attributeImplementation) UpdatedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.UpdatedAt())
 }
 
 // == TYPE CONVERSIONS ======================================================
 
 // GetInt returns the value as int64
-func (o *attribute) GetInt() (int64, error) {
+func (o *attributeImplementation) GetInt() (int64, error) {
 	return strconv.ParseInt(o.AttributeValue(), 10, 64)
 }
 
 // GetFloat returns the value as float64
-func (o *attribute) GetFloat() (float64, error) {
+func (o *attributeImplementation) GetFloat() (float64, error) {
 	return strconv.ParseFloat(o.AttributeValue(), 64)
 }
 
 // SetInt sets an int64 value
-func (o *attribute) SetInt(value int64) AttributeInterface {
+func (o *attributeImplementation) SetInt(value int64) AttributeInterface {
 	o.SetAttributeValue(strconv.FormatInt(value, 10))
 	return o
 }
 
 // SetFloat sets a float64 value
-func (o *attribute) SetFloat(value float64) AttributeInterface {
+func (o *attributeImplementation) SetFloat(value float64) AttributeInterface {
 	o.SetAttributeValue(strconv.FormatFloat(value, 'f', 30, 64))
 	return o
 }
@@ -490,21 +490,77 @@ type AttributeInterface interface {
 
 ## 4. Files to Modify
 
-| File | Changes | Lines (Est) |
+Following cmsstore pattern exactly - **8 files per entity**:
+
+### 4.1 Entity Files (8 files)
+
+| File | Purpose | Lines (Est) |
 |------|---------|-------------|
-| `entity.go` | Rewrite using dataobject | 120 |
-| `attribute.go` | Rewrite using dataobject | 100 |
-| `new_entity.go` | Remove (merged into entity.go) | -20 |
-| `new_attribute.go` | Remove (merged into attribute.go) | -20 |
-| `entity_attribute_list.go` | Update to use interface | 20 |
-| `interfaces.go` | Add EntityInterface, AttributeInterface | 60 |
-| `consts.go` | Add status constants | 10 |
+| `entity_implementation.go` | Struct with dataobject, getters, setters, status methods | 130 |
+| `entity_implementation_test.go` | Tests for entity implementation | 100 |
+| `entity_query.go` | Query builder (EntityFindByID, EntityList, etc.) | 150 |
+| `entity_query_interface.go` | Query interface definitions | 60 |
+| `entity_query_test.go` | Query tests | 100 |
+| `entity_table_create_sql.go` | SQL schema for entities/trash tables | 80 |
+| `store_entities.go` | Store CRUD methods (EntityCreate, EntityUpdate, etc.) | 200 |
+| `store_entities_test.go` | Store method tests | 150 |
+| **Entity Subtotal** | | **970** |
+
+### 4.2 Attribute Files (8 files)
+
+| File | Purpose | Lines (Est) |
+|------|---------|-------------|
+| `attribute_implementation.go` | Struct with dataobject, getters, setters | 110 |
+| `attribute_implementation_test.go` | Tests for attribute implementation | 80 |
+| `attribute_query.go` | Query builder (AttributeFind, AttributeList, etc.) | 120 |
+| `attribute_query_interface.go` | Query interface definitions | 50 |
+| `attribute_query_test.go` | Query tests | 80 |
+| `attribute_table_create_sql.go` | SQL schema for attributes/trash tables | 60 |
+| `store_attributes.go` | Store CRUD methods (AttributeCreate, AttributeUpdate, etc.) | 150 |
+| `store_attributes_test.go` | Store method tests | 120 |
+| **Attribute Subtotal** | | **770** |
+
+### 4.3 Support Files (5 files)
+
+| File | Purpose | Lines (Est) |
+|------|---------|-------------|
+| `interfaces.go` | EntityInterface, AttributeInterface definitions | 80 |
+| `consts.go` | Column constants, status constants | 30 |
+| `id_helpers.go` | GenerateShortID(), NormalizeID(), IsShortID() | 60 |
 | `go.mod` | Add dataobject dependency | 1 |
-| `id_helpers.go` | Add GenerateShortID() | 50 |
-| `store_implementation.go` | Update to return interfaces | 30 |
-| `entity_create.go` | Update for new pattern | 20 |
-| `attribute_create.go` | Update for new pattern | 20 |
-| **Total** | | **~391** |
+| `store_implementation.go` | Update AutoMigrate to call new SQL files | 30 |
+| **Support Subtotal** | | **201** |
+
+### 4.4 Files to Remove (consolidated into new structure)
+
+| File | Reason |
+|------|--------|
+| `entity.go` | Replaced by `entity_implementation.go` |
+| `new_entity.go` | Merged into `entity_implementation.go` |
+| `entity_create.go` | Moved to `store_entities.go` |
+| `entity_list.go` | Moved to `entity_query.go` |
+| `entity_find_by_id.go` | Moved to `entity_query.go` |
+| `entity_update.go` | Moved to `store_entities.go` |
+| `entity_delete.go` | Moved to `store_entities.go` |
+| `entity_trash.go` | Moved to `store_entities.go` |
+| `attribute.go` | Replaced by `attribute_implementation.go` |
+| `new_attribute.go` | Merged into `attribute_implementation.go` |
+| `attribute_create.go` | Moved to `store_attributes.go` |
+| `attribute_list.go` | Moved to `attribute_query.go` |
+| `attribute_find.go` | Moved to `attribute_query.go` |
+| `attribute_update.go` | Moved to `store_attributes.go` |
+| `attribute_delete.go` | Moved to `store_attributes.go` |
+| `attribute_trash.go` | Moved to `store_attributes.go` |
+
+### 4.5 Total Effort
+
+| Category | Files | Lines (Est) |
+|----------|-------|-------------|
+| **New/Modified** | 21 | 1,941 |
+| **Removed** | 16 | -800 |
+| **Net Total** | **21** | **~1,141** |
+
+**Implementation: ~10-12 days** (was ~8 days with old estimate)
 
 ---
 
