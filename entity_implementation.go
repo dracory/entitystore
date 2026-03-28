@@ -2,7 +2,6 @@ package entitystore
 
 import (
 	"github.com/dracory/dataobject"
-	"github.com/dracory/sb"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -24,11 +23,9 @@ func NewEntity() EntityInterface {
 	o := &entityImplementation{}
 	o.SetEntityType("")
 	o.SetEntityHandle("")
-	o.SetStatus(ENTITY_STATUS_ACTIVE)
 	o.SetID(GenerateShortID())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
-	o.SetSoftDeletedAt(sb.MAX_DATETIME)
 	return o
 }
 
@@ -37,20 +34,6 @@ func NewEntityFromExistingData(data map[string]string) EntityInterface {
 	o := &entityImplementation{}
 	o.Hydrate(data)
 	return o
-}
-
-// == STATUS HELPERS =========================================================
-
-func (o *entityImplementation) IsActive() bool {
-	return o.Status() == ENTITY_STATUS_ACTIVE
-}
-
-func (o *entityImplementation) IsInactive() bool {
-	return o.Status() == ENTITY_STATUS_INACTIVE
-}
-
-func (o *entityImplementation) IsSoftDeleted() bool {
-	return o.SoftDeletedAtCarbon().Compare("<", carbon.Now(carbon.UTC))
 }
 
 // == GETTERS & SETTERS ======================================================
@@ -70,15 +53,6 @@ func (o *entityImplementation) EntityHandle() string {
 
 func (o *entityImplementation) SetEntityHandle(handle string) EntityInterface {
 	o.Set(COLUMN_ENTITY_HANDLE, handle)
-	return o
-}
-
-func (o *entityImplementation) Status() string {
-	return o.Get(COLUMN_STATUS)
-}
-
-func (o *entityImplementation) SetStatus(status string) EntityInterface {
-	o.Set(COLUMN_STATUS, status)
 	return o
 }
 
@@ -108,19 +82,6 @@ func (o *entityImplementation) UpdatedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
 }
 
-func (o *entityImplementation) SoftDeletedAt() string {
-	return o.Get(COLUMN_SOFT_DELETED_AT)
-}
-
-func (o *entityImplementation) SetSoftDeletedAt(softDeletedAt string) EntityInterface {
-	o.Set(COLUMN_SOFT_DELETED_AT, softDeletedAt)
-	return o
-}
-
-func (o *entityImplementation) SoftDeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.SoftDeletedAt(), carbon.UTC)
-}
-
 // == DYNAMIC ATTRIBUTES =====================================================
 
 // GetAttribute retrieves an in-memory attribute by key
@@ -137,13 +98,11 @@ func (o *entityImplementation) SetAttribute(key string, value string) EntityInte
 // GetAllAttributes returns all dynamic attributes (excludes system columns)
 func (o *entityImplementation) GetAllAttributes() map[string]string {
 	systemColumns := map[string]bool{
-		COLUMN_ID:              true,
-		COLUMN_ENTITY_TYPE:     true,
-		COLUMN_ENTITY_HANDLE:   true,
-		COLUMN_STATUS:          true,
-		COLUMN_CREATED_AT:      true,
-		COLUMN_UPDATED_AT:      true,
-		COLUMN_SOFT_DELETED_AT: true,
+		COLUMN_ID:            true,
+		COLUMN_ENTITY_TYPE:   true,
+		COLUMN_ENTITY_HANDLE: true,
+		COLUMN_CREATED_AT:    true,
+		COLUMN_UPDATED_AT:    true,
 	}
 
 	attrs := make(map[string]string)

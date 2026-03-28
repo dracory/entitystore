@@ -17,31 +17,21 @@ type EntityInterface interface {
 	// Core getters
 	EntityType() string
 	EntityHandle() string
-	Status() string
 	CreatedAt() string
 	CreatedAtCarbon() *carbon.Carbon
 	UpdatedAt() string
 	UpdatedAtCarbon() *carbon.Carbon
-	SoftDeletedAt() string
-	SoftDeletedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityType(entityType string) EntityInterface
 	SetEntityHandle(handle string) EntityInterface
-	SetStatus(status string) EntityInterface
 	SetCreatedAt(createdAt string) EntityInterface
 	SetUpdatedAt(updatedAt string) EntityInterface
-	SetSoftDeletedAt(softDeletedAt string) EntityInterface
 
 	// Dynamic / extra attributes (in-memory)
 	GetAttribute(key string) string
 	SetAttribute(key string, value string) EntityInterface
 	GetAllAttributes() map[string]string
-
-	// Status helpers
-	IsActive() bool
-	IsInactive() bool
-	IsSoftDeleted() bool
 }
 
 // == ATTRIBUTE INTERFACE ====================================================
@@ -71,6 +61,58 @@ type AttributeInterface interface {
 	GetFloat() (float64, error)
 	SetInt(value int64) AttributeInterface
 	SetFloat(value float64) AttributeInterface
+}
+
+// == TRASH INTERFACES =======================================================
+
+// EntityTrashInterface defines the contract for trashed entities
+type EntityTrashInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	EntityType() string
+	EntityHandle() string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+	DeletedAt() string
+	DeletedAtCarbon() *carbon.Carbon
+	DeletedBy() string
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetEntityType(entityType string) EntityTrashInterface
+	SetEntityHandle(handle string) EntityTrashInterface
+	SetCreatedAt(createdAt string) EntityTrashInterface
+	SetUpdatedAt(updatedAt string) EntityTrashInterface
+	SetDeletedAt(deletedAt string) EntityTrashInterface
+	SetDeletedBy(deletedBy string) EntityTrashInterface
+}
+
+// AttributeTrashInterface defines the contract for trashed attributes
+type AttributeTrashInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	EntityID() string
+	AttributeKey() string
+	AttributeValue() string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	UpdatedAt() string
+	UpdatedAtCarbon() *carbon.Carbon
+	DeletedAt() string
+	DeletedAtCarbon() *carbon.Carbon
+	DeletedBy() string
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetEntityID(entityID string) AttributeTrashInterface
+	SetAttributeKey(key string) AttributeTrashInterface
+	SetAttributeValue(value string) AttributeTrashInterface
+	SetCreatedAt(createdAt string) AttributeTrashInterface
+	SetUpdatedAt(updatedAt string) AttributeTrashInterface
+	SetDeletedAt(deletedAt string) AttributeTrashInterface
+	SetDeletedBy(deletedBy string) AttributeTrashInterface
 }
 
 // == STORE INTERFACE ========================================================
