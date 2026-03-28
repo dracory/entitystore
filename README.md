@@ -13,6 +13,7 @@ Modern "schemaless" storage using a relational (SQL) database. Document database
 - Single store can store unlimited number of attributes for each entity
 - Multiple stores can be used to store specific types
 - Attributes can store any type of data - strings, integers, floating point numbers, any interfaces
+- **Entity Relationships** - Link entities together (belongs_to, has_many, many_to_many) with optional hierarchical support
 - 99% of required storage functionality provided out of the box
 - Full SQL available for more sophisticated cases - reporting, diagrams, etc.
 - Supports soft deletes via separate trash bin tables
@@ -24,12 +25,28 @@ go get -u github.com/dracory/entitystore
 
 ## Setup
 
+### Basic Setup (Entities and Attributes)
+
 ```golang
 entityStore, err := NewStore(NewStoreOptions{
 	DB:                 db,
 	EntityTableName:    "entities_entity",
 	AttributeTableName: "entities_attribute",
 	AutomigrateEnabled: true,
+})
+```
+
+### Setup with Relationships (Optional)
+
+Enable entity relationships by setting `RelationshipsEnabled: true`. See [docs/entity-relationships.md](docs/entity-relationships.md) for full documentation.
+
+```golang
+entityStore, err := NewStore(NewStoreOptions{
+	DB:                   db,
+	EntityTableName:      "entities_entity",
+	AttributeTableName:   "entities_attribute",
+	RelationshipsEnabled: true,  // Enable relationships
+	AutomigrateEnabled:   true,
 })
 ```
 
@@ -54,65 +71,60 @@ person.GetFloat("salary")
 person.GetInterface("kids")
 ```
 
+### 3. Entity Relationships (Optional)
+
+Link entities with `belongs_to`, `has_many`, or `many_to_many` relationships. See [docs/entity-relationships.md](docs/entity-relationships.md) for full documentation.
+
+```golang
+// Create relationship
+store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+    EntityID:         book.ID(),
+    RelatedEntityID:  author.ID(),
+    RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
+})
+
+// Query relationships
+relationships, _ := store.RelationshipListRelated(ctx, author.ID(), RELATIONSHIP_TYPE_BELONGS_TO)
+```
+
 
 ## Database Schema
 
-<img src="entitystore-database-schema.png" />
+<img src="docs/entitystore-database-schema.svg" />
 
-## Methods
+## Documentation
 
-These methods may be subject to change
+| Topic | Link |
+|-------|------|
+| **Entities** | [docs/entities.md](docs/entities.md) - Creating, updating, deleting entities |
+| **Attributes** | [docs/attributes.md](docs/attributes.md) - Working with typed attributes |
+| **Relationships** | [docs/entity-relationships.md](docs/entity-relationships.md) - Linking entities together |
 
-### Store Methods
+## Methods Overview
 
-- AttributeCreate(attr *Attribute) error - creates a new attributes
-- AttributeCreateWithKeyAndValue(entityID string, attributeKey string, attributeValue string) *Attribute - shortcut to create a new attribute with key and value
-- AttributeFind(entityID string, attributeKey string) *Attribute - finds an attribute by ID
-- AttributeSetFloat(entityID string, attributeKey string, attributeValue float64) error - upserts a new float attribute
-- AttributeSetInt(entityID string, attributeKey string, attributeValue int64) error -  upserts a new int attribute
-- AttributeSetString(entityID string, attributeKey string, attributeValue string) error -  upserts a new interface{} attribute
-- AttributeSetString(entityID string, attributeKey string, attributeValue string) error -  upserts a new string attribute
-- AutoMigrate() - auto migrate
-- EntityCount(entityType string) uint64 - counts entities with the specified type
-- EntityCreate(entity *Entity) error - creates a new attributes
-- EntityCreateWithType(entityType string) *Entity - shortcut to create a new entity
-- EntityCreateWithTypeAndAttributes(entityType string, attributes map[string]interface{}) *Entity
-- EntityDelete(entityID string) - deletes an entity and all attributes
-- EntityFindByID(entityID string) *Entity - finds an entity by ID
-- EntityFindByAttribute(entityType string, attributeKey string, attributeValue string) *Entity - finds an entity by attribute
-- EntityList(entityType string, offset uint64, perPage uint64, search string, orderBy string, sort string) []Entity - lists entities
-- EntityListByAttribute(entityType string, attributeKey string, attributeValue string) []Entity - finds an entity by attribute
-- EntityTrash(entityID string) - moves an entity and all its attributes to the trash bin
-- GetAttributeTableName() string
-- GetAttributeTrashTableName() string
-- GetDB() *sql.DB
-- GetEntityTableName() string
-- GetEntityTrashTableName() string
+These methods may be subject to change. See documentation links above for complete API reference.
 
+### Entity Store Methods
 
-### Entity Methods
+- `EntityCreateWithType(type string)` - Create new entity
+- `EntityFindByID(ctx, id string)` - Find entity by ID
+- `EntityList(ctx, opts)` - List entities
+- `EntityUpdate(ctx, entity)` - Update entity
+- `EntityDelete(ctx, id)` / `EntityTrash(ctx, id)` - Delete / Soft delete
 
-- Delete() bool - deletes the entity
-- GetInt(attributeKey string, defaultValue int64) (int64, error) - the value of the attribute as string or the default value if it does not exist
-- GetFloat(attributeKey string, defaultValue float64) (float64, error) - the value of the attribute as float or the default value if it does not exist
-- GetInterface(attributeKey string, defaultValue interface{}) interface{} - the value of the attribute as interface{} or the default value if it does not exist
-- GetString(attributeKey string, defaultValue string) string - the value of the attribute as string or the default value if it does not exist
-- GetAttribute(attributeKey string) *Attribute - returns an attribute by key
-- SetFloat(attributeKey string, attributeValue float64) bool - sets an attribute with float value
-- SetInt(attributeKey string, attributeValue int64) bool - sets an attribute with int value
-- SetInterface(attributeKey string, attributeValue interface{}) bool - sets an attribute with string value
-- SetString(attributeKey string, attributeValue string) bool - sets an attribute with string value
+### Attribute Store Methods
 
-### Attribute Methods
+- `AttributeSetString(ctx, entityID, key, value)` - Set string attribute
+- `AttributeSetInt(ctx, entityID, key, value)` - Set int attribute
+- `AttributeSetFloat(ctx, entityID, key, value)` - Set float attribute
+- `AttributeSetInterface(ctx, entityID, key, value)` - Set JSON attribute
+- `AttributeFind(ctx, entityID, key)` - Find attribute
 
-- GetInterface() interface{} - de-serializes the JSON value
-- GetInt() (int64, error) - returns the value as int
-- GetFloat() (float64, error) - returns the value as float
-- GetString() string - returns the value as string
-- SetFloat(value float64) bool - saves a float value
-- SetInt(value int64) bool - saves a int value
-- SetInterface(value interface{}) bool - serializes the interface to JSON string and saves it
-- SetString(value string) bool - saves a string value
+### Relationship Store Methods (requires `RelationshipsEnabled: true`)
+
+- `RelationshipCreateByOptions(ctx, options)` - Create relationship
+- `RelationshipList(ctx, options)` - List relationships
+- `RelationshipListRelated(ctx, relatedID, type)` - List by related entity
 
 ## Similar Packages
 - https://github.com/sebastienros/yessql (.NET)

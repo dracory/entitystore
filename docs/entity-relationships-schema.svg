@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <style>
+      .table { fill: #f8f9fa; stroke: #dee2e6; stroke-width: 2; }
+      .table-header { fill: #495057; }
+      .table-title { fill: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; }
+      .column-odd { fill: #ffffff; }
+      .column-even { fill: #f8f9fa; }
+      .column-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; fill: #212529; }
+      .pk { fill: #28a745; font-weight: 600; }
+      .fk { fill: #007bff; }
+      .nullable { fill: #6c757d; font-style: italic; }
+      .relation-line { stroke: #adb5bd; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .type-label { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; fill: #6c757d; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#adb5bd"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#212529">Entity Store - Relationships Schema</text>
+
+  <!-- entities table (simplified reference) -->
+  <g transform="translate(50, 70)">
+    <rect x="0" y="0" width="180" height="30" rx="4" class="table-header"/>
+    <text x="90" y="20" text-anchor="middle" class="table-title">entities (reference)</text>
+    
+    <rect x="0" y="30" width="180" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="170" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="180" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text">entity_type</text>
+    <text x="170" y="72" text-anchor="end" class="type-label">string(40)</text>
+    
+    <rect x="0" y="80" width="180" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text">...</text>
+  </g>
+
+  <!-- relationships table -->
+  <g transform="translate(310, 70)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">relationships</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text fk">entity_id (FK)</text>
+    <text x="210" y="72" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text fk">related_entity_id (FK)</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="105" width="220" height="25" class="column-even"/>
+    <text x="10" y="122" class="column-text">relationship_type</text>
+    <text x="210" y="122" text-anchor="end" class="type-label">string(50)</text>
+    
+    <rect x="0" y="130" width="220" height="25" class="column-odd"/>
+    <text x="10" y="147" class="column-text nullable">parent_id</text>
+    <text x="210" y="147" text-anchor="end" class="type-label">string(9), null</text>
+    
+    <rect x="0" y="155" width="220" height="25" class="column-even"/>
+    <text x="10" y="172" class="column-text">sequence</text>
+    <text x="210" y="172" text-anchor="end" class="type-label">int, default 0</text>
+    
+    <rect x="0" y="180" width="220" height="25" class="column-odd"/>
+    <text x="10" y="197" class="column-text nullable">metadata</text>
+    <text x="210" y="197" text-anchor="end" class="type-label">text, null</text>
+    
+    <rect x="0" y="205" width="220" height="25" class="column-even"/>
+    <text x="10" y="222" class="column-text">created_at</text>
+    <text x="210" y="222" text-anchor="end" class="type-label">datetime</text>
+  </g>
+
+  <!-- relationships_trash table -->
+  <g transform="translate(560, 70)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">relationships_trash</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text">entity_id</text>
+    <text x="210" y="72" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text">related_entity_id</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="105" width="220" height="25" class="column-even"/>
+    <text x="10" y="122" class="column-text">relationship_type</text>
+    <text x="210" y="122" text-anchor="end" class="type-label">string(50)</text>
+    
+    <rect x="0" y="130" width="220" height="25" class="column-odd"/>
+    <text x="10" y="147" class="column-text nullable">parent_id</text>
+    <text x="210" y="147" text-anchor="end" class="type-label">string(9), null</text>
+    
+    <rect x="0" y="155" width="220" height="25" class="column-even"/>
+    <text x="10" y="172" class="column-text">sequence</text>
+    <text x="210" y="172" text-anchor="end" class="type-label">int, default 0</text>
+    
+    <rect x="0" y="180" width="220" height="25" class="column-odd"/>
+    <text x="10" y="197" class="column-text nullable">metadata</text>
+    <text x="210" y="197" text-anchor="end" class="type-label">text, null</text>
+    
+    <rect x="0" y="205" width="220" height="25" class="column-even"/>
+    <text x="10" y="222" class="column-text">created_at</text>
+    <text x="210" y="222" text-anchor="end" class="type-label">datetime</text>
+    
+    <rect x="0" y="230" width="220" height="25" class="column-odd"/>
+    <text x="10" y="247" class="column-text">deleted_at</text>
+    <text x="210" y="247" text-anchor="end" class="type-label">datetime</text>
+    
+    <rect x="0" y="255" width="220" height="25" class="column-even"/>
+    <text x="10" y="272" class="column-text">deleted_by</text>
+    <text x="210" y="272" text-anchor="end" class="type-label">string(9)</text>
+  </g>
+
+  <!-- Relationship lines -->
+  <!-- entity_id FK -->
+  <path d="M 230 140 L 310 140" class="relation-line"/>
+  <!-- related_entity_id FK -->
+  <path d="M 230 165 L 310 165" class="relation-line"/>
+
+  <!-- Legend -->
+  <g transform="translate(50, 350)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#212529">Legend:</text>
+    
+    <text x="0" y="25" class="pk" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">green = Primary Key</text>
+    <text x="0" y="45" class="fk" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">blue = Foreign Key (→ entities.id)</text>
+    <text x="0" y="65" class="nullable" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">gray italic = nullable column</text>
+  </g>
+
+  <!-- Relationship Types Note -->
+  <g transform="translate(50, 430)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#212529">Relationship Types:</text>
+    <text x="0" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#495057">• belongs_to - Entity belongs to one parent</text>
+    <text x="0" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#495057">• has_many - Entity has many children</text>
+    <text x="0" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#495057">• many_to_many - Entities linked bidirectionally</text>
+  </g>
+</svg>
