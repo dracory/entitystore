@@ -53,7 +53,7 @@ entityStore, err := NewStore(NewStoreOptions{
 
 ### Setup with Taxonomies (Optional)
 
-Enable entity taxonomies by setting `TaxonomiesEnabled: true`. See [docs/proposals/2026-03-28-entity-taxonomy.md](docs/proposals/2026-03-28-entity-taxonomy.md) for full documentation.
+Enable entity taxonomies by setting `TaxonomiesEnabled: true`. See [docs/taxonomies.md](docs/taxonomies.md) for full documentation.
 
 ```golang
 entityStore, err := NewStore(NewStoreOptions{
@@ -104,7 +104,7 @@ relationships, _ := store.RelationshipListRelated(ctx, author.ID(), RELATIONSHIP
 
 ### 4. Entity Taxonomies (Optional)
 
-Categorize entities with hierarchical taxonomies. See [docs/proposals/2026-03-28-entity-taxonomy.md](docs/proposals/2026-03-28-entity-taxonomy.md) for full documentation.
+Categorize entities with hierarchical taxonomies. See [docs/taxonomies.md](docs/taxonomies.md) for full documentation.
 
 ```golang
 // Create taxonomy
@@ -134,16 +134,19 @@ assignments, _ := store.EntityTaxonomyList(ctx, EntityTaxonomyQueryOptions{
 
 ## Database Schema
 
-<img src="docs/entitystore-database-schema.svg" />
+<img src="docs/images/entitystore-database-schema.svg" />
 
 ## Documentation
 
-| Topic | Link |
-|-------|------|
-| **Entities** | [docs/entities.md](docs/entities.md) - Creating, updating, deleting entities |
-| **Attributes** | [docs/attributes.md](docs/attributes.md) - Working with typed attributes |
-| **Relationships** | [docs/entity-relationships.md](docs/entity-relationships.md) - Linking entities together |
-| **Taxonomies** | [docs/proposals/2026-03-28-entity-taxonomy.md](docs/proposals/2026-03-28-entity-taxonomy.md) - Categorizing entities with hierarchical taxonomies |
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Installation, setup, and first steps |
+| [Entities](docs/entities.md) | Creating, reading, updating, deleting entities |
+| [Attributes](docs/attributes.md) | Working with typed attributes |
+| [Relationships](docs/entity-relationships.md) | Linking entities together |
+| [Taxonomies](docs/taxonomies.md) | Categorizing entities |
+| [Architecture](docs/architecture.md) | Design patterns and database schema |
+| [API Reference](docs/api-reference.md) | Complete method reference |
 
 ## Methods Overview
 

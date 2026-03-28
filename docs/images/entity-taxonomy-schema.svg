@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600">
+  <defs>
+    <style>
+      .table { fill: #f8f9fa; stroke: #dee2e6; stroke-width: 2; }
+      .table-header { fill: #495057; }
+      .table-title { fill: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; }
+      .column-odd { fill: #ffffff; }
+      .column-even { fill: #f8f9fa; }
+      .column-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; fill: #212529; }
+      .pk { fill: #28a745; font-weight: 600; }
+      .fk { fill: #007bff; }
+      .unique { fill: #fd7e14; }
+      .type-label { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; fill: #6c757d; }
+      .relation-line { stroke: #adb5bd; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#adb5bd"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#212529">Entity Store - Taxonomy Schema</text>
+
+  <!-- entities table (reference) -->
+  <g transform="translate(50, 70)">
+    <rect x="0" y="0" width="180" height="30" rx="4" class="table-header"/>
+    <text x="90" y="20" text-anchor="middle" class="table-title">entities (reference)</text>
+    
+    <rect x="0" y="30" width="180" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="170" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="180" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text">entity_type</text>
+    <text x="170" y="72" text-anchor="end" class="type-label">string(40)</text>
+    
+    <rect x="0" y="80" width="180" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text">...</text>
+  </g>
+
+  <!-- taxonomies table -->
+  <g transform="translate(280, 70)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">taxonomies</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text">name</text>
+    <text x="210" y="72" text-anchor="end" class="type-label">string(255)</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text unique">slug (Unique)</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">string(255)</text>
+    
+    <rect x="0" y="105" width="220" height="25" class="column-even"/>
+    <text x="10" y="122" class="column-text">description</text>
+    <text x="210" y="122" text-anchor="end" class="type-label">text</text>
+    
+    <rect x="0" y="130" width="220" height="25" class="column-odd"/>
+    <text x="10" y="147" class="column-text">parent_id</text>
+    <text x="210" y="147" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="155" width="220" height="25" class="column-even"/>
+    <text x="10" y="172" class="column-text">entity_types</text>
+    <text x="210" y="172" text-anchor="end" class="type-label">text (JSON)</text>
+    
+    <rect x="0" y="180" width="220" height="25" class="column-odd"/>
+    <text x="10" y="197" class="column-text">created_at</text>
+    <text x="210" y="197" text-anchor="end" class="type-label">datetime</text>
+    
+    <rect x="0" y="205" width="220" height="25" class="column-even"/>
+    <text x="10" y="222" class="column-text">updated_at</text>
+    <text x="210" y="222" text-anchor="end" class="type-label">datetime</text>
+  </g>
+
+  <!-- taxonomy_terms table -->
+  <g transform="translate(530, 70)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">taxonomy_terms</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text fk">taxonomy_id (FK)</text>
+    <text x="210" y="72" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text">name</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">string(255)</text>
+    
+    <rect x="0" y="105" width="220" height="25" class="column-even"/>
+    <text x="10" y="122" class="column-text">slug</text>
+    <text x="210" y="122" text-anchor="end" class="type-label">string(255)</text>
+    
+    <rect x="0" y="130" width="220" height="25" class="column-odd"/>
+    <text x="10" y="147" class="column-text">parent_id</text>
+    <text x="210" y="147" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="155" width="220" height="25" class="column-even"/>
+    <text x="10" y="172" class="column-text">sort_order</text>
+    <text x="210" y="172" text-anchor="end" class="type-label">int, default 0</text>
+    
+    <rect x="0" y="180" width="220" height="25" class="column-odd"/>
+    <text x="10" y="197" class="column-text">created_at</text>
+    <text x="210" y="197" text-anchor="end" class="type-label">datetime</text>
+    
+    <rect x="0" y="205" width="220" height="25" class="column-even"/>
+    <text x="10" y="222" class="column-text">updated_at</text>
+    <text x="210" y="222" text-anchor="end" class="type-label">datetime</text>
+  </g>
+
+  <!-- entity_taxonomies table (junction) -->
+  <g transform="translate(280, 320)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">entity_taxonomies</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text fk">entity_id (FK)</text>
+    <text x="210" y="72" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text fk">taxonomy_id (FK)</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="105" width="220" height="25" class="column-even"/>
+    <text x="10" y="122" class="column-text fk">term_id (FK)</text>
+    <text x="210" y="122" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="130" width="220" height="25" class="column-odd"/>
+    <text x="10" y="147" class="column-text">created_at</text>
+    <text x="210" y="147" text-anchor="end" class="type-label">datetime</text>
+  </g>
+
+  <!-- taxonomies_trash -->
+  <g transform="translate(530, 320)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">taxonomies_trash</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text">name, slug...</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text">deleted_at</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">datetime</text>
+    
+    <rect x="0" y="105" width="220" height="25" class="column-even"/>
+    <text x="10" y="122" class="column-text">deleted_by</text>
+    <text x="210" y="122" text-anchor="end" class="type-label">string(9)</text>
+  </g>
+
+  <!-- taxonomy_terms_trash -->
+  <g transform="translate(530, 480)">
+    <rect x="0" y="0" width="220" height="30" rx="4" class="table-header"/>
+    <text x="110" y="20" text-anchor="middle" class="table-title">taxonomy_terms_trash</text>
+    
+    <rect x="0" y="30" width="220" height="25" class="column-odd"/>
+    <text x="10" y="47" class="column-text pk">id (PK)</text>
+    <text x="210" y="47" text-anchor="end" class="type-label">string(9)</text>
+    
+    <rect x="0" y="55" width="220" height="25" class="column-even"/>
+    <text x="10" y="72" class="column-text">...</text>
+    
+    <rect x="0" y="80" width="220" height="25" class="column-odd"/>
+    <text x="10" y="97" class="column-text">deleted_at</text>
+    <text x="210" y="97" text-anchor="end" class="type-label">datetime</text>
+  </g>
+
+  <!-- Relationship lines -->
+  <!-- taxonomy_terms.taxonomy_id -> taxonomies.id -->
+  <path d="M 500 140 L 530 140" class="relation-line"/>
+  
+  <!-- entity_taxonomies.entity_id -> entities.id -->
+  <path d="M 230 390 L 250 390 L 250 120 L 280 120" class="relation-line"/>
+  
+  <!-- entity_taxonomies.taxonomy_id -> taxonomies.id -->
+  <path d="M 280 397 L 260 397 L 260 245 L 390 245" class="relation-line"/>
+  
+  <!-- entity_taxonomies.term_id -> taxonomy_terms.id -->
+  <path d="M 500 420 L 520 420 L 520 165 L 530 165" class="relation-line"/>
+
+  <!-- Legend -->
+  <g transform="translate(50, 500)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#212529">Legend:</text>
+    
+    <text x="0" y="25" class="pk" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">green = Primary Key</text>
+    <text x="0" y="45" class="fk" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">blue = Foreign Key</text>
+    <text x="200" y="25" class="unique" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">orange = Unique constraint</text>
+    <text x="200" y="45" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#495057">_trash tables = Soft delete support</text>
+  </g>
+
+  <!-- Notes -->
+  <g transform="translate(50, 560)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#6c757d">entity_taxonomies is a junction table linking entities to taxonomy terms</text>
+    <text x="0" y="16" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#6c757d">Unique index on (entity_id, taxonomy_id, term_id) prevents duplicate assignments</text>
+  </g>
+</svg>

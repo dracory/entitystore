@@ -4,7 +4,7 @@ Entity relationships allow you to link entities together using different relatio
 
 ## Database Schema
 
-<img src="entity-relationships-schema.svg" />
+<img src="images/entity-relationships-schema.svg" />
 
 ## Setup
 
@@ -108,5 +108,3 @@ store.RelationshipCreateByOptions(ctx, entitystore.RelationshipOptions{
 - `ParentID() string` / `SetParentID(id string) RelationshipInterface`
 - `Sequence() int` / `SetSequence(n int) RelationshipInterface`
 - `Metadata() string` / `SetMetadata(json string) RelationshipInterface`
-
-See [Entity Relationships Proposal](../proposals/2026-03-28-entity-relationships.md) for full implementation details.
