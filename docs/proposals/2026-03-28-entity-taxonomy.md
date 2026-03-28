@@ -1,7 +1,7 @@
 # Entity Taxonomy Support Proposal
 
 **Date:** 2026-03-28
-**Status:** Draft
+**Status:** ⏳ PENDING (waiting for dataobject pattern stabilization)
 **Author:** AI Assistant
 **Repository:** github.com/dracory/entitystore
 
@@ -15,11 +15,11 @@
 
 ```go
 // Current workaround - manual attribute storage
-product.SetString("category_id", "cat_123")
-product.SetString("tag_ids", `["tag_1", "tag_2"]`)
+entity.SetAttribute("category_id", "cat_123")
+entity.SetAttribute("tag_ids", `["tag_1", "tag_2"]`)
 
 // Manual filtering in application code
-categoryID := product.GetString("category_id", "")
+categoryID := entity.GetAttribute("category_id")
 // Query all products, filter in code - inefficient
 ```
 
@@ -30,43 +30,88 @@ categoryID := product.GetString("category_id", "")
 - Enables taxonomy-based queries ("find all products in Electronics")
 - Supports hierarchical categories, tags, labels, etc.
 
+**Status:** ⏳ **PENDING** - Waiting for dataobject pattern implementation to stabilize before adding taxonomy
+
 ---
 
-## 2. Current State (As-Is)
+## 2. Current State (As-Is) ✅ IMPLEMENTED
 
-### 2.1 Entitystore Architecture
+### 2.1 Entitystore Architecture (dataobject Pattern)
 
 ```
 entitystore/
-├── entity.go                 # Entity struct with Get/Set methods
-├── entity_*.go              # Entity operations (CRUD, List, Trash)
-├── attribute.go             # Attribute struct
-├── attribute_*.go           # Attribute operations
-├── store_implementation.go  # Core store with table management
-├── interfaces.go            # StoreInterface definition
-└── new.go                   # Store initialization
+├── entity_implementation.go          # Entity with dataobject.DataObject
+├── entity_implementation_test.go     # Entity tests
+├── entity_query.go                   # Entity query builder
+├── entity_query_interface.go         # EntityQueryInterface
+├── entity_table_create_sql.go        # Entities table SQL
+├── attribute_implementation.go       # Attribute with dataobject.DataObject
+├── attribute_implementation_test.go    # Attribute tests
+├── attribute_query.go                # Attribute query builder
+├── attribute_query_interface.go      # AttributeQueryInterface
+├── attribute_table_create_sql.go     # Attributes table SQL
+├── entity_trash_implementation.go  # EntityTrash with dataobject
+├── entity_trash_implementation_test.go
+├── entity_trash_query_interface.go
+├── entity_trash_table_create_sql.go
+├── attribute_trash_implementation.go # AttributeTrash with dataobject
+├── attribute_trash_implementation_test.go
+├── attribute_trash_query_interface.go
+├── attribute_trash_table_create_sql.go
+├── store_entities.go                 # Entity CRUD methods
+├── store_entities_test.go            # Entity store tests
+├── store_attributes.go               # Attribute CRUD methods
+├── store_attributes_test.go            # Attribute store tests
+├── store_entities_trash.go           # Entity trash/restore
+├── store_attributes_trash.go         # Attribute trash/restore
+├── interfaces.go                     # All entity interfaces
+├── consts.go                         # Column constants
+├── id_helpers.go                     # GenerateShortID()
+└── new.go                            # Store initialization
 ```
 
-### 2.2 Current Database Schema
+### 2.2 Current Database Schema (Short IDs + dataobject)
 
 ```sql
--- Entities table (exists)
+-- Entities table (exists with dataobject pattern)
 CREATE TABLE entities (
-    id varchar(40) PRIMARY KEY,
+    id varchar(15) PRIMARY KEY,           -- Short ID (9-15 chars)
     entity_type varchar(40) NOT NULL,
     entity_handle varchar(60),
     created_at datetime NOT NULL,
     updated_at datetime NOT NULL
 );
 
--- Attributes table (exists)
+-- Attributes table (exists with dataobject pattern)
 CREATE TABLE attributes (
-    id varchar(40) PRIMARY KEY,
-    entity_id varchar(40) NOT NULL,
+    id varchar(15) PRIMARY KEY,           -- Short ID
+    entity_id varchar(15) NOT NULL,       -- References entities.id
     attribute_key varchar(255) NOT NULL,
     attribute_value text,
     created_at datetime NOT NULL,
     updated_at datetime NOT NULL
+);
+
+-- Trash tables (separate, no soft delete)
+CREATE TABLE entities_trash (
+    id varchar(15) PRIMARY KEY,
+    entity_type varchar(40) NOT NULL,
+    entity_handle varchar(60),
+    created_at datetime NOT NULL,
+    updated_at datetime NOT NULL,
+    deleted_at datetime NOT NULL,
+    deleted_by varchar(15)
+);
+
+CREATE TABLE attributes_trash (
+    id varchar(15) PRIMARY KEY,
+    entity_id varchar(15) NOT NULL,
+    attribute_key varchar(255) NOT NULL,
+    attribute_value text,
+    created_at datetime NOT NULL,
+    updated_at datetime NOT NULL,
+    deleted_at datetime NOT NULL,
+    deleted_by varchar(15)
 );
 ```
 
@@ -81,302 +126,316 @@ CREATE TABLE attributes (
 
 ---
 
-## 3. Proposed Solution (To-Be)
+## 3. Proposed Solution (To-Be) ⏳ PENDING
 
-### 3.1 New Types
+**Note:** This proposal is pending stabilization of the dataobject pattern implementation. Once the core entitystore architecture (entities, attributes, trash tables with dataobject) is stable, taxonomy can be added following the same pattern.
 
-**File:** `taxonomy.go`
+### 3.1 New Types (dataobject Pattern)
+
+Following the same pattern as entities and attributes:
+
+**File:** `taxonomy_implementation.go`
 
 ```go
 package entitystore
 
-import "time"
+import "github.com/dracory/dataobject"
 
 // Taxonomy is a categorization system (categories, tags, etc.)
-// ID is 9-char short ID (e.g., "86ccrtsgx") for space efficiency
-type Taxonomy struct {
-	id          string // 9-char short ID
-	name        string
-	slug        string
-	description string
-	parentID    string // 9-char short ID
-	entityTypes []string
-	createdAt   time.Time
-	updatedAt   time.Time
-	st          *storeImplementation
+type taxonomyImplementation struct {
+	*dataobject.DataObject
 }
 
-// TaxonomyTerm is a single term/category within a taxonomy
-// ID is 9-char short ID (e.g., "86ccrtsgx") for space efficiency
-type TaxonomyTerm struct {
-	id         string // 9-char short ID
-	taxonomyID string // 9-char short ID
-	name       string
-	slug       string
-	parentID   string // 9-char short ID
-	sortOrder  int
-	createdAt  time.Time
-	updatedAt  time.Time
-	st         *storeImplementation
-}
+// Column constants for taxonomies
+const (
+	COLUMN_NAME        = "name"
+	COLUMN_SLUG        = "slug"
+	COLUMN_DESCRIPTION = "description"
+	COLUMN_PARENT_ID   = "parent_id"
+	COLUMN_ENTITY_TYPES = "entity_types"
+	COLUMN_TAXONOMY_ID = "taxonomy_id"
+	COLUMN_SORT_ORDER  = "sort_order"
+	COLUMN_TERM_ID     = "term_id"
+)
 
-// EntityTaxonomy links an entity to a taxonomy term
-// Uses 9-char short IDs for all ID fields
-type EntityTaxonomy struct {
-	id         string // 9-char short ID
-	entityID   string // 9-char short ID
-	taxonomyID string // 9-char short ID
-	termID     string // 9-char short ID
-	createdAt  time.Time
-}
-
-// ==========================================
-// Taxonomy Getters
-// ==========================================
-
-func (t *Taxonomy) ID() string {
-	return t.id
-}
-
-func (t *Taxonomy) Name() string {
-	return t.name
-}
-
-func (t *Taxonomy) Slug() string {
-	return t.slug
-}
-
-func (t *Taxonomy) Description() string {
-	return t.description
-}
-
-func (t *Taxonomy) ParentID() string {
-	return t.parentID
-}
-
-func (t *Taxonomy) EntityTypes() []string {
-	return t.entityTypes
-}
-
-func (t *Taxonomy) CreatedAt() time.Time {
-	return t.createdAt
-}
-
-func (t *Taxonomy) UpdatedAt() time.Time {
-	return t.updatedAt
-}
-
-// ==========================================
-// Taxonomy Setters (fluent interface)
-// ==========================================
-
-func (t *Taxonomy) SetID(id string) *Taxonomy {
-	t.id = id
-	return t
-}
-
-func (t *Taxonomy) SetName(name string) *Taxonomy {
-	t.name = name
-	return t
-}
-
-func (t *Taxonomy) SetSlug(slug string) *Taxonomy {
-	t.slug = slug
-	return t
-}
-
-func (t *Taxonomy) SetDescription(desc string) *Taxonomy {
-	t.description = desc
-	return t
-}
-
-func (t *Taxonomy) SetParentID(parentID string) *Taxonomy {
-	t.parentID = parentID
-	return t
-}
-
-func (t *Taxonomy) SetEntityTypes(types []string) *Taxonomy {
-	t.entityTypes = types
-	return t
-}
-
-func (t *Taxonomy) SetCreatedAt(createdAt time.Time) *Taxonomy {
-	t.createdAt = createdAt
-	return t
-}
-
-func (t *Taxonomy) SetUpdatedAt(updatedAt time.Time) *Taxonomy {
-	t.updatedAt = updatedAt
-	return t
-}
-
-func (t *Taxonomy) ToMap() map[string]any {
-	return map[string]any{
-		"id":           t.ID(),
-		"name":         t.Name(),
-		"slug":         t.Slug(),
-		"description":  t.Description(),
-		"parent_id":    t.ParentID(),
-		"entity_types": t.EntityTypes(),
-		"created_at":   t.CreatedAt(),
-		"updated_at":   t.UpdatedAt(),
+// NewTaxonomy creates a new taxonomy instance
+func NewTaxonomy() TaxonomyInterface {
+	return &taxonomyImplementation{
+		DataObject: dataobject.NewDataObject(),
 	}
 }
 
-// ==========================================
-// TaxonomyTerm Getters
-// ==========================================
-
-func (tt *TaxonomyTerm) ID() string {
-	return tt.id
+// ID returns the taxonomy ID
+func (o *taxonomyImplementation) ID() string {
+	return o.Get(COLUMN_ID)
 }
 
-func (tt *TaxonomyTerm) TaxonomyID() string {
-	return tt.taxonomyID
+// SetID sets the taxonomy ID (fluent)
+func (o *taxonomyImplementation) SetID(id string) TaxonomyInterface {
+	o.Set(COLUMN_ID, id)
+	return o
 }
 
-func (tt *TaxonomyTerm) Name() string {
-	return tt.name
+// Name returns the taxonomy name
+func (o *taxonomyImplementation) Name() string {
+	return o.Get(COLUMN_NAME)
 }
 
-func (tt *TaxonomyTerm) Slug() string {
-	return tt.slug
+// SetName sets the taxonomy name (fluent)
+func (o *taxonomyImplementation) SetName(name string) TaxonomyInterface {
+	o.Set(COLUMN_NAME, name)
+	return o
 }
 
-func (tt *TaxonomyTerm) ParentID() string {
-	return tt.parentID
+// Slug returns the taxonomy slug
+func (o *taxonomyImplementation) Slug() string {
+	return o.Get(COLUMN_SLUG)
 }
 
-func (tt *TaxonomyTerm) SortOrder() int {
-	return tt.sortOrder
+// SetSlug sets the taxonomy slug (fluent)
+func (o *taxonomyImplementation) SetSlug(slug string) TaxonomyInterface {
+	o.Set(COLUMN_SLUG, slug)
+	return o
 }
 
-func (tt *TaxonomyTerm) CreatedAt() time.Time {
-	return tt.createdAt
+// Description returns the taxonomy description
+func (o *taxonomyImplementation) Description() string {
+	return o.Get(COLUMN_DESCRIPTION)
 }
 
-func (tt *TaxonomyTerm) UpdatedAt() time.Time {
-	return tt.updatedAt
+// SetDescription sets the taxonomy description (fluent)
+func (o *taxonomyImplementation) SetDescription(desc string) TaxonomyInterface {
+	o.Set(COLUMN_DESCRIPTION, desc)
+	return o
 }
 
-// ==========================================
-// TaxonomyTerm Setters (fluent interface)
-// ==========================================
-
-func (tt *TaxonomyTerm) SetID(id string) *TaxonomyTerm {
-	tt.id = id
-	return tt
+// ParentID returns the parent taxonomy ID
+func (o *taxonomyImplementation) ParentID() string {
+	return o.Get(COLUMN_PARENT_ID)
 }
 
-func (tt *TaxonomyTerm) SetTaxonomyID(taxID string) *TaxonomyTerm {
-	tt.taxonomyID = taxID
-	return tt
+// SetParentID sets the parent taxonomy ID (fluent)
+func (o *taxonomyImplementation) SetParentID(parentID string) TaxonomyInterface {
+	o.Set(COLUMN_PARENT_ID, parentID)
+	return o
 }
 
-func (tt *TaxonomyTerm) SetName(name string) *TaxonomyTerm {
-	tt.name = name
-	return tt
+// EntityTypes returns the entity types this taxonomy applies to
+func (o *taxonomyImplementation) EntityTypes() []string {
+	// Parse from stored JSON or comma-separated
+	return o.GetAttributeStrings(COLUMN_ENTITY_TYPES)
 }
 
-func (tt *TaxonomyTerm) SetSlug(slug string) *TaxonomyTerm {
-	tt.slug = slug
-	return tt
+// SetEntityTypes sets the entity types (fluent)
+func (o *taxonomyImplementation) SetEntityTypes(types []string) TaxonomyInterface {
+	o.SetAttributeStrings(COLUMN_ENTITY_TYPES, types)
+	return o
 }
 
-func (tt *TaxonomyTerm) SetParentID(parentID string) *TaxonomyTerm {
-	tt.parentID = parentID
-	return tt
+// CreatedAt returns creation timestamp
+func (o *taxonomyImplementation) CreatedAt() string {
+	return o.Get(COLUMN_CREATED_AT)
 }
 
-func (tt *TaxonomyTerm) SetSortOrder(order int) *TaxonomyTerm {
-	tt.sortOrder = order
-	return tt
+// SetCreatedAt sets creation timestamp (fluent)
+func (o *taxonomyImplementation) SetCreatedAt(createdAt string) TaxonomyInterface {
+	o.Set(COLUMN_CREATED_AT, createdAt)
+	return o
 }
 
-func (tt *TaxonomyTerm) SetCreatedAt(createdAt time.Time) *TaxonomyTerm {
-	tt.createdAt = createdAt
-	return tt
+// UpdatedAt returns update timestamp
+func (o *taxonomyImplementation) UpdatedAt() string {
+	return o.Get(COLUMN_UPDATED_AT)
 }
 
-func (tt *TaxonomyTerm) SetUpdatedAt(updatedAt time.Time) *TaxonomyTerm {
-	tt.updatedAt = updatedAt
-	return tt
+// SetUpdatedAt sets update timestamp (fluent)
+func (o *taxonomyImplementation) SetUpdatedAt(updatedAt string) TaxonomyInterface {
+	o.Set(COLUMN_UPDATED_AT, updatedAt)
+	return o
+}
+```
+
+**File:** `taxonomy_term_implementation.go`
+
+```go
+package entitystore
+
+import "github.com/dracory/dataobject"
+
+// taxonomyTermImplementation implements TaxonomyTermInterface
+type taxonomyTermImplementation struct {
+	*dataobject.DataObject
 }
 
-func (tt *TaxonomyTerm) ToMap() map[string]any {
-	return map[string]any{
-		"id":          tt.ID(),
-		"taxonomy_id": tt.TaxonomyID(),
-		"name":        tt.Name(),
-		"slug":        tt.Slug(),
-		"parent_id":   tt.ParentID(),
-		"sort_order":  tt.SortOrder(),
-		"created_at":  tt.CreatedAt(),
-		"updated_at":  tt.UpdatedAt(),
+// NewTaxonomyTerm creates a new taxonomy term instance
+func NewTaxonomyTerm() TaxonomyTermInterface {
+	return &taxonomyTermImplementation{
+		DataObject: dataobject.NewDataObject(),
 	}
 }
 
-// ==========================================
-// EntityTaxonomy Getters
-// ==========================================
-
-func (et *EntityTaxonomy) ID() string {
-	return et.id
+// ID returns the term ID
+func (o *taxonomyTermImplementation) ID() string {
+	return o.Get(COLUMN_ID)
 }
 
-func (et *EntityTaxonomy) EntityID() string {
-	return et.entityID
+// SetID sets the term ID (fluent)
+func (o *taxonomyTermImplementation) SetID(id string) TaxonomyTermInterface {
+	o.Set(COLUMN_ID, id)
+	return o
 }
 
-func (et *EntityTaxonomy) TaxonomyID() string {
-	return et.taxonomyID
+// TaxonomyID returns the parent taxonomy ID
+func (o *taxonomyTermImplementation) TaxonomyID() string {
+	return o.Get(COLUMN_TAXONOMY_ID)
 }
 
-func (et *EntityTaxonomy) TermID() string {
-	return et.termID
+// SetTaxonomyID sets the parent taxonomy ID (fluent)
+func (o *taxonomyTermImplementation) SetTaxonomyID(taxonomyID string) TaxonomyTermInterface {
+	o.Set(COLUMN_TAXONOMY_ID, taxonomyID)
+	return o
 }
 
-func (et *EntityTaxonomy) CreatedAt() time.Time {
-	return et.createdAt
+// Name returns the term name
+func (o *taxonomyTermImplementation) Name() string {
+	return o.Get(COLUMN_NAME)
 }
 
-// ==========================================
-// EntityTaxonomy Setters (fluent interface)
-// ==========================================
-
-func (et *EntityTaxonomy) SetID(id string) *EntityTaxonomy {
-	et.id = id
-	return et
+// SetName sets the term name (fluent)
+func (o *taxonomyTermImplementation) SetName(name string) TaxonomyTermInterface {
+	o.Set(COLUMN_NAME, name)
+	return o
 }
 
-func (et *EntityTaxonomy) SetEntityID(entityID string) *EntityTaxonomy {
-	et.entityID = entityID
-	return et
+// Slug returns the term slug
+func (o *taxonomyTermImplementation) Slug() string {
+	return o.Get(COLUMN_SLUG)
 }
 
-func (et *EntityTaxonomy) SetTaxonomyID(taxID string) *EntityTaxonomy {
-	et.taxonomyID = taxID
-	return et
+// SetSlug sets the term slug (fluent)
+func (o *taxonomyTermImplementation) SetSlug(slug string) TaxonomyTermInterface {
+	o.Set(COLUMN_SLUG, slug)
+	return o
 }
 
-func (et *EntityTaxonomy) SetTermID(termID string) *EntityTaxonomy {
-	et.termID = termID
-	return et
+// ParentID returns the parent term ID (for hierarchy)
+func (o *taxonomyTermImplementation) ParentID() string {
+	return o.Get(COLUMN_PARENT_ID)
 }
 
-func (et *EntityTaxonomy) SetCreatedAt(createdAt time.Time) *EntityTaxonomy {
-	et.createdAt = createdAt
-	return et
+// SetParentID sets the parent term ID (fluent)
+func (o *taxonomyTermImplementation) SetParentID(parentID string) TaxonomyTermInterface {
+	o.Set(COLUMN_PARENT_ID, parentID)
+	return o
 }
 
-func (et *EntityTaxonomy) ToMap() map[string]any {
-	return map[string]any{
-		"id":          et.ID(),
-		"entity_id":   et.EntityID(),
-		"taxonomy_id": et.TaxonomyID(),
-		"term_id":     et.TermID(),
-		"created_at":  et.CreatedAt(),
+// SortOrder returns the sort order
+func (o *taxonomyTermImplementation) SortOrder() int {
+	return o.GetInt(COLUMN_SORT_ORDER)
+}
+
+// SetSortOrder sets the sort order (fluent)
+func (o *taxonomyTermImplementation) SetSortOrder(order int) TaxonomyTermInterface {
+	o.Set(COLUMN_SORT_ORDER, order)
+	return o
+}
+
+// CreatedAt returns creation timestamp
+func (o *taxonomyTermImplementation) CreatedAt() string {
+	return o.Get(COLUMN_CREATED_AT)
+}
+
+// SetCreatedAt sets creation timestamp (fluent)
+func (o *taxonomyTermImplementation) SetCreatedAt(createdAt string) TaxonomyTermInterface {
+	o.Set(COLUMN_CREATED_AT, createdAt)
+	return o
+}
+
+// UpdatedAt returns update timestamp
+func (o *taxonomyTermImplementation) UpdatedAt() string {
+	return o.Get(COLUMN_UPDATED_AT)
+}
+
+// SetUpdatedAt sets update timestamp (fluent)
+func (o *taxonomyTermImplementation) SetUpdatedAt(updatedAt string) TaxonomyTermInterface {
+	o.Set(COLUMN_UPDATED_AT, updatedAt)
+	return o
+}
+```
+
+**File:** `entity_taxonomy_implementation.go`
+
+```go
+package entitystore
+
+import "github.com/dracory/dataobject"
+
+// entityTaxonomyImplementation implements EntityTaxonomyInterface
+// This links entities to taxonomy terms (the assignment table)
+type entityTaxonomyImplementation struct {
+	*dataobject.DataObject
+}
+
+// NewEntityTaxonomy creates a new entity-taxonomy link instance
+func NewEntityTaxonomy() EntityTaxonomyInterface {
+	return &entityTaxonomyImplementation{
+		DataObject: dataobject.NewDataObject(),
 	}
+}
+
+// ID returns the link ID
+func (o *entityTaxonomyImplementation) ID() string {
+	return o.Get(COLUMN_ID)
+}
+
+// SetID sets the link ID (fluent)
+func (o *entityTaxonomyImplementation) SetID(id string) EntityTaxonomyInterface {
+	o.Set(COLUMN_ID, id)
+	return o
+}
+
+// EntityID returns the entity ID
+func (o *entityTaxonomyImplementation) EntityID() string {
+	return o.Get(COLUMN_ENTITY_ID)
+}
+
+// SetEntityID sets the entity ID (fluent)
+func (o *entityTaxonomyImplementation) SetEntityID(entityID string) EntityTaxonomyInterface {
+	o.Set(COLUMN_ENTITY_ID, entityID)
+	return o
+}
+
+// TaxonomyID returns the taxonomy ID
+func (o *entityTaxonomyImplementation) TaxonomyID() string {
+	return o.Get(COLUMN_TAXONOMY_ID)
+}
+
+// SetTaxonomyID sets the taxonomy ID (fluent)
+func (o *entityTaxonomyImplementation) SetTaxonomyID(taxonomyID string) EntityTaxonomyInterface {
+	o.Set(COLUMN_TAXONOMY_ID, taxonomyID)
+	return o
+}
+
+// TermID returns the term ID
+func (o *entityTaxonomyImplementation) TermID() string {
+	return o.Get(COLUMN_TERM_ID)
+}
+
+// SetTermID sets the term ID (fluent)
+func (o *entityTaxonomyImplementation) SetTermID(termID string) EntityTaxonomyInterface {
+	o.Set(COLUMN_TERM_ID, termID)
+	return o
+}
+
+// CreatedAt returns creation timestamp
+func (o *entityTaxonomyImplementation) CreatedAt() string {
+	return o.Get(COLUMN_CREATED_AT)
+}
+
+// SetCreatedAt sets creation timestamp (fluent)
+func (o *entityTaxonomyImplementation) SetCreatedAt(createdAt string) EntityTaxonomyInterface {
+	o.Set(COLUMN_CREATED_AT, createdAt)
+	return o
 }
 ```
 
@@ -397,6 +456,85 @@ type TaxonomyTermOptions struct {
     Slug       string
     ParentID   string
     SortOrder  int
+}
+```
+
+### 3.1b Interface Definitions
+
+**File:** `interfaces.go` (append new interfaces)
+
+```go
+// TaxonomyInterface defines the taxonomy (classification system) type
+type TaxonomyInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core fields
+	ID() string
+	SetID(id string) TaxonomyInterface
+	Name() string
+	SetName(name string) TaxonomyInterface
+	Slug() string
+	SetSlug(slug string) TaxonomyInterface
+	Description() string
+	SetDescription(desc string) TaxonomyInterface
+
+	// Hierarchy and scope
+	ParentID() string
+	SetParentID(parentID string) TaxonomyInterface
+	EntityTypes() []string
+	SetEntityTypes(types []string) TaxonomyInterface
+
+	// Timestamps
+	CreatedAt() string
+	SetCreatedAt(createdAt string) TaxonomyInterface
+	UpdatedAt() string
+	SetUpdatedAt(updatedAt string) TaxonomyInterface
+}
+
+// TaxonomyTermInterface defines a term within a taxonomy
+type TaxonomyTermInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core fields
+	ID() string
+	SetID(id string) TaxonomyTermInterface
+	TaxonomyID() string
+	SetTaxonomyID(taxonomyID string) TaxonomyTermInterface
+	Name() string
+	SetName(name string) TaxonomyTermInterface
+	Slug() string
+	SetSlug(slug string) TaxonomyTermInterface
+
+	// Hierarchy and ordering
+	ParentID() string
+	SetParentID(parentID string) TaxonomyTermInterface
+	SortOrder() int
+	SetSortOrder(order int) TaxonomyTermInterface
+
+	// Timestamps
+	CreatedAt() string
+	SetCreatedAt(createdAt string) TaxonomyTermInterface
+	UpdatedAt() string
+	SetUpdatedAt(updatedAt string) TaxonomyTermInterface
+}
+
+// EntityTaxonomyInterface links entities to taxonomy terms
+type EntityTaxonomyInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core fields
+	ID() string
+	SetID(id string) EntityTaxonomyInterface
+	EntityID() string
+	SetEntityID(entityID string) EntityTaxonomyInterface
+	TaxonomyID() string
+	SetTaxonomyID(taxonomyID string) EntityTaxonomyInterface
+	TermID() string
+	SetTermID(termID string) EntityTaxonomyInterface
+
+	// Timestamps
+	CreatedAt() string
+	SetCreatedAt(createdAt string) EntityTaxonomyInterface
 }
 ```
 
@@ -473,6 +611,71 @@ type StoreInterface interface {
 }
 ```
 
+### 3.2b Query Interface Definitions
+
+**File:** `taxonomy_query_interface.go`
+
+```go
+// TaxonomyQueryInterface provides query capabilities for taxonomies
+type TaxonomyQueryInterface interface {
+	// Select enables method chaining
+	Select() TaxonomyQueryInterface
+
+	// Filters
+	SetID(id string) TaxonomyQueryInterface
+	SetSlug(slug string) TaxonomyQueryInterface
+	SetParentID(parentID string) TaxonomyQueryInterface
+
+	// Execution
+	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context) ([]TaxonomyInterface, error)
+	First(ctx context.Context) (TaxonomyInterface, error)
+}
+```
+
+**File:** `taxonomy_term_query_interface.go`
+
+```go
+// TaxonomyTermQueryInterface provides query capabilities for taxonomy terms
+type TaxonomyTermQueryInterface interface {
+	// Select enables method chaining
+	Select() TaxonomyTermQueryInterface
+
+	// Filters
+	SetID(id string) TaxonomyTermQueryInterface
+	SetTaxonomyID(taxonomyID string) TaxonomyTermQueryInterface
+	SetSlug(slug string) TaxonomyTermQueryInterface
+	SetParentID(parentID string) TaxonomyTermQueryInterface
+
+	// Execution
+	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context) ([]TaxonomyTermInterface, error)
+	ListTree(ctx context.Context, parentID string) ([]TaxonomyTermInterface, error)
+	First(ctx context.Context) (TaxonomyTermInterface, error)
+}
+```
+
+**File:** `entity_taxonomy_query_interface.go`
+
+```go
+// EntityTaxonomyQueryInterface provides query capabilities for entity-taxonomy links
+type EntityTaxonomyQueryInterface interface {
+	// Select enables method chaining
+	Select() EntityTaxonomyQueryInterface
+
+	// Filters
+	SetID(id string) EntityTaxonomyQueryInterface
+	SetEntityID(entityID string) EntityTaxonomyQueryInterface
+	SetTaxonomyID(taxonomyID string) EntityTaxonomyQueryInterface
+	SetTermID(termID string) EntityTaxonomyQueryInterface
+
+	// Execution
+	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context) ([]EntityTaxonomyInterface, error)
+	First(ctx context.Context) (EntityTaxonomyInterface, error)
+}
+```
+
 ### 3.3 Database Schema Additions
 
 Uses **9-char short IDs** (varchar(9)) for space efficiency, matching cmsstore pattern:
@@ -529,22 +732,29 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 }
 ```
 
-### 3.4 Implementation Files
+### 3.4 Implementation Files (dataobject Pattern)
+
+Following the same 8-file pattern as entities and attributes for each taxonomy entity:
 
 | File | Purpose | Lines (Est) |
 |------|---------|-------------|
-| `taxonomy.go` | Taxonomy, Term, EntityTaxonomy types | 300 |
-| `taxonomy_create.go` | Create taxonomy | 50 |
-| `taxonomy_find.go` | Find taxonomy | 50 |
-| `taxonomy_list.go` | List taxonomies | 50 |
-| `taxonomy_update.go` | Update taxonomy | 50 |
-| `taxonomy_delete.go` | Delete taxonomy | 50 |
-| `taxonomy_term_*.go` | Term CRUD operations | 250 |
-| `entity_taxonomy_*.go` | Entity-taxonomy association | 150 |
-| `new_taxonomy.go` | Constructor functions | 80 |
-| `interfaces.go` | Extend StoreInterface | +60 |
-| `store_implementation.go` | Update SqlCreateTable | +40 |
-| **Total** | | **~700** |
+| `taxonomy_implementation.go` | dataobject-based struct with getters/setters | 130 |
+| `taxonomy_implementation_test.go` | Tests for taxonomy implementation | 100 |
+| `taxonomy_query.go` | Query builder for taxonomies | 120 |
+| `taxonomy_query_interface.go` | Query interface definitions | 50 |
+| `taxonomy_query_test.go` | Query tests | 80 |
+| `taxonomy_table_create_sql.go` | SQL schema using sb builder | 40 |
+| `store_taxonomies.go` | Store CRUD methods | 150 |
+| `store_taxonomies_test.go` | Store method tests | 100 |
+| **Taxonomy Subtotal** | | **~770** |
+
+Plus similar 8-file sets for:
+- TaxonomyTerm (8 files)
+- EntityTaxonomy (8 files)
+
+Plus column constants in `consts.go` and interfaces in `interfaces.go`.
+
+**Prerequisite:** This should only be implemented AFTER the dataobject pattern for entities and attributes is stable.
 
 ---
 
@@ -581,15 +791,15 @@ phones, _ := store.TaxonomyTermCreate(ctx, entitystore.TaxonomyTermOptions{
 })
 
 // Assign product to category
-product := store.EntityCreateWithType(ctx, "product")
-product.SetString("name", "iPhone 15")
-store.EntityTaxonomyAssign(ctx, product.ID(), categories.ID(), phones.ID())
+entity := store.EntityCreateWithType(ctx, "product")
+entity.SetAttribute("name", "iPhone 15")
+store.EntityTaxonomyAssign(ctx, entity.ID(), categories.ID(), phones.ID())
 
 // Find all products in Electronics category
 assignments, _ := store.EntityTaxonomyListByTaxonomy(ctx, categories.ID(), electronics.ID())
 for _, assignment := range assignments {
-    product, _ := store.EntityFindByID(ctx, assignment.EntityID())
-    fmt.Println(product.GetString("name", ""))
+    entity, _ := store.EntityFindByID(ctx, assignment.EntityID())
+    fmt.Println(entity.GetAttribute("name"))
 }
 ```
 
@@ -638,57 +848,64 @@ phoneCategories, _ := store.TaxonomyTermListTree(ctx, categories.ID(), electroni
 
 ---
 
-## 5. Implementation Phases
+## 5. Implementation Phases ⏳ PENDING
 
-### Phase 1: Taxonomy Core (2 days)
+**Note:** Implementation is pending stabilization of the dataobject pattern for entities and attributes.
 
-1. Create `taxonomy.go` with types
-2. Create `new_taxonomy.go` with constructors
-3. Implement taxonomy CRUD operations
-4. Write tests
+### Phase 1: Taxonomy Core (1 day)
 
-### Phase 2: Taxonomy Terms (2 days)
+1. Create `taxonomy_implementation.go` with dataobject pattern
+2. Create `taxonomy_implementation_test.go`
+3. Add constants for taxonomy columns in `consts.go`
+4. Add `TaxonomyInterface` to `interfaces.go`
 
-1. Implement term CRUD operations
-2. Implement hierarchical tree queries (`TaxonomyTermListTree`)
-3. Write tests
+### Phase 2: Query & SQL (1 day)
 
-### Phase 3: Entity-Taxonomy Integration (2 days)
+1. Create `taxonomy_query.go` with query builder
+2. Create `taxonomy_query_interface.go`
+3. Create `taxonomy_query_test.go`
+4. Create `taxonomy_table_create_sql.go` with sb builder pattern
 
-1. Implement `EntityTaxonomyAssign`, `EntityTaxonomyRemove`
-2. Implement `EntityTaxonomyList`, `EntityTaxonomyListByTaxonomy`
-3. Write tests
+### Phase 3: Store Methods (1 day)
 
-### Phase 4: Integration (1 day)
+1. Create `store_taxonomies.go` with CRUD operations
+2. Create `store_taxonomies_test.go`
+3. Update `store_implementation.go` to include taxonomy table in AutoMigrate
 
-1. Update `interfaces.go` with new methods
-2. Update `store_implementation.go` with taxonomy tables
-3. Add tables to AutoMigrate
-4. Write integration tests
+### Phase 4: Taxonomy Terms (1.5 days)
 
-### Phase 5: Documentation (1 day)
+Repeat Phases 1-3 for TaxonomyTerm (8 files)
+- Hierarchical tree queries (`TaxonomyTermListTree`)
 
-1. Update README.md
-2. Create examples/taxonomy.go
-3. Write usage guide
+### Phase 5: Entity-Taxonomy Integration (1 day)
 
-**Total: ~8 days**
+Repeat Phases 1-3 for EntityTaxonomy (8 files)
+- Entity-taxonomy assignment operations
+
+### Phase 6: Documentation (0.5 day)
+
+1. Update README.md with taxonomy examples
+2. Add usage guide
+
+**Total: ~6 days** (after dataobject pattern is stable)
 
 ---
 
 ## 6. Testing Strategy
 
-### 6.1 Unit Tests
+### 6.1 Unit Tests (dataobject Pattern)
 
 | Test File | Coverage |
 |-----------|----------|
-| `taxonomy_test.go` | Type definitions, getters, setters |
-| `taxonomy_create_test.go` | Create taxonomy, slug uniqueness |
-| `taxonomy_find_test.go` | Find by ID, find by slug |
-| `taxonomy_list_test.go` | List taxonomies |
-| `taxonomy_term_create_test.go` | Create terms, hierarchy |
-| `taxonomy_term_tree_test.go` | Tree structure, parent/child |
-| `entity_taxonomy_test.go` | Assign, remove, list associations |
+| `taxonomy_implementation_test.go` | Type definition, getters, setters |
+| `taxonomy_query_test.go` | Query builder |
+| `store_taxonomies_test.go` | Store CRUD operations |
+| `taxonomy_term_implementation_test.go` | Term type definition |
+| `taxonomy_term_query_test.go` | Term query builder |
+| `store_taxonomy_terms_test.go` | Term store CRUD |
+| `entity_taxonomy_implementation_test.go` | EntityTaxonomy type |
+| `entity_taxonomy_query_test.go` | EntityTaxonomy query |
+| `store_entity_taxonomies_test.go` | EntityTaxonomy store CRUD |
 
 ### 6.2 Integration Tests
 
@@ -774,11 +991,22 @@ store.EntityList(ctx, entitystore.EntityQueryOptions{
 
 ## 10. Conclusion
 
+### Status
+
+⏳ **PENDING** - This proposal is on hold until the dataobject pattern implementation for entities and attributes is fully stabilized.
+
 ### Recommendation
 
-**Proceed with implementation.**
+**Proceed with implementation AFTER:**
+1. ✅ dataobject pattern for entities is stable
+2. ✅ dataobject pattern for attributes is stable
+3. ✅ Trash table implementation is stable
+4. ✅ All 4 core entities (Entity, Attribute, EntityTrash, AttributeTrash) are complete
 
-Taxonomy is a fundamental CMS/e-commerce feature. Adding native support to `entitystore` enables categorization, filtering, and navigation patterns essential for complex applications.
+Then implement taxonomy following the same dataobject pattern:
+- Taxonomy (8 files)
+- TaxonomyTerm (8 files)
+- EntityTaxonomy (8 files)
 
 ### Benefits
 
@@ -786,14 +1014,16 @@ Taxonomy is a fundamental CMS/e-commerce feature. Adding native support to `enti
 2. **Performance** - Native taxonomy queries vs. attribute parsing
 3. **Hierarchy** - Built-in support for nested categories
 4. **Reusability** - All entitystore consumers get taxonomy for free
+5. **Consistency** - Uses same dataobject pattern as entities and attributes
 
 ### Next Actions
 
-1. Create feature branch
-2. Implement Phase 1 (Taxonomy Core)
-3. PR and review
-4. Proceed to Phase 2-5
+1. ⏳ Wait for dataobject pattern stabilization
+2. ⏳ Create feature branch for taxonomy
+3. ⏳ Implement following 8-file pattern
+4. ⏳ PR and review
 
 ---
 
-**End of Proposal**
+**End of Proposal - Updated March 28, 2026**
+**Status: PENDING (waiting for dataobject pattern stabilization)**

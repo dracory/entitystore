@@ -1,7 +1,7 @@
 # Entity Relationships Support Proposal
 
 **Date:** 2026-03-28
-**Status:** Draft
+**Status:** ⏳ PENDING (waiting for dataobject pattern stabilization)
 **Author:** AI Assistant
 **Repository:** github.com/dracory/entitystore
 
@@ -15,8 +15,8 @@
 
 ```go
 // Current workaround - manual attribute storage
-product.SetString("author_id", "auth_123")
-authorID := product.GetString("author_id", "")
+entity.SetAttribute("author_id", "auth_123")
+authorID := entity.GetAttribute("author_id")
 author := store.EntityFindByID(ctx, authorID) // Separate query
 ```
 
@@ -27,43 +27,88 @@ author := store.EntityFindByID(ctx, authorID) // Separate query
 - Eliminates manual join logic in application code
 - Enables relationship queries ("find all books by this author")
 
+**Status:** ⏳ **PENDING** - Waiting for dataobject pattern implementation to stabilize before adding relationships
+
 ---
 
-## 2. Current State (As-Is)
+## 2. Current State (As-Is) ✅ IMPLEMENTED
 
-### 2.1 Entitystore Architecture
+### 2.1 Entitystore Architecture (dataobject Pattern)
 
 ```
 entitystore/
-├── entity.go                 # Entity struct with Get/Set methods
-├── entity_*.go              # Entity operations (CRUD, List, Trash)
-├── attribute.go             # Attribute struct
-├── attribute_*.go           # Attribute operations
-├── store_implementation.go  # Core store with table management
-├── interfaces.go            # StoreInterface definition
-└── new.go                   # Store initialization
+├── entity_implementation.go          # Entity with dataobject.DataObject
+├── entity_implementation_test.go     # Entity tests
+├── entity_query.go                   # Entity query builder
+├── entity_query_interface.go         # EntityQueryInterface
+├── entity_table_create_sql.go        # Entities table SQL
+├── attribute_implementation.go       # Attribute with dataobject.DataObject
+├── attribute_implementation_test.go  # Attribute tests
+├── attribute_query.go                # Attribute query builder
+├── attribute_query_interface.go      # AttributeQueryInterface
+├── attribute_table_create_sql.go     # Attributes table SQL
+├── entity_trash_implementation.go    # EntityTrash with dataobject
+├── entity_trash_implementation_test.go
+├── entity_trash_query_interface.go
+├── entity_trash_table_create_sql.go
+├── attribute_trash_implementation.go   # AttributeTrash with dataobject
+├── attribute_trash_implementation_test.go
+├── attribute_trash_query_interface.go
+├── attribute_trash_table_create_sql.go
+├── store_entities.go                  # Entity CRUD methods
+├── store_entities_test.go             # Entity store tests
+├── store_attributes.go                # Attribute CRUD methods
+├── store_attributes_test.go           # Attribute store tests
+├── store_entities_trash.go            # Entity trash/restore
+├── store_attributes_trash.go          # Attribute trash/restore
+├── interfaces.go                      # All entity interfaces
+├── consts.go                          # Column constants
+├── id_helpers.go                      # GenerateShortID()
+└── new.go                             # Store initialization
 ```
 
-### 2.2 Current Database Schema
+### 2.2 Current Database Schema (Short IDs + dataobject)
 
 ```sql
--- Entities table (exists)
+-- Entities table (exists with dataobject pattern)
 CREATE TABLE entities (
-    id varchar(40) PRIMARY KEY,
+    id varchar(15) PRIMARY KEY,           -- Short ID (9-15 chars)
     entity_type varchar(40) NOT NULL,
     entity_handle varchar(60),
     created_at datetime NOT NULL,
     updated_at datetime NOT NULL
 );
 
--- Attributes table (exists)
+-- Attributes table (exists with dataobject pattern)
 CREATE TABLE attributes (
-    id varchar(40) PRIMARY KEY,
-    entity_id varchar(40) NOT NULL,
+    id varchar(15) PRIMARY KEY,           -- Short ID
+    entity_id varchar(15) NOT NULL,       -- References entities.id
     attribute_key varchar(255) NOT NULL,
     attribute_value text,
     created_at datetime NOT NULL,
     updated_at datetime NOT NULL
+);
+
+-- Trash tables (separate, no soft delete)
+CREATE TABLE entities_trash (
+    id varchar(15) PRIMARY KEY,
+    entity_type varchar(40) NOT NULL,
+    entity_handle varchar(60),
+    created_at datetime NOT NULL,
+    updated_at datetime NOT NULL,
+    deleted_at datetime NOT NULL,
+    deleted_by varchar(15)
+);
+
+CREATE TABLE attributes_trash (
+    id varchar(15) PRIMARY KEY,
+    entity_id varchar(15) NOT NULL,
+    attribute_key varchar(255) NOT NULL,
+    attribute_value text,
+    created_at datetime NOT NULL,
+    updated_at datetime NOT NULL,
+    deleted_at datetime NOT NULL,
+    deleted_by varchar(15)
 );
 ```
 
@@ -78,16 +123,20 @@ CREATE TABLE attributes (
 
 ---
 
-## 3. Proposed Solution (To-Be)
+## 3. Proposed Solution (To-Be) ⏳ PENDING
 
-### 3.1 New Types
+**Note:** This proposal is pending stabilization of the dataobject pattern implementation. Once the core entitystore architecture (entities, attributes, trash tables with dataobject) is stable, relationships can be added following the same pattern.
 
-**File:** `relationship.go`
+### 3.1 New Types (dataobject Pattern)
+
+Following the same pattern as entities and attributes:
+
+**File:** `relationship_implementation.go`
 
 ```go
 package entitystore
 
-import "time"
+import "github.com/dracory/dataobject"
 
 // Relationship types
 const (
@@ -96,84 +145,114 @@ const (
 	RELATIONSHIP_TYPE_MANY_MANY  = "many_to_many" // Entities linked bidirectionally
 )
 
-// Relationship links two entities
-// ID is 9-char short ID (e.g., "86ccrtsgx") for space efficiency
-type Relationship struct {
-	id               string // 9-char short ID
-	entityID         string // 9-char short ID
-	relatedEntityID  string // 9-char short ID
-	relationshipType string
-	metadata         map[string]string
-	createdAt        time.Time
-	st               *storeImplementation
+// relationshipImplementation implements RelationshipInterface
+type relationshipImplementation struct {
+	*dataobject.DataObject
 }
 
-// Getters
-func (r *Relationship) ID() string {
-	return r.id
-}
+// Column constants for relationships
+const (
+	COLUMN_PARENT_ID   = "parent_id"
+	COLUMN_SEQUENCE    = "sequence"
+)
 
-func (r *Relationship) EntityID() string {
-	return r.entityID
-}
-
-func (r *Relationship) RelatedEntityID() string {
-	return r.relatedEntityID
-}
-
-func (r *Relationship) RelationshipType() string {
-	return r.relationshipType
-}
-
-func (r *Relationship) Metadata() map[string]string {
-	return r.metadata
-}
-
-func (r *Relationship) CreatedAt() time.Time {
-	return r.createdAt
-}
-
-// Setters (fluent interface)
-func (r *Relationship) SetID(id string) *Relationship {
-	r.id = id
-	return r
-}
-
-func (r *Relationship) SetEntityID(entityID string) *Relationship {
-	r.entityID = entityID
-	return r
-}
-
-func (r *Relationship) SetRelatedEntityID(relatedID string) *Relationship {
-	r.relatedEntityID = relatedID
-	return r
-}
-
-func (r *Relationship) SetRelationshipType(relType string) *Relationship {
-	r.relationshipType = relType
-	return r
-}
-
-func (r *Relationship) SetMetadata(metadata map[string]string) *Relationship {
-	r.metadata = metadata
-	return r
-}
-
-func (r *Relationship) SetCreatedAt(createdAt time.Time) *Relationship {
-	r.createdAt = createdAt
-	return r
-}
-
-func (r *Relationship) ToMap() map[string]any {
-	return map[string]any{
-		"id":                r.ID(),
-		"entity_id":         r.EntityID(),
-		"related_entity_id": r.RelatedEntityID(),
-		"relationship_type": r.RelationshipType(),
-		"metadata":          r.Metadata(),
-		"created_at":        r.CreatedAt(),
+// NewRelationship creates a new relationship instance
+func NewRelationship() RelationshipInterface {
+	return &relationshipImplementation{
+		DataObject: dataobject.NewDataObject(),
 	}
 }
+
+// ID returns the relationship ID
+func (o *relationshipImplementation) ID() string {
+	return o.Get(COLUMN_ID)
+}
+
+// SetID sets the relationship ID (fluent)
+func (o *relationshipImplementation) SetID(id string) RelationshipInterface {
+	o.Set(COLUMN_ID, id)
+	return o
+}
+
+// EntityID returns the source entity ID
+func (o *relationshipImplementation) EntityID() string {
+	return o.Get(COLUMN_ENTITY_ID)
+}
+
+// SetEntityID sets the source entity ID (fluent)
+func (o *relationshipImplementation) SetEntityID(entityID string) RelationshipInterface {
+	o.Set(COLUMN_ENTITY_ID, entityID)
+	return o
+}
+
+// RelatedEntityID returns the target entity ID
+func (o *relationshipImplementation) RelatedEntityID() string {
+	return o.Get(COLUMN_RELATED_ENTITY_ID)
+}
+
+// SetRelatedEntityID sets the target entity ID (fluent)
+func (o *relationshipImplementation) SetRelatedEntityID(relatedID string) RelationshipInterface {
+	o.Set(COLUMN_RELATED_ENTITY_ID, relatedID)
+	return o
+}
+
+// RelationshipType returns the relationship type
+func (o *relationshipImplementation) RelationshipType() string {
+	return o.Get(COLUMN_RELATIONSHIP_TYPE)
+}
+
+// SetRelationshipType sets the relationship type (fluent)
+func (o *relationshipImplementation) SetRelationshipType(relType string) RelationshipInterface {
+	o.Set(COLUMN_RELATIONSHIP_TYPE, relType)
+	return o
+}
+
+// ParentID returns the parent relationship ID (for hierarchical relationships)
+func (o *relationshipImplementation) ParentID() string {
+	return o.Get(COLUMN_PARENT_ID)
+}
+
+// SetParentID sets the parent relationship ID (fluent)
+func (o *relationshipImplementation) SetParentID(parentID string) RelationshipInterface {
+	o.Set(COLUMN_PARENT_ID, parentID)
+	return o
+}
+
+// Sequence returns the sequence/order number
+func (o *relationshipImplementation) Sequence() int {
+	return o.GetInt(COLUMN_SEQUENCE)
+}
+
+// SetSequence sets the sequence/order number (fluent)
+func (o *relationshipImplementation) SetSequence(sequence int) RelationshipInterface {
+	o.Set(COLUMN_SEQUENCE, sequence)
+	return o
+}
+
+// Metadata returns relationship metadata
+func (o *relationshipImplementation) Metadata() map[string]string {
+	return o.GetAllAttributes()
+}
+
+// SetMetadata sets relationship metadata (fluent)
+func (o *relationshipImplementation) SetMetadata(metadata map[string]string) RelationshipInterface {
+	for k, v := range metadata {
+		o.SetAttribute(k, v)
+	}
+	return o
+}
+
+// CreatedAt returns creation timestamp
+func (o *relationshipImplementation) CreatedAt() string {
+	return o.Get(COLUMN_CREATED_AT)
+}
+
+// SetCreatedAt sets creation timestamp (fluent)
+func (o *relationshipImplementation) SetCreatedAt(createdAt string) RelationshipInterface {
+	o.Set(COLUMN_CREATED_AT, createdAt)
+	return o
+}
+```
 ```
 
 ### 3.2 Store Interface Extensions
@@ -206,15 +285,44 @@ type StoreInterface interface {
     // RelationshipDeleteAll removes all relationships for an entity
     RelationshipDeleteAll(ctx context.Context, entityID string) error
 }
-```
 
-**Options struct:**
+type RelationshipInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core fields
+	ID() string
+	SetID(id string) RelationshipInterface
+	EntityID() string
+	SetEntityID(entityID string) RelationshipInterface
+	RelatedEntityID() string
+	SetRelatedEntityID(relatedID string) RelationshipInterface
+	RelationshipType() string
+	SetRelationshipType(relType string) RelationshipInterface
+
+	// Hierarchical support
+	ParentID() string
+	SetParentID(parentID string) RelationshipInterface
+	Sequence() int
+	SetSequence(sequence int) RelationshipInterface
+
+	// Metadata
+	Metadata() map[string]string
+	SetMetadata(metadata map[string]string) RelationshipInterface
+
+	// Timestamps
+	CreatedAt() string
+	SetCreatedAt(createdAt string) RelationshipInterface
+}
+
+// Options struct:
 
 ```go
 type RelationshipOptions struct {
     EntityID         string
     RelatedEntityID  string
     RelationshipType string
+    ParentID         string            // For hierarchical relationships
+    Sequence         int               // For ordering
     Metadata         map[string]string
 }
 ```
@@ -235,12 +343,16 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
         entity_id varchar(9) NOT NULL,
         related_entity_id varchar(9) NOT NULL,
         relationship_type varchar(50) NOT NULL,
+        parent_id varchar(9) DEFAULT NULL,
+        sequence int DEFAULT 0,
         metadata text,
         created_at datetime NOT NULL,
         INDEX idx_entity (entity_id),
         INDEX idx_related (related_entity_id),
         INDEX idx_type (relationship_type),
-        INDEX idx_entity_type (entity_id, relationship_type)
+        INDEX idx_entity_type (entity_id, relationship_type),
+        INDEX idx_parent (parent_id),
+        INDEX idx_sequence (entity_id, sequence)
     );`
     
     sqlArray := append(existingSQL, sqlRelationship)
@@ -248,72 +360,29 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 }
 ```
 
-### 3.4 Implementation Files
+### 3.4 Implementation Files (dataobject Pattern)
+
+Following the same 8-file pattern as entities and attributes:
 
 | File | Purpose | Lines (Est) |
 |------|---------|-------------|
-| `relationship.go` | Relationship type definition | 90 |
-| `relationship_create.go` | Create relationship | 50 |
-| `relationship_find.go` | Find relationship | 50 |
-| `relationship_list.go` | List relationships | 60 |
-| `relationship_delete.go` | Delete relationship | 50 |
-| `id_helpers.go` | Short ID generation | 50 |
-| `interfaces.go` | Extend StoreInterface | +30 |
-| `store_implementation.go` | Update SqlCreateTable | +20 |
-| **Total** | | **~400** |
+| `relationship_implementation.go` | dataobject-based struct with getters/setters | 130 |
+| `relationship_implementation_test.go` | Tests for relationship implementation | 100 |
+| `relationship_query.go` | Query builder for relationships | 120 |
+| `relationship_query_interface.go` | Query interface definitions | 50 |
+| `relationship_query_test.go` | Query tests | 80 |
+| `relationship_table_create_sql.go` | SQL schema using sb builder | 40 |
+| `store_relationships.go` | Store CRUD methods | 150 |
+| `store_relationships_test.go` | Store method tests | 100 |
+| **Relationship Subtotal** | | **~770** |
+
+Plus column constants in `consts.go` and interface in `interfaces.go`.
+
+**Prerequisite:** This should only be implemented AFTER the dataobject pattern for entities and attributes is stable.
 
 ---
 
-**File:** `id_helpers.go` (new file)
-
-Add short ID generation matching cmsstore pattern:
-
-```go
-package entitystore
-
-import (
-	"strings"
-	"sync"
-	"time"
-
-	"github.com/dracory/uid"
-)
-
-var (
-	idMutex    sync.Mutex
-	lastIDTime int64
-	idSequence int
-)
-
-// GenerateShortID generates a new shortened ID using TimestampMicro + Crockford Base32 (lowercase)
-// Returns a 9-character lowercase ID (e.g., "86ccrtsgx")
-// Thread-safe: Uses mutex to prevent duplicate IDs when called concurrently
-func GenerateShortID() string {
-	idMutex.Lock()
-	defer idMutex.Unlock()
-
-	// Get current microsecond timestamp
-	now := time.Now().UnixMicro()
-
-	// If same microsecond as last ID, add sequence number to ensure uniqueness
-	if now == lastIDTime {
-		idSequence++
-		now += int64(idSequence)
-	} else {
-		lastIDTime = now
-		idSequence = 0
-	}
-
-	timestampID := uid.TimestampMicro()
-	shortened, _ := uid.ShortenCrockford(timestampID)
-	return strings.ToLower(shortened)
-}
-
-// NormalizeID normalizes an ID to lowercase for consistent lookups
-func NormalizeID(id string) string {
-	return strings.ToLower(strings.TrimSpace(id))
-}
-```
+## 4. Usage Examples
 
 ### 4.1 Basic Relationship
 
@@ -345,7 +414,7 @@ store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
 relationships, _ := store.RelationshipListRelated(ctx, author.ID(), entitystore.RELATIONSHIP_TYPE_BELONGS_TO)
 for _, rel := range relationships {
     book, _ := store.EntityFindByID(ctx, rel.EntityID())
-    fmt.Println(book.GetString("title", ""))
+    fmt.Println(book.GetAttribute("title"))
 }
 ```
 
@@ -377,7 +446,7 @@ friendships, _ := store.RelationshipList(ctx, user1.ID(), entitystore.RELATIONSH
 for _, friendship := range friendships {
     friend, _ := store.EntityFindByID(ctx, friendship.RelatedEntityID())
     status := friendship.Metadata()["status"]
-    fmt.Printf("Friend: %s, Status: %s\n", friend.GetString("name", ""), status)
+    fmt.Printf("Friend: %s, Status: %s\n", friend.GetAttribute("name"), status)
 }
 ```
 
@@ -396,53 +465,90 @@ store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
 })
 ```
 
+### 4.4 Hierarchical Relationships (Trees/Nesting)
+
+```go
+// Build a nested category tree using parent_id
+electronics := store.EntityCreateWithType(ctx, "category")
+electronics.SetString("name", "Electronics")
+
+phones := store.EntityCreateWithType(ctx, "category")
+phones.SetString("name", "Phones")
+
+laptops := store.EntityCreateWithType(ctx, "category")
+laptops.SetString("name", "Laptops")
+
+// Create root relationship
+relElectronics := store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
+    EntityID:         electronics.ID(),
+    RelatedEntityID:  rootCategory.ID(),
+    RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
+    Sequence:         1,
+})
+
+// Create child relationships with parent_id
+relPhones := store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
+    EntityID:         phones.ID(),
+    RelatedEntityID:  electronics.ID(),
+    RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
+    ParentID:         relElectronics.ID(),  // Child of electronics
+    Sequence:         1,
+})
+
+relLaptops := store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
+    EntityID:         laptops.ID(),
+    RelatedEntityID:  electronics.ID(),
+    RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
+    ParentID:         relElectronics.ID(),  // Child of electronics
+    Sequence:         2,  // After phones
+})
+```
+
 ---
 
-## 5. Implementation Phases
+## 5. Implementation Phases ⏳ PENDING
+
+**Note:** Implementation is pending stabilization of the dataobject pattern for entities and attributes.
 
 ### Phase 1: Core Types (1 day)
 
-1. Create `relationship.go` with type definition
-2. Create `new_relationship.go` with constructor
-3. Add constants for relationship types
-4. Write basic type tests
+1. Create `relationship_implementation.go` with dataobject pattern
+2. Create `relationship_implementation_test.go`
+3. Add constants for relationship types in `consts.go`
+4. Add `RelationshipInterface` to `interfaces.go`
 
-### Phase 2: CRUD Operations (2 days)
+### Phase 2: Query & SQL (1 day)
 
-1. Create `relationship_create.go`
-2. Create `relationship_find.go`
-3. Create `relationship_list.go`
-4. Create `relationship_delete.go`
-5. Write CRUD tests
+1. Create `relationship_query.go` with query builder
+2. Create `relationship_query_interface.go`
+3. Create `relationship_query_test.go`
+4. Create `relationship_table_create_sql.go` with sb builder pattern
 
-### Phase 3: Integration (1 day)
+### Phase 3: Store Methods (1 day)
 
-1. Update `interfaces.go` with new methods
-2. Update `store_implementation.go` with relationship table
-3. Add table to AutoMigrate
-4. Write integration tests
+1. Create `store_relationships.go` with CRUD operations
+2. Create `store_relationships_test.go`
+3. Update `store_implementation.go` to include relationship table in AutoMigrate
 
-### Phase 4: Documentation (1 day)
+### Phase 4: Documentation (0.5 day)
 
-1. Update README.md
-2. Create examples/relationships.go
-3. Write usage guide
+1. Update README.md with relationship examples
+2. Add usage guide
 
-**Total: ~5 days**
+**Total: ~3.5 days** (after dataobject pattern is stable)
 
 ---
 
 ## 6. Testing Strategy
 
-### 6.1 Unit Tests
+### 6.1 Unit Tests (dataobject Pattern)
 
 | Test File | Coverage |
 |-----------|----------|
-| `relationship_test.go` | Type definition, getters, setters |
-| `relationship_create_test.go` | Create relationships, duplicate handling |
-| `relationship_find_test.go` | Find by entities |
-| `relationship_list_test.go` | List by entity, list by related |
-| `relationship_delete_test.go` | Delete single, delete all |
+| `relationship_implementation_test.go` | Type definition, getters, setters |
+| `relationship_query_test.go` | Query builder |
+| `store_relationships_test.go` | Store CRUD operations |
+| `store_relationships_trash_test.go` | Trash/restore (if applicable) |
 
 ### 6.2 Integration Tests
 
@@ -513,11 +619,19 @@ store.EntityList(ctx, entitystore.EntityQueryOptions{
 
 ## 10. Conclusion
 
+### Status
+
+⏳ **PENDING** - This proposal is on hold until the dataobject pattern implementation for entities and attributes is fully stabilized.
+
 ### Recommendation
 
-**Proceed with implementation.**
+**Proceed with implementation AFTER:**
+1. ✅ dataobject pattern for entities is stable
+2. ✅ dataobject pattern for attributes is stable
+3. ✅ Trash table implementation is stable
+4. ✅ All 4 core entities (Entity, Attribute, EntityTrash, AttributeTrash) are complete
 
-Relationships are a fundamental data modeling concept. Adding native support to `entitystore` transforms it from a simple EAV store into a complete entity management system.
+Then implement relationships following the same dataobject pattern (8 files: implementation, test, query, query interface, query test, SQL schema, store methods, store test).
 
 ### Benefits
 
@@ -525,14 +639,16 @@ Relationships are a fundamental data modeling concept. Adding native support to 
 2. **Performance** - Single-query relationship loading
 3. **Integrity** - Clear relationship semantics
 4. **Reusability** - All entitystore consumers benefit
+5. **Consistency** - Uses same dataobject pattern as entities and attributes
 
 ### Next Actions
 
-1. Create feature branch
-2. Implement Phase 1 (Core Types)
-3. PR and review
-4. Proceed to Phase 2-4
+1. ⏳ Wait for dataobject pattern stabilization
+2. ⏳ Create feature branch for relationships
+3. ⏳ Implement following 8-file pattern
+4. ⏳ PR and review
 
 ---
 
-**End of Proposal**
+**End of Proposal - Updated March 28, 2026**
+**Status: PENDING (waiting for dataobject pattern stabilization)**
