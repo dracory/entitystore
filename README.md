@@ -29,6 +29,7 @@ Entity Store provides a flexible **EAV (Entity-Attribute-Value)** pattern for Go
 | [Attributes](docs/attributes.md) | Working with typed attributes |
 | [Relationships](docs/entity-relationships.md) | Linking entities together |
 | [Taxonomies](docs/taxonomies.md) | Categorizing entities |
+| [Pros & Cons](docs/pros-and-cons.md) | When to use and when not to |
 | [Architecture](docs/architecture.md) | Design patterns and database schema |
 | [API Reference](docs/api-reference.md) | Complete method reference |
 
