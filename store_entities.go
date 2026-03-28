@@ -181,9 +181,9 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 
 // EntityCount counts entities
 func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
-	options.CountOnly = true
 	q := st.EntityQuery(options)
-	sqlStr, _, errSql := q.Limit(1).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
+	q = q.Limit(1).Select(goqu.COUNT(goqu.Star()).As("count"))
+	sqlStr, _, errSql := q.ToSQL()
 	if errSql != nil {
 		return 0, errSql
 	}
@@ -266,7 +266,7 @@ func (st *storeImplementation) EntityCreateWithTypeAndAttributes(ctx context.Con
 		return entity, err
 	}
 
-	if attributes != nil && len(attributes) > 0 {
+	if len(attributes) > 0 {
 		if err := st.AttributesSet(ctx, entity.ID(), attributes); err != nil {
 			return entity, err
 		}

@@ -14,7 +14,7 @@ require (
 require (
 	github.com/dracory/database v0.7.0 // indirect
 	github.com/dracory/uid v1.9.0
-	github.com/spf13/cast v1.10.0 // indirect
+	github.com/spf13/cast v1.10.0
 )
 
 require (

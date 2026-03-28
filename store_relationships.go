@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"log"
-	"strconv"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
+	"github.com/spf13/cast"
 )
 
 // RelationshipCreate persists a new relationship record
@@ -327,6 +327,6 @@ func (st *storeImplementation) RelationshipCount(ctx context.Context, options Re
 		return 0, nil
 	}
 
-	count, _ := strconv.ParseInt(maps[0]["count"], 10, 64)
+	count := cast.ToInt64(maps[0]["count"])
 	return count, nil
 }

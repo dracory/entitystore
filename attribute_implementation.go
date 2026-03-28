@@ -1,10 +1,9 @@
 package entitystore
 
 import (
-	"strconv"
-
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
+	"github.com/spf13/cast"
 )
 
 // == TYPE ===================================================================
@@ -98,22 +97,22 @@ func (o *attributeImplementation) UpdatedAtCarbon() *carbon.Carbon {
 
 // GetInt returns the attribute value parsed as int64
 func (o *attributeImplementation) GetInt() (int64, error) {
-	return strconv.ParseInt(o.AttributeValue(), 10, 64)
+	return cast.ToInt64E(o.AttributeValue())
 }
 
 // GetFloat returns the attribute value parsed as float64
 func (o *attributeImplementation) GetFloat() (float64, error) {
-	return strconv.ParseFloat(o.AttributeValue(), 64)
+	return cast.ToFloat64E(o.AttributeValue())
 }
 
 // SetInt sets the attribute value from an int64
 func (o *attributeImplementation) SetInt(value int64) AttributeInterface {
-	o.SetAttributeValue(strconv.FormatInt(value, 10))
+	o.SetAttributeValue(cast.ToString(value))
 	return o
 }
 
 // SetFloat sets the attribute value from a float64
 func (o *attributeImplementation) SetFloat(value float64) AttributeInterface {
-	o.SetAttributeValue(strconv.FormatFloat(value, 'f', 30, 64))
+	o.SetAttributeValue(cast.ToString(value))
 	return o
 }
