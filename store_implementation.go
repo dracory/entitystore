@@ -75,7 +75,7 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqlMysql1 := `
 	CREATE TABLE IF NOT EXISTS ` + st.entityTableName + ` (
-		id varchar(40) NOT NULL PRIMARY KEY,
+		id varchar(9) NOT NULL PRIMARY KEY,
 		entity_type varchar(40) NOT NULL,
 		entity_handle varchar(60) DEFAULT '',
 		created_at datetime NOT NULL,
@@ -85,8 +85,8 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqlMysql2 := `
 	CREATE TABLE IF NOT EXISTS ` + st.attributeTableName + ` (
-		id varchar(40) NOT NULL PRIMARY KEY,
-		entity_id varchar(40) NOT NULL,
+		id varchar(9) NOT NULL PRIMARY KEY,
+		entity_id varchar(9) NOT NULL,
 		attribute_key varchar(255) NOT NULL,
 		attribute_value text,
 		created_at datetime NOT NULL,
@@ -96,33 +96,33 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqlMysql3 := `
 	CREATE TABLE IF NOT EXISTS ` + st.entityTrashTableName + ` (
-		id varchar(40) NOT NULL PRIMARY KEY,
+		id varchar(9) NOT NULL PRIMARY KEY,
 		entity_type varchar(40) NOT NULL,
 		entity_handle varchar(60) DEFAULT '',
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
 		deleted_at datetime NOT NULL,
-		deleted_by varchar(40)
+		deleted_by varchar(9)
 	);
 	`
 
 	sqlMysql4 := `
 	CREATE TABLE IF NOT EXISTS ` + st.attributeTrashTableName + ` (
-		id varchar(40) NOT NULL PRIMARY KEY,
-		entity_id varchar(40) NOT NULL,
+		id varchar(9) NOT NULL PRIMARY KEY,
+		entity_id varchar(9) NOT NULL,
 		attribute_key varchar(255) NOT NULL,
 		attribute_value text,
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
 		deleted_at datetime NOT NULL,
-		deleted_by varchar(40)
+		deleted_by varchar(9)
 	);
 	`
 
 	sqlPostgres1 := `
 	CREATE TABLE IF NOT EXISTS ` + st.attributeTableName + ` (
-		"id" varchar(40) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(40) NOT NULL,
+		"id" varchar(9) NOT NULL PRIMARY KEY,
+		"entity_id" varchar(9) NOT NULL,
 		"attribute_key" varchar(255) NOT NULL,
 		"attribute_value" text,
 		"created_at" timestamptz(6) NOT NULL,
@@ -132,7 +132,7 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqlPostgres2 := `
 	CREATE TABLE IF NOT EXISTS ` + st.entityTableName + ` (
-	   "id" varchar(40) NOT NULL PRIMARY KEY,
+	   "id" varchar(9) NOT NULL PRIMARY KEY,
 	   "entity_type" varchar(40) NOT NULL,
 	   "entity_handle" varchar(60) DEFAULT '',
 	   "created_at" timestamptz(6),
@@ -142,33 +142,33 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqlPostgres3 := `
 	CREATE TABLE IF NOT EXISTS ` + st.entityTrashTableName + ` (
-		"id" varchar(40) NOT NULL PRIMARY KEY,
+		"id" varchar(9) NOT NULL PRIMARY KEY,
 		"entity_type" varchar(40) NOT NULL,
 		"entity_handle" varchar(60) DEFAULT '',
 		"created_at" timestamptz(6) NOT NULL,
 		"updated_at" timestamptz(6) NOT NULL,
 		"deleted_at" timestamptz(6) NOT NULL,
-		"deleted_by" varchar(40)
+		"deleted_by" varchar(9)
 	);
 	`
 
 	sqlPostgres4 := `
 	CREATE TABLE IF NOT EXISTS ` + st.attributeTrashTableName + ` (
-		"id" varchar(40) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(40) NOT NULL,
+		"id" varchar(9) NOT NULL PRIMARY KEY,
+		"entity_id" varchar(9) NOT NULL,
 		"attribute_key" varchar(255) NOT NULL,
 		"attribute_value" text,
 		"created_at" timestamptz(6) NOT NULL,
 		"updated_at" timestamptz(6) NOT NULL,
 		"deleted_at" timestamptz(6) NOT NULL,
-		"deleted_by" varchar(40)
+		"deleted_by" varchar(9)
 	);
 	`
 
 	sqlSqlite1 := `
 	CREATE TABLE IF NOT EXISTS "` + st.attributeTableName + `" (
-		"id" varchar(40) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(40) NOT NULL,
+		"id" varchar(9) NOT NULL PRIMARY KEY,
+		"entity_id" varchar(9) NOT NULL,
 		"attribute_key" varchar(255) NOT NULL,
 		"attribute_value" text,
 		"created_at" datetime NOT NULL,
@@ -177,7 +177,7 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 	`
 	sqlSqlite2 := `
 	CREATE TABLE IF NOT EXISTS "` + st.entityTableName + `" (
-	   "id" varchar(40) NOT NULL PRIMARY KEY,
+	   "id" varchar(9) NOT NULL PRIMARY KEY,
 	   "entity_type" varchar(40) NOT NULL,
 	   "entity_handle" varchar(60) DEFAULT '',
 	   "created_at" datetime NOT NULL,
@@ -187,26 +187,26 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 
 	sqlSqlite3 := `
 	CREATE TABLE IF NOT EXISTS "` + st.entityTrashTableName + `" (
-		"id" varchar(40) NOT NULL PRIMARY KEY,
+		"id" varchar(9) NOT NULL PRIMARY KEY,
 		"entity_type" varchar(40) NOT NULL,
 		"entity_handle" varchar(60) DEFAULT '',
 		"created_at" datetime NOT NULL,
 		"updated_at" datetime NOT NULL,
 		"deleted_at" datetime NOT NULL,
-		"deleted_by" varchar(40)
+		"deleted_by" varchar(9)
 	);
 	`
 
 	sqlSqlite4 := `
 	CREATE TABLE IF NOT EXISTS "` + st.attributeTrashTableName + `" (
-		"id" varchar(40) NOT NULL PRIMARY KEY,
-		"entity_id" varchar(40) NOT NULL,
+		"id" varchar(9) NOT NULL PRIMARY KEY,
+		"entity_id" varchar(9) NOT NULL,
 		"attribute_key" varchar(255) NOT NULL,
 		"attribute_value" text,
 		"created_at" datetime NOT NULL,
 		"updated_at" datetime NOT NULL,
 		"deleted_at" datetime NOT NULL,
-		"deleted_by" varchar(40)
+		"deleted_by" varchar(9)
 	);
 	`
 

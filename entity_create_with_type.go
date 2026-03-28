@@ -3,8 +3,6 @@ package entitystore
 import (
 	"context"
 	"time"
-
-	"github.com/dracory/uid"
 )
 
 // EntityCreateWithType quick shortcut method
@@ -12,7 +10,7 @@ import (
 // NB. The ID will be auto-assigned
 func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityType string) (*Entity, error) {
 	entity := st.NewEntity(NewEntityOptions{
-		ID:        uid.HumanUid(),
+		ID:        GenerateShortID(),
 		Type:      entityType,
 		Handle:    "",
 		CreatedAt: time.Now(),

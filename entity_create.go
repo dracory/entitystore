@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"log"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/dracory/uid"
 )
 
 // EntityCreate creates a new entity
@@ -17,15 +15,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity *Entity)
 	}
 
 	if entity.ID() == "" {
-		entity.SetID(uid.HumanUid())
-	}
-
-	if entity.CreatedAt().IsZero() {
-		entity.SetCreatedAt(time.Now())
-	}
-
-	if entity.UpdatedAt().IsZero() {
-		entity.SetUpdatedAt(time.Now())
+		entity.SetID(GenerateShortID())
 	}
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTableName)

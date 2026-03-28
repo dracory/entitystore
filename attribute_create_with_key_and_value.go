@@ -3,8 +3,6 @@ package entitystore
 import (
 	"context"
 	"time"
-
-	"github.com/dracory/uid"
 )
 
 // AttributeCreateWithKeyAndValue shortcut to create a new attribute
@@ -12,7 +10,7 @@ import (
 // NN. The ID will be auto-assigned
 func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (*Attribute, error) {
 	newAttribute := st.NewAttribute(NewAttributeOptions{
-		ID:             uid.HumanUid(),
+		ID:             GenerateShortID(),
 		EntityID:       entityID,
 		AttributeKey:   attributeKey,
 		AttributeValue: attributeValue,

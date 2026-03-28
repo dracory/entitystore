@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/dracory/uid"
 )
 
 // AttributeCreate creates a new attribute
@@ -21,7 +20,7 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attr *Attrib
 	}
 
 	if attr.ID() == "" {
-		attr.SetID(uid.HumanUid())
+		attr.SetID(GenerateShortID())
 	}
 
 	if attr.CreatedAt().IsZero() {

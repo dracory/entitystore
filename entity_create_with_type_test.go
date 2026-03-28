@@ -29,8 +29,8 @@ func TestEntityCreateWithType(t *testing.T) {
 		t.Fatal("Entity could not be created:", err)
 	}
 
-	if len(entity.ID()) < 32 {
-		t.Fatal("Entity ID is less than 32 characters", entity.ID())
+	if len(entity.ID()) < 9 || len(entity.ID()) > 15 {
+		t.Fatal("Entity ID is not a short ID (expected 9-15 chars):", entity.ID(), "len:", len(entity.ID()))
 	}
 
 	if entity.CreatedAt().Before(time.Now().Add(-1 * time.Minute)) {
