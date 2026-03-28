@@ -29,10 +29,10 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 
 	if opts.DbDriverName == "" {
 		if opts.DB != nil {
-			opts.DbDriverName = driverName(opts.DB)
+			opts.DbDriverName = sb.DatabaseDriverName(opts.DB)
 		}
 		if opts.Database != nil {
-			opts.DbDriverName = driverName(opts.Database.DB())
+			opts.DbDriverName = sb.DatabaseDriverName(opts.Database.DB())
 		}
 	}
 
