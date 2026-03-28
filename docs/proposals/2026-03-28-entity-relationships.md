@@ -279,8 +279,17 @@ type StoreInterface interface {
     // RelationshipListRelated finds all entities related to the given entity
     RelationshipListRelated(ctx context.Context, relatedID string, relType string) ([]Relationship, error)
     
-    // RelationshipDelete removes a relationship
+    // RelationshipDelete removes a relationship (hard delete)
     RelationshipDelete(ctx context.Context, entityID, relatedID, relType string) error
+    
+    // RelationshipTrash soft-deletes a relationship
+    RelationshipTrash(ctx context.Context, id string, deletedBy string) error
+    
+    // RelationshipRestore restores a relationship from trash
+    RelationshipRestore(ctx context.Context, id string) error
+    
+    // RelationshipListTrash lists deleted relationships
+    RelationshipListTrash(ctx context.Context) ([]RelationshipTrash, error)
     
     // RelationshipDeleteAll removes all relationships for an entity
     RelationshipDeleteAll(ctx context.Context, entityID string) error
@@ -327,6 +336,9 @@ type NewStoreOptions struct {
     // Feature flags - relationships are optional
     RelationshipsEnabled bool   // Enable relationship support
     RelationshipTableName string // Default: "entities_relationships"
+    
+    // Trash table for soft delete
+    RelationshipTrashTableName string // Default: "entities_relationships_trash"
 }
 
 type RelationshipOptions struct {
@@ -371,6 +383,22 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
             INDEX idx_sequence (entity_id, sequence)
         );`
         sqlArray = append(sqlArray, sqlRelationship)
+        
+        // Create trash table for soft delete
+        sqlRelationshipTrash := `
+        CREATE TABLE IF NOT EXISTS ` + st.relationshipTrashTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            entity_id varchar(9) NOT NULL,
+            related_entity_id varchar(9) NOT NULL,
+            relationship_type varchar(50) NOT NULL,
+            parent_id varchar(9) DEFAULT NULL,
+            sequence int DEFAULT 0,
+            metadata text,
+            created_at datetime NOT NULL,
+            deleted_at datetime NOT NULL,
+            deleted_by varchar(9)
+        );`
+        sqlArray = append(sqlArray, sqlRelationshipTrash)
     }
     
     return sqlArray, nil
@@ -391,7 +419,10 @@ Following the same 8-file pattern as entities and attributes:
 | `relationship_table_create_sql.go` | SQL schema using sb builder | 40 |
 | `store_relationships.go` | Store CRUD methods | 150 |
 | `store_relationships_test.go` | Store method tests | 100 |
-| **Relationship Subtotal** | | **~770** |
+| `store_relationships_trash.go` | Trash/restore operations | 80 |
+| `relationship_trash_implementation.go` | Trash type definition | 80 |
+| `relationship_trash_table_create_sql.go` | Trash table SQL schema | 40 |
+| **Trash Subtotal** | | **~200** |
 
 Plus column constants in `consts.go` and interface in `interfaces.go`.
 
@@ -568,12 +599,18 @@ relLaptops := store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
 2. Create `store_relationships_test.go`
 3. Update `store_implementation.go` to include relationship table in AutoMigrate
 
-### Phase 4: Documentation (0.5 day)
+### Phase 4: Trash Support (0.75 day)
+
+1. Create `relationship_trash_implementation.go` and test
+2. Create `store_relationships_trash.go` with Trash/Restore/ListTrash methods
+3. Add trash table SQL to `SqlCreateTable`
+
+### Phase 5: Documentation (0.5 day)
 
 1. Update README.md with relationship examples
 2. Add usage guide
 
-**Total: ~3.5 days** (after dataobject pattern is stable)
+**Total: ~4.25 days** (after dataobject pattern is stable)
 
 ---
 
@@ -586,7 +623,8 @@ relLaptops := store.RelationshipCreate(ctx, entitystore.RelationshipOptions{
 | `relationship_implementation_test.go` | Type definition, getters, setters |
 | `relationship_query_test.go` | Query builder |
 | `store_relationships_test.go` | Store CRUD operations |
-| `store_relationships_trash_test.go` | Trash/restore (if applicable) |
+| `relationship_trash_implementation_test.go` | Trash type definition, soft delete tests |
+| `store_relationships_trash_test.go` | Trash/restore operations |
 
 ### 6.2 Integration Tests
 
@@ -595,13 +633,21 @@ func TestRelationshipLifecycle(t *testing.T) {
     // Create parent and child
     // Link with relationship
     // Verify relationship exists
-    // Delete relationship
+    // Trash relationship (soft delete)
+    // Verify relationship in trash
+    // Restore relationship
+    // Verify relationship restored
+    // Hard delete relationship
     // Verify relationship gone
 }
 
 func TestRelationshipMetadata(t *testing.T) {
     // Create relationship with metadata
     // Retrieve and verify metadata preserved
+    // Trash relationship
+    // Verify metadata preserved in trash
+    // Restore relationship
+    // Verify metadata still present after restore
 }
 ```
 

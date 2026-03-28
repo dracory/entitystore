@@ -454,6 +454,10 @@ type NewStoreOptions struct {
     TaxonomyTableName string // Default: "entities_taxonomies"
     TaxonomyTermTableName string // Default: "entities_taxonomy_terms"
     EntityTaxonomyTableName string // Default: "entities_entity_taxonomies"
+    
+    // Trash tables for soft delete
+    TaxonomyTrashTableName string // Default: "entities_taxonomies_trash"
+    TaxonomyTermTrashTableName string // Default: "entities_taxonomy_terms_trash"
 }
 ```
 
@@ -583,6 +587,15 @@ type StoreInterface interface {
     // TaxonomyDelete deletes a taxonomy and all its terms
     TaxonomyDelete(ctx context.Context, id string) error
     
+    // TaxonomyTrash soft-deletes a taxonomy
+    TaxonomyTrash(ctx context.Context, id string, deletedBy string) error
+    
+    // TaxonomyRestore restores a taxonomy from trash
+    TaxonomyRestore(ctx context.Context, id string) error
+    
+    // TaxonomyListTrash lists deleted taxonomies
+    TaxonomyListTrash(ctx context.Context) ([]TaxonomyTrash, error)
+    
     // ==========================================
     // Taxonomy Terms
     // ==========================================
@@ -607,6 +620,15 @@ type StoreInterface interface {
     
     // TaxonomyTermDelete deletes a term
     TaxonomyTermDelete(ctx context.Context, id string) error
+    
+    // TaxonomyTermTrash soft-deletes a term
+    TaxonomyTermTrash(ctx context.Context, id string, deletedBy string) error
+    
+    // TaxonomyTermRestore restores a term from trash
+    TaxonomyTermRestore(ctx context.Context, id string) error
+    
+    // TaxonomyTermListTrash lists deleted terms
+    TaxonomyTermListTrash(ctx context.Context, taxonomyID string) ([]TaxonomyTermTrash, error)
     
     // ==========================================
     // Entity-Taxonomy Associations
@@ -747,6 +769,37 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
         );`
         
         sqlArray = append(sqlArray, sqlTaxonomy, sqlTaxonomyTerm, sqlEntityTaxonomy)
+        
+        // Create trash tables for soft delete
+        sqlTaxonomyTrash := `
+        CREATE TABLE IF NOT EXISTS ` + st.taxonomyTrashTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            name varchar(255) NOT NULL,
+            slug varchar(255) NOT NULL,
+            description text,
+            parent_id varchar(9),
+            entity_types text,
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
+            deleted_at datetime NOT NULL,
+            deleted_by varchar(9)
+        );`
+        
+        sqlTaxonomyTermTrash := `
+        CREATE TABLE IF NOT EXISTS ` + st.taxonomyTermTrashTableName + ` (
+            id varchar(9) NOT NULL PRIMARY KEY,
+            taxonomy_id varchar(9) NOT NULL,
+            name varchar(255) NOT NULL,
+            slug varchar(255) NOT NULL,
+            parent_id varchar(9),
+            sort_order int DEFAULT 0,
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
+            deleted_at datetime NOT NULL,
+            deleted_by varchar(9)
+        );`
+        
+        sqlArray = append(sqlArray, sqlTaxonomyTrash, sqlTaxonomyTermTrash)
     }
     
     return sqlArray, nil
@@ -773,7 +826,13 @@ Plus similar 8-file sets for:
 - TaxonomyTerm (8 files)
 - EntityTaxonomy (8 files)
 
-Plus column constants in `consts.go` and interfaces in `interfaces.go`.
+| `taxonomy_trash_implementation.go` | Trash type for soft delete | 80 |
+| `taxonomy_trash_table_create_sql.go` | Trash table SQL schema | 40 |
+| `store_taxonomies_trash.go` | Trash/restore store methods | 80 |
+| `taxonomy_term_trash_implementation.go` | Term trash type | 80 |
+| `taxonomy_term_trash_table_create_sql.go` | Term trash table SQL | 40 |
+| `store_taxonomy_terms_trash.go` | Term trash/restore methods | 80 |
+| **Trash Subtotal** | | **~360** |
 
 **Prerequisite:** This should only be implemented AFTER the dataobject pattern for entities and attributes is stable.
 
@@ -926,12 +985,20 @@ Repeat Phases 1-3 for TaxonomyTerm (8 files)
 Repeat Phases 1-3 for EntityTaxonomy (8 files)
 - Entity-taxonomy assignment operations
 
-### Phase 6: Documentation (0.5 day)
+### Phase 6: Trash Support (1 day)
+
+1. Create `taxonomy_trash_implementation.go` and test
+2. Create `taxonomy_term_trash_implementation.go` and test
+3. Create `store_taxonomies_trash.go` with Trash/Restore/ListTrash methods
+4. Create `store_taxonomy_terms_trash.go` with Trash/Restore/ListTrash methods
+5. Add trash table SQL to `SqlCreateTable`
+
+### Phase 7: Documentation (0.5 day)
 
 1. Update README.md with taxonomy examples
 2. Add usage guide
 
-**Total: ~6 days** (after dataobject pattern is stable)
+**Total: ~7 days** (after dataobject pattern is stable)
 
 ---
 
@@ -948,8 +1015,10 @@ Repeat Phases 1-3 for EntityTaxonomy (8 files)
 | `taxonomy_term_query_test.go` | Term query builder |
 | `store_taxonomy_terms_test.go` | Term store CRUD |
 | `entity_taxonomy_implementation_test.go` | EntityTaxonomy type |
-| `entity_taxonomy_query_test.go` | EntityTaxonomy query |
-| `store_entity_taxonomies_test.go` | EntityTaxonomy store CRUD |
+| `taxonomy_trash_implementation_test.go` | Trash type definition |
+| `store_taxonomies_trash_test.go` | Trash/restore operations |
+| `taxonomy_term_trash_implementation_test.go` | Term trash type |
+| `store_taxonomy_terms_trash_test.go` | Term trash/restore operations |
 
 ### 6.2 Integration Tests
 
@@ -958,7 +1027,23 @@ func TestTaxonomyLifecycle(t *testing.T) {
     // Create taxonomy
     // Create terms with hierarchy
     // Assign entities
-    // Delete taxonomy (cascade to terms and associations)
+    // Trash taxonomy (soft delete)
+    // Verify taxonomy in trash
+    // Restore taxonomy
+    // Verify taxonomy restored
+    // Hard delete taxonomy
+    // Verify taxonomy gone
+}
+
+func TestTaxonomyTrashCascade(t *testing.T) {
+    // Create Electronics taxonomy
+    // Create Phones term
+    // Assign products to Phones
+    // Trash Electronics taxonomy
+    // Verify Phones term also trashed
+    // Verify entity assignments preserved (or cascade removed)
+    // Restore Electronics
+    // Verify Phones also restored
 }
 
 func TestTaxonomyHierarchy(t *testing.T) {
