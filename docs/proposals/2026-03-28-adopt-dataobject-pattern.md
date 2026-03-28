@@ -133,7 +133,6 @@ func NewEntity() EntityInterface {
 	o.SetID(GenerateShortID())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
-	o.SetSoftDeletedAt(sb.MAX_DATETIME)
 	return o
 }
 
@@ -142,20 +141,6 @@ func NewEntityFromExistingData(data map[string]string) EntityInterface {
 	o := &entityImplementation{}
 	o.Hydrate(data)
 	return o
-}
-
-// == METHODS ===============================================================
-
-func (o *entityImplementation) IsActive() bool {
-	return o.Status() == ENTITY_STATUS_ACTIVE
-}
-
-func (o *entityImplementation) IsInactive() bool {
-	return o.Status() == ENTITY_STATUS_INACTIVE
-}
-
-func (o *entityImplementation) IsSoftDeleted() bool {
-	return o.SoftDeletedAtCarbon().Compare("<", carbon.Now(carbon.UTC))
 }
 
 // == SETTERS AND GETTERS =====================================================
@@ -187,15 +172,6 @@ func (o *entityImplementation) SetEntityHandle(handle string) EntityInterface {
 	return o
 }
 
-func (o *entityImplementation) Status() string {
-	return o.Get(COLUMN_STATUS)
-}
-
-func (o *entityImplementation) SetStatus(status string) EntityInterface {
-	o.Set(COLUMN_STATUS, status)
-	return o
-}
-
 func (o *entityImplementation) CreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
@@ -222,19 +198,6 @@ func (o *entityImplementation) UpdatedAtCarbon() *carbon.Carbon {
 	return carbon.Parse(o.UpdatedAt())
 }
 
-func (o *entityImplementation) SoftDeletedAt() string {
-	return o.Get(COLUMN_SOFT_DELETED_AT)
-}
-
-func (o *entityImplementation) SetSoftDeletedAt(softDeletedAt string) EntityInterface {
-	o.Set(COLUMN_SOFT_DELETED_AT, softDeletedAt)
-	return o
-}
-
-func (o *entityImplementation) SoftDeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.SoftDeletedAt())
-}
-
 // == DYNAMIC ATTRIBUTES ======================================================
 
 // GetAttribute retrieves an attribute by key
@@ -251,13 +214,11 @@ func (o *entityImplementation) SetAttribute(key string, value string) EntityInte
 // GetAllAttributes returns all dynamic attributes (excludes system columns)
 func (o *entityImplementation) GetAllAttributes() map[string]string {
 	systemColumns := map[string]bool{
-		COLUMN_ID:              true,
-		COLUMN_ENTITY_TYPE:     true,
-		COLUMN_ENTITY_HANDLE:   true,
-		COLUMN_STATUS:          true,
-		COLUMN_CREATED_AT:      true,
-		COLUMN_UPDATED_AT:      true,
-		COLUMN_SOFT_DELETED_AT: true,
+		COLUMN_ID:            true,
+		COLUMN_ENTITY_TYPE:   true,
+		COLUMN_ENTITY_HANDLE: true,
+		COLUMN_CREATED_AT:    true,
+		COLUMN_UPDATED_AT:    true,
 	}
 	
 	attrs := make(map[string]string)
@@ -416,32 +377,22 @@ type EntityInterface interface {
 	ID() string
 	EntityType() string
 	EntityHandle() string
-	Status() string
 	CreatedAt() string
 	CreatedAtCarbon() *carbon.Carbon
 	UpdatedAt() string
 	UpdatedAtCarbon() *carbon.Carbon
-	SoftDeletedAt() string
-	SoftDeletedAtCarbon() *carbon.Carbon
 	
 	// Setters
 	SetID(id string) EntityInterface
 	SetEntityType(entityType string) EntityInterface
 	SetEntityHandle(handle string) EntityInterface
-	SetStatus(status string) EntityInterface
 	SetCreatedAt(createdAt string) EntityInterface
 	SetUpdatedAt(updatedAt string) EntityInterface
-	SetSoftDeletedAt(softDeletedAt string) EntityInterface
 	
 	// Dynamic attributes
 	GetAttribute(key string) string
 	SetAttribute(key string, value string) EntityInterface
 	GetAllAttributes() map[string]string
-	
-	// Status checks
-	IsActive() bool
-	IsInactive() bool
-	IsSoftDeleted() bool
 }
 
 // AttributeInterface defines the contract for attributes
@@ -492,19 +443,19 @@ type AttributeInterface interface {
 
 Following cmsstore pattern exactly - **8 files per entity**:
 
-### 4.1 Entity Files (8 files)
+### 4.1 Entity Files (8 files x 4 entities = 32 files)
 
 | File | Purpose | Lines (Est) |
 |------|---------|-------------|
-| `entity_implementation.go` | Struct with dataobject, getters, setters, status methods | 130 |
+| `entity_implementation.go` | Struct with dataobject, getters, setters | 130 |
 | `entity_implementation_test.go` | Tests for entity implementation | 100 |
 | `entity_query.go` | Query builder (EntityFindByID, EntityList, etc.) | 150 |
 | `entity_query_interface.go` | Query interface definitions | 60 |
 | `entity_query_test.go` | Query tests | 100 |
-| `entity_table_create_sql.go` | SQL schema for entities/trash tables | 80 |
+| `entity_table_create_sql.go` | SQL schema for entities table | 40 |
 | `store_entities.go` | Store CRUD methods (EntityCreate, EntityUpdate, etc.) | 200 |
 | `store_entities_test.go` | Store method tests | 150 |
-| **Entity Subtotal** | | **970** |
+| **Entity Subtotal** | | **930** |
 
 ### 4.2 Attribute Files (8 files)
 
@@ -515,23 +466,61 @@ Following cmsstore pattern exactly - **8 files per entity**:
 | `attribute_query.go` | Query builder (AttributeFind, AttributeList, etc.) | 120 |
 | `attribute_query_interface.go` | Query interface definitions | 50 |
 | `attribute_query_test.go` | Query tests | 80 |
-| `attribute_table_create_sql.go` | SQL schema for attributes/trash tables | 60 |
+| `attribute_table_create_sql.go` | SQL schema for attributes table | 40 |
 | `store_attributes.go` | Store CRUD methods (AttributeCreate, AttributeUpdate, etc.) | 150 |
 | `store_attributes_test.go` | Store method tests | 120 |
-| **Attribute Subtotal** | | **770** |
+| **Attribute Subtotal** | | **750** |
 
-### 4.3 Support Files (5 files)
+### 4.3 EntityTrash Files (8 files)
 
 | File | Purpose | Lines (Est) |
 |------|---------|-------------|
-| `interfaces.go` | EntityInterface, AttributeInterface definitions | 80 |
-| `consts.go` | Column constants, status constants | 30 |
+| `entity_trash_implementation.go` | Struct with dataobject, getters, setters | 130 |
+| `entity_trash_implementation_test.go` | Tests for entity trash implementation | 80 |
+| `entity_trash_query.go` | Query builder (EntityTrashFindByID, etc.) | 100 |
+| `entity_trash_query_interface.go` | Query interface definitions | 40 |
+| `entity_trash_query_test.go` | Query tests | 60 |
+| `entity_trash_table_create_sql.go` | SQL schema for entities_trash table | 40 |
+| `store_entities_trash.go` | Store CRUD methods (EntityTrash, EntityRestore, etc.) | 120 |
+| `store_entities_trash_test.go` | Store method tests | 80 |
+| **EntityTrash Subtotal** | | **650** |
+
+### 4.4 AttributeTrash Files (8 files)
+
+| File | Purpose | Lines (Est) |
+|------|---------|-------------|
+| `attribute_trash_implementation.go` | Struct with dataobject, getters, setters | 110 |
+| `attribute_trash_implementation_test.go` | Tests for attribute trash implementation | 70 |
+| `attribute_trash_query.go` | Query builder (AttributeTrashFindByID, etc.) | 90 |
+| `attribute_trash_query_interface.go` | Query interface definitions | 35 |
+| `attribute_trash_query_test.go` | Query tests | 50 |
+| `attribute_trash_table_create_sql.go` | SQL schema for attributes_trash table | 40 |
+| `store_attributes_trash.go` | Store CRUD methods (AttributeTrash, AttributeRestore, etc.) | 100 |
+| `store_attributes_trash_test.go` | Store method tests | 70 |
+| **AttributeTrash Subtotal** | | **565** |
+
+### 4.5 Support Files (5 files)
+
+| File | Purpose | Lines (Est) |
+|------|---------|-------------|
+| `interfaces.go` | EntityInterface, AttributeInterface, EntityTrashInterface, AttributeTrashInterface | 100 |
+| `consts.go` | Column constants for all 4 entities | 30 |
 | `id_helpers.go` | GenerateShortID(), NormalizeID(), IsShortID() | 60 |
 | `go.mod` | Add dataobject dependency | 1 |
 | `store_implementation.go` | Update AutoMigrate to call new SQL files | 30 |
-| **Support Subtotal** | | **201** |
+| **Support Subtotal** | | **221** |
 
-### 4.4 Files to Remove (consolidated into new structure)
+### 4.6 Total Effort
+
+| Category | Files | Lines (Est) |
+|----------|-------|-------------|
+| **New/Modified** | 37 | 3,116 |
+| **Removed** | 16 | -800 |
+| **Net Total** | **37** | **~2,316** |
+
+**Implementation: ~14-16 days** (4 entities x 8 files each + support).
+
+### 4.7 Files to Remove (consolidated into new structure)
 
 | File | Reason |
 |------|--------|
@@ -542,7 +531,16 @@ Following cmsstore pattern exactly - **8 files per entity**:
 | `entity_find_by_id.go` | Moved to `entity_query.go` |
 | `entity_update.go` | Moved to `store_entities.go` |
 | `entity_delete.go` | Moved to `store_entities.go` |
-| `entity_trash.go` | Moved to `store_entities.go` |
+| `entity_trash.go` | Replaced by `entity_trash_implementation.go` |
+| `entity_trash_create.go` | Moved to `store_entities_trash.go` |
+| `entity_trash_list.go` | Moved to `entity_trash_query.go` |
+| `entity_trash_find.go` | Moved to `entity_trash_query.go` |
+| `entity_trash_restore.go` | Moved to `store_entities_trash.go` |
+| `attribute_trash.go` | Replaced by `attribute_trash_implementation.go` |
+| `attribute_trash_create.go` | Moved to `store_attributes_trash.go` |
+| `attribute_trash_list.go` | Moved to `attribute_trash_query.go` |
+| `attribute_trash_find.go` | Moved to `attribute_trash_query.go` |
+| `attribute_trash_restore.go` | Moved to `store_attributes_trash.go` |
 | `attribute.go` | Replaced by `attribute_implementation.go` |
 | `new_attribute.go` | Merged into `attribute_implementation.go` |
 | `attribute_create.go` | Moved to `store_attributes.go` |
@@ -582,17 +580,15 @@ This is the same dependency used by `cmsstore`.
 
 1. Add `dataobject` dependency to `go.mod`
 2. Create `id_helpers.go` with `GenerateShortID()`
-3. Update `consts.go` with status constants
-4. Define `EntityInterface` and `AttributeInterface`
+3. Update `consts.go` with column constants for all 4 entities
+4. Define interfaces: `EntityInterface`, `AttributeInterface`, `EntityTrashInterface`, `AttributeTrashInterface`
 
 ### Phase 2: Rewrite Entity (2 days)
 
-1. Rewrite `entity.go` using `dataobject.DataObject`
-2. Add all getters/setters with `o.Get()` / `o.Set()` pattern
-3. Implement `IsActive()`, `IsInactive()`, `IsSoftDeleted()`
-4. Add dynamic attribute methods
-5. Remove `new_entity.go` (merge into `entity.go`)
-6. Write/update tests
+1. Rewrite `entity_implementation.go` using `dataobject.DataObject`
+2. Add getters/setters with `o.Get()` / `o.Set()` pattern
+3. Remove `new_entity.go` (merge into `entity_implementation.go`)
+4. Write/update tests
 
 ### Phase 3: Rewrite Attribute (2 days)
 
@@ -632,7 +628,8 @@ This is the same dependency used by `cmsstore`.
 | **ID generation** | `uid.HumanUid()` | `GenerateShortID()` (9-char) |
 | **Constructor** | `NewEntity(opts)` | `NewEntity()` |
 | **Hydration** | `NewEntityFromMap(data)` | `NewEntityFromExistingData(data)` |
-| **Data access** | `entity.id` | `entity.Get(COLUMN_ID)` |
+| **EntityTrash type** | `EntityTrash` struct | `EntityTrashInterface` |
+| **AttributeTrash type** | `AttributeTrash` struct | `AttributeTrashInterface` |
 
 ### 7.2 Code Migration Examples
 
@@ -661,8 +658,8 @@ entity.SetAttribute("name", "iPhone")
 // Access field (same API)
 id := entity.ID()
 
-// Check status (new)
-if entity.IsActive()
+// Check status (trash tables handle deletion, not soft delete)
+// Use EntityTrash() to move to trash, EntityRestore() to restore
 ```
 
 ### 7.3 Database Migration
