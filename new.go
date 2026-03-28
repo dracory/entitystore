@@ -10,15 +10,18 @@ import (
 
 // NewStoreOptions define the options for creating a new entity store
 type NewStoreOptions struct {
-	EntityTableName         string
-	AttributeTableName      string
-	EntityTrashTableName    string
-	AttributeTrashTableName string
-	DB                      *sql.DB
-	Database                sb.DatabaseInterface
-	DbDriverName            string
-	AutomigrateEnabled      bool
-	DebugEnabled            bool
+	EntityTableName            string
+	AttributeTableName         string
+	EntityTrashTableName       string
+	AttributeTrashTableName    string
+	RelationshipTableName      string
+	RelationshipTrashTableName string
+	RelationshipsEnabled       bool
+	DB                         *sql.DB
+	Database                   sb.DatabaseInterface
+	DbDriverName               string
+	AutomigrateEnabled         bool
+	DebugEnabled               bool
 }
 
 // NewStore creates a new entity store
@@ -41,14 +44,17 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	}
 
 	store := &storeImplementation{
-		entityTableName:         opts.EntityTableName,
-		attributeTableName:      opts.AttributeTableName,
-		entityTrashTableName:    opts.EntityTrashTableName,
-		attributeTrashTableName: opts.AttributeTrashTableName,
-		automigrateEnabled:      opts.AutomigrateEnabled,
-		database:                opts.Database,
-		dbDriverName:            opts.DbDriverName,
-		debugEnabled:            opts.DebugEnabled,
+		entityTableName:            opts.EntityTableName,
+		attributeTableName:         opts.AttributeTableName,
+		entityTrashTableName:       opts.EntityTrashTableName,
+		attributeTrashTableName:    opts.AttributeTrashTableName,
+		relationshipTableName:      opts.RelationshipTableName,
+		relationshipTrashTableName: opts.RelationshipTrashTableName,
+		relationshipsEnabled:       opts.RelationshipsEnabled,
+		automigrateEnabled:         opts.AutomigrateEnabled,
+		database:                   opts.Database,
+		dbDriverName:               opts.DbDriverName,
+		debugEnabled:               opts.DebugEnabled,
 	}
 
 	if store.entityTableName == "" {
@@ -65,6 +71,16 @@ func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 
 	if store.attributeTrashTableName == "" {
 		store.attributeTrashTableName = store.attributeTableName + "_trash"
+	}
+
+	// Set default relationship table names if relationships are enabled
+	if store.relationshipsEnabled {
+		if store.relationshipTableName == "" {
+			store.relationshipTableName = DEFAULT_RELATIONSHIP_TABLE_NAME
+		}
+		if store.relationshipTrashTableName == "" {
+			store.relationshipTrashTableName = DEFAULT_RELATIONSHIP_TRASH_TABLE_NAME
+		}
 	}
 
 	if store.automigrateEnabled {

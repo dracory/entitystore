@@ -9,14 +9,17 @@ import (
 
 // storeImplementation implements StoreInterface
 type storeImplementation struct {
-	entityTableName         string
-	attributeTableName      string
-	entityTrashTableName    string
-	attributeTrashTableName string
-	database                sb.DatabaseInterface
-	dbDriverName            string
-	automigrateEnabled      bool
-	debugEnabled            bool
+	entityTableName            string
+	attributeTableName         string
+	entityTrashTableName       string
+	attributeTrashTableName    string
+	relationshipTableName      string
+	relationshipTrashTableName string
+	relationshipsEnabled       bool
+	database                   sb.DatabaseInterface
+	dbDriverName               string
+	automigrateEnabled         bool
+	debugEnabled               bool
 }
 
 // StoreOption options for the vault store
@@ -69,6 +72,14 @@ func (st *storeImplementation) GetEntityTrashTableName() string {
 	return st.entityTrashTableName
 }
 
+func (st *storeImplementation) GetRelationshipTableName() string {
+	return st.relationshipTableName
+}
+
+func (st *storeImplementation) GetRelationshipTrashTableName() string {
+	return st.relationshipTrashTableName
+}
+
 func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 	sqls := []string{}
 
@@ -99,6 +110,37 @@ func (st *storeImplementation) SqlCreateTable() ([]string, error) {
 		return nil, err
 	}
 	sqls = append(sqls, sql4)
+
+	// Create relationship tables if enabled
+	if st.relationshipsEnabled {
+		// Create relationships table
+		sql5, err := st.relationshipTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql5)
+
+		// Create relationships_trash table
+		sql6, err := st.relationshipTrashTableCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql6)
+
+		// Create indexes for relationships table
+		sql7, err := st.relationshipIndexesCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql7...)
+
+		// Create indexes for relationships_trash table
+		sql8, err := st.relationshipTrashIndexesCreateSql()
+		if err != nil {
+			return nil, err
+		}
+		sqls = append(sqls, sql8...)
+	}
 
 	return sqls, nil
 }

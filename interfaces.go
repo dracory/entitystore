@@ -63,6 +63,32 @@ type AttributeInterface interface {
 	SetFloat(value float64) AttributeInterface
 }
 
+// == RELATIONSHIP INTERFACE ==================================================
+
+// RelationshipInterface defines the contract for entity relationships
+type RelationshipInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	EntityID() string
+	RelatedEntityID() string
+	RelationshipType() string
+	ParentID() string
+	Sequence() int
+	Metadata() string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetEntityID(entityID string) RelationshipInterface
+	SetRelatedEntityID(relatedID string) RelationshipInterface
+	SetRelationshipType(relType string) RelationshipInterface
+	SetParentID(parentID string) RelationshipInterface
+	SetSequence(sequence int) RelationshipInterface
+	SetMetadata(metadata string) RelationshipInterface
+	SetCreatedAt(createdAt string) RelationshipInterface
+}
+
 // == TRASH INTERFACES =======================================================
 
 // EntityTrashInterface defines the contract for trashed entities
@@ -115,6 +141,35 @@ type AttributeTrashInterface interface {
 	SetDeletedBy(deletedBy string) AttributeTrashInterface
 }
 
+// RelationshipTrashInterface defines the contract for trashed relationships
+type RelationshipTrashInterface interface {
+	dataobject.DataObjectInterface
+
+	// Core getters
+	EntityID() string
+	RelatedEntityID() string
+	RelationshipType() string
+	ParentID() string
+	Sequence() int
+	Metadata() string
+	CreatedAt() string
+	CreatedAtCarbon() *carbon.Carbon
+	DeletedAt() string
+	DeletedAtCarbon() *carbon.Carbon
+	DeletedBy() string
+
+	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
+	SetEntityID(entityID string) RelationshipTrashInterface
+	SetRelatedEntityID(relatedID string) RelationshipTrashInterface
+	SetRelationshipType(relType string) RelationshipTrashInterface
+	SetParentID(parentID string) RelationshipTrashInterface
+	SetSequence(sequence int) RelationshipTrashInterface
+	SetMetadata(metadata string) RelationshipTrashInterface
+	SetCreatedAt(createdAt string) RelationshipTrashInterface
+	SetDeletedAt(deletedAt string) RelationshipTrashInterface
+	SetDeletedBy(deletedBy string) RelationshipTrashInterface
+}
+
 // == STORE INTERFACE ========================================================
 
 type StoreInterface interface {
@@ -125,6 +180,8 @@ type StoreInterface interface {
 	GetDB() *sql.DB
 	GetEntityTableName() string
 	GetEntityTrashTableName() string
+	GetRelationshipTableName() string
+	GetRelationshipTrashTableName() string
 
 	// Attribute CRUD
 	AttributeCreate(ctx context.Context, attr AttributeInterface) error
@@ -152,4 +209,18 @@ type StoreInterface interface {
 	EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error)
 	EntityTrash(ctx context.Context, entityID string) (bool, error)
 	EntityUpdate(ctx context.Context, entity EntityInterface) error
+
+	// Relationship CRUD + helpers
+	RelationshipCreate(ctx context.Context, relationship RelationshipInterface) error
+	RelationshipCreateByOptions(ctx context.Context, options RelationshipOptions) (RelationshipInterface, error)
+	RelationshipCount(ctx context.Context, options RelationshipQueryOptions) (int64, error)
+	RelationshipDelete(ctx context.Context, relationshipID string) (bool, error)
+	RelationshipDeleteAll(ctx context.Context, entityID string) error
+	RelationshipFind(ctx context.Context, relationshipID string) (RelationshipInterface, error)
+	RelationshipFindByEntities(ctx context.Context, entityID string, relatedEntityID string, relationshipType string) (RelationshipInterface, error)
+	RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error)
+	RelationshipListRelated(ctx context.Context, relatedEntityID string, relationshipType string) ([]RelationshipInterface, error)
+	RelationshipRestore(ctx context.Context, relationshipID string) (bool, error)
+	RelationshipTrash(ctx context.Context, relationshipID string, deletedBy string) (bool, error)
+	RelationshipTrashList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipTrashInterface, error)
 }
