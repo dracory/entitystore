@@ -55,6 +55,11 @@ AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attri
 AttributeSetFloat(ctx context.Context, entityID string, attributeKey string, attributeValue float64) error
 AttributeSetInterface(ctx context.Context, entityID string, attributeKey string, attributeValue interface{}) error
 AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error
+
+// Getters
+AttributeGetString(ctx context.Context, entityID string, attributeKey string) (value string, exists bool, err error)
+AttributeGetInt(ctx context.Context, entityID string, attributeKey string) (value int64, exists bool, err error)
+AttributeGetFloat(ctx context.Context, entityID string, attributeKey string) (value float64, exists bool, err error)
 ```
 
 ### Relationship Operations (Requires `RelationshipsEnabled: true`)

@@ -64,6 +64,23 @@ salary, _ := entity.GetFloat("salary", 0.0)
 tags := entity.GetInterface("tags", []string{}).([]string)
 ```
 
+### Using Store Getters
+
+```go
+// Get attribute values directly (returns value, exists flag, and error)
+name, exists, err := store.AttributeGetString(ctx, entity.ID(), "name")
+if err != nil {
+    // Handle database error
+}
+if !exists {
+    // Handle missing attribute
+}
+
+// Get typed values
+age, exists, err := store.AttributeGetInt(ctx, entity.ID(), "age")
+rating, exists, err := store.AttributeGetFloat(ctx, entity.ID(), "rating")
+```
+
 ### Direct Attribute Access
 
 ```go
@@ -141,6 +158,9 @@ deletedCount, err := store.AttributeDeleteByEntityID(ctx, entity.ID())
 | `AttributeDelete(ctx, id string) (bool, error)` | Hard delete |
 | `AttributeDeleteByEntityID(ctx, entityID string) (int64, error)` | Delete by entity |
 | `AttributeFind(ctx, entityID, key string) (AttributeInterface, error)` | Find attribute |
+| `AttributeGetFloat(ctx, entityID, key string) (float64, bool, error)` | Get float value |
+| `AttributeGetInt(ctx, entityID, key string) (int64, bool, error)` | Get int value |
+| `AttributeGetString(ctx, entityID, key string) (string, bool, error)` | Get string value |
 | `AttributeList(ctx, opts) ([]AttributeInterface, error)` | List attributes |
 | `AttributeRestore(ctx, id string) (bool, error)` | Restore from trash |
 | `AttributeSetFloat(ctx, entityID, key string, value float64) error` | Upsert float |
