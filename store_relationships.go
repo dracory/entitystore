@@ -49,7 +49,7 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.relationshipTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -58,7 +58,7 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -94,7 +94,7 @@ func (st *storeImplementation) RelationshipDelete(ctx context.Context, relations
 		Delete(st.relationshipTableName).
 		Where(goqu.C(COLUMN_ID).Eq(relationshipID))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -103,7 +103,7 @@ func (st *storeImplementation) RelationshipDelete(ctx context.Context, relations
 		log.Println(sqlStr)
 	}
 
-	result, err := st.database.Exec(ctx, sqlStr)
+	result, err := st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -119,7 +119,7 @@ func (st *storeImplementation) RelationshipDeleteAll(ctx context.Context, entity
 		Delete(st.relationshipTableName).
 		Where(goqu.C(COLUMN_ENTITY_ID).Eq(entityID))
 
-	sqlStr1, _, errSql := q1.ToSQL()
+	sqlStr1, params1, errSql := q1.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -128,7 +128,7 @@ func (st *storeImplementation) RelationshipDeleteAll(ctx context.Context, entity
 		log.Println(sqlStr1)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr1)
+	_, err := st.database.Exec(ctx, sqlStr1, params1...)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (st *storeImplementation) RelationshipDeleteAll(ctx context.Context, entity
 		Delete(st.relationshipTableName).
 		Where(goqu.C(COLUMN_RELATED_ENTITY_ID).Eq(entityID))
 
-	sqlStr2, _, errSql := q2.ToSQL()
+	sqlStr2, params2, errSql := q2.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -147,7 +147,7 @@ func (st *storeImplementation) RelationshipDeleteAll(ctx context.Context, entity
 		log.Println(sqlStr2)
 	}
 
-	_, err = st.database.Exec(ctx, sqlStr2)
+	_, err = st.database.Exec(ctx, sqlStr2, params2...)
 	return err
 }
 

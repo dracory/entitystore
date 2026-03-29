@@ -50,7 +50,7 @@ func (st *storeImplementation) TaxonomyCreate(ctx context.Context, taxonomy Taxo
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.taxonomyTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -59,7 +59,7 @@ func (st *storeImplementation) TaxonomyCreate(ctx context.Context, taxonomy Taxo
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -120,7 +120,7 @@ func (st *storeImplementation) TaxonomyDelete(ctx context.Context, taxonomyID st
 		Delete(st.taxonomyTableName).
 		Where(goqu.C(COLUMN_ID).Eq(taxonomyID))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -129,7 +129,7 @@ func (st *storeImplementation) TaxonomyDelete(ctx context.Context, taxonomyID st
 		log.Println(sqlStr)
 	}
 
-	result, err := st.database.Exec(ctx, sqlStr)
+	result, err := st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -239,7 +239,7 @@ func (st *storeImplementation) TaxonomyList(ctx context.Context, options Taxonom
 		q = q.Limit(uint(options.Limit))
 	}
 
-	sqlStr, _, errSql := q.Select().ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -248,7 +248,7 @@ func (st *storeImplementation) TaxonomyList(ctx context.Context, options Taxonom
 		log.Println(sqlStr)
 	}
 
-	taxonomyMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	taxonomyMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func (st *storeImplementation) TaxonomyCount(ctx context.Context, options Taxono
 		q = q.Where(goqu.C(COLUMN_PARENT_ID).Eq(options.ParentID))
 	}
 
-	sqlStr, _, errSql := q.Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
 	if errSql != nil {
 		return 0, errSql
 	}
@@ -294,7 +294,7 @@ func (st *storeImplementation) TaxonomyCount(ctx context.Context, options Taxono
 		log.Println(sqlStr)
 	}
 
-	maps, err := st.database.SelectToMapString(ctx, sqlStr)
+	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return 0, err
 	}
@@ -344,7 +344,7 @@ func (st *storeImplementation) TaxonomyUpdate(ctx context.Context, taxonomy Taxo
 		Set(record).
 		Where(goqu.C(COLUMN_ID).Eq(taxonomy.ID()))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -353,6 +353,6 @@ func (st *storeImplementation) TaxonomyUpdate(ctx context.Context, taxonomy Taxo
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }

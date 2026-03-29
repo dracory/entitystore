@@ -42,7 +42,7 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 	}
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTrashTableName).Rows(record)
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -51,7 +51,7 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 		log.Println(sqlStr)
 	}
 
-	_, err = st.database.Exec(ctx, sqlStr)
+	_, err = st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -74,12 +74,12 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 		}
 
 		q2 := goqu.Dialect(st.dbDriverName).Insert(st.attributeTrashTableName).Rows(attrRecord)
-		sqlStr2, _, errSql2 := q2.ToSQL()
+		sqlStr2, params2, errSql2 := q2.Prepared(true).ToSQL()
 		if errSql2 != nil {
 			return false, errSql2
 		}
 
-		_, err = st.database.Exec(ctx, sqlStr2)
+		_, err = st.database.Exec(ctx, sqlStr2, params2...)
 		if err != nil {
 			return false, err
 		}
@@ -112,7 +112,7 @@ func (st *storeImplementation) EntityRestore(ctx context.Context, id string) err
 
 	// Delete entity from trash
 	delQ := goqu.Dialect(st.dbDriverName).Delete(st.entityTrashTableName).Where(goqu.C(COLUMN_ID).Eq(id))
-	delSql, _, _ := delQ.ToSQL()
-	_, err := st.database.Exec(ctx, delSql)
+	delSql, params, _ := delQ.Prepared(true).ToSQL()
+	_, err := st.database.Exec(ctx, delSql, params...)
 	return err
 }

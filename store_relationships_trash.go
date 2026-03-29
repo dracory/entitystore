@@ -55,7 +55,7 @@ func (st *storeImplementation) RelationshipTrash(ctx context.Context, relationsh
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.relationshipTrashTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -64,7 +64,7 @@ func (st *storeImplementation) RelationshipTrash(ctx context.Context, relationsh
 		log.Println(sqlStr)
 	}
 
-	_, err = tx.ExecContext(ctx, sqlStr)
+	_, err = tx.ExecContext(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -74,7 +74,7 @@ func (st *storeImplementation) RelationshipTrash(ctx context.Context, relationsh
 		Delete(st.relationshipTableName).
 		Where(goqu.C(COLUMN_ID).Eq(relationshipID))
 
-	sqlStr2, _, errSql2 := q2.ToSQL()
+	sqlStr2, params2, errSql2 := q2.Prepared(true).ToSQL()
 	if errSql2 != nil {
 		return false, errSql2
 	}
@@ -83,7 +83,7 @@ func (st *storeImplementation) RelationshipTrash(ctx context.Context, relationsh
 		log.Println(sqlStr2)
 	}
 
-	result, err := tx.ExecContext(ctx, sqlStr2)
+	result, err := tx.ExecContext(ctx, sqlStr2, params2...)
 	if err != nil {
 		return false, err
 	}
@@ -147,7 +147,7 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.relationshipTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -156,7 +156,7 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 		log.Println(sqlStr)
 	}
 
-	_, err = tx.ExecContext(ctx, sqlStr)
+	_, err = tx.ExecContext(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -166,7 +166,7 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 		Delete(st.relationshipTrashTableName).
 		Where(goqu.C(COLUMN_ID).Eq(relationshipID))
 
-	sqlStr2, _, errSql2 := q2.ToSQL()
+	sqlStr2, params2, errSql2 := q2.Prepared(true).ToSQL()
 	if errSql2 != nil {
 		return false, errSql2
 	}
@@ -175,7 +175,7 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 		log.Println(sqlStr2)
 	}
 
-	result, err := tx.ExecContext(ctx, sqlStr2)
+	result, err := tx.ExecContext(ctx, sqlStr2, params2...)
 	if err != nil {
 		return false, err
 	}
@@ -239,7 +239,7 @@ func (st *storeImplementation) RelationshipTrashList(ctx context.Context, option
 		q = q.Limit(uint(options.Limit))
 	}
 
-	sqlStr, _, errSql := q.Select().ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -248,7 +248,7 @@ func (st *storeImplementation) RelationshipTrashList(ctx context.Context, option
 		log.Println(sqlStr)
 	}
 
-	relationshipMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	relationshipMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return nil, err
 	}

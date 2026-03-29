@@ -82,7 +82,7 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTaxonomyTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -91,7 +91,7 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		log.Println(sqlStr)
 	}
 
-	_, err = st.database.Exec(ctx, sqlStr)
+	_, err = st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -113,7 +113,7 @@ func (st *storeImplementation) EntityTaxonomyRemove(ctx context.Context, entityI
 			goqu.C(COLUMN_TERM_ID).Eq(termID),
 		)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -122,7 +122,7 @@ func (st *storeImplementation) EntityTaxonomyRemove(ctx context.Context, entityI
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -183,7 +183,7 @@ func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, options E
 		q = q.Limit(uint(options.Limit))
 	}
 
-	sqlStr, _, errSql := q.Select().ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -192,7 +192,7 @@ func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, options E
 		log.Println(sqlStr)
 	}
 
-	assignmentMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	assignmentMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (st *storeImplementation) EntityTaxonomyCount(ctx context.Context, options 
 		q = q.Where(goqu.C(COLUMN_TERM_ID).In(options.TermIDs))
 	}
 
-	sqlStr, _, errSql := q.Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
 	if errSql != nil {
 		return 0, errSql
 	}
@@ -246,7 +246,7 @@ func (st *storeImplementation) EntityTaxonomyCount(ctx context.Context, options 
 		log.Println(sqlStr)
 	}
 
-	maps, err := st.database.SelectToMapString(ctx, sqlStr)
+	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return 0, err
 	}

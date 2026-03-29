@@ -59,7 +59,7 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 	}
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.taxonomyTermTrashTableName).Rows(record)
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -68,7 +68,7 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 		log.Println(sqlStr)
 	}
 
-	_, err = st.database.Exec(ctx, sqlStr)
+	_, err = st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -117,7 +117,7 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 		Delete(st.taxonomyTermTrashTableName).
 		Where(goqu.C(COLUMN_ID).Eq(termID))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -126,7 +126,7 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 		log.Println(sqlStr)
 	}
 
-	result, err := st.database.Exec(ctx, sqlStr)
+	result, err := st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -184,7 +184,7 @@ func (st *storeImplementation) TaxonomyTermTrashList(ctx context.Context, option
 		q = q.Limit(uint(options.Limit))
 	}
 
-	sqlStr, _, errSql := q.Select().ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -193,7 +193,7 @@ func (st *storeImplementation) TaxonomyTermTrashList(ctx context.Context, option
 		log.Println(sqlStr)
 	}
 
-	trashMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	trashMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return nil, err
 	}

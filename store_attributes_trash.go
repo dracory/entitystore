@@ -25,7 +25,7 @@ func (st *storeImplementation) AttributeTrash(ctx context.Context, id string, de
 	}
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.attributeTrashTableName).Rows(record)
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -34,7 +34,7 @@ func (st *storeImplementation) AttributeTrash(ctx context.Context, id string, de
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (st *storeImplementation) AttributeRestore(ctx context.Context, id string) 
 		Delete(st.attributeTrashTableName).
 		Where(goqu.C(COLUMN_ID).Eq(id))
 
-	sqlStr, _, _ := q.ToSQL()
-	_, err := st.database.Exec(ctx, sqlStr)
+	sqlStr, params, _ := q.Prepared(true).ToSQL()
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }

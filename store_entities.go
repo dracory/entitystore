@@ -35,7 +35,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -44,7 +44,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -62,7 +62,7 @@ func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityIn
 		Where(goqu.C(COLUMN_ID).Eq(entity.ID())).
 		Set(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -71,7 +71,7 @@ func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityIn
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	if err != nil && st.GetDebug() {
 		log.Println(err)
 	}
@@ -85,7 +85,7 @@ func (st *storeImplementation) EntityDelete(ctx context.Context, id string) (boo
 		Delete(st.entityTableName).
 		Where(goqu.C(COLUMN_ID).Eq(id))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return false, errSql
 	}
@@ -94,7 +94,7 @@ func (st *storeImplementation) EntityDelete(ctx context.Context, id string) (boo
 		log.Println(sqlStr)
 	}
 
-	result, err := st.database.Exec(ctx, sqlStr)
+	result, err := st.database.Exec(ctx, sqlStr, params...)
 	if err != nil {
 		return false, err
 	}
@@ -156,7 +156,7 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error) {
 	q := st.EntityQuery(options)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -165,7 +165,7 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 		log.Println(sqlStr)
 	}
 
-	entityMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	entityMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		log.Println("EntityList error:", err)
 		return nil, err
@@ -183,7 +183,7 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
 	q := st.EntityQuery(options)
 	q = q.Limit(1).Select(goqu.COUNT(goqu.Star()).As("count"))
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return 0, errSql
 	}
@@ -192,7 +192,7 @@ func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQu
 		log.Println(sqlStr)
 	}
 
-	maps, err := st.database.SelectToMapString(ctx, sqlStr)
+	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return 0, err
 	}
@@ -227,9 +227,7 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 		}
 	}
 
-	trash := NewEntity()
-	trash.SetType("unknown")
-	return trash, nil
+	return nil, nil
 }
 
 // EntityListByAttribute finds entities by type and attribute key/value

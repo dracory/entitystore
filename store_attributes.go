@@ -35,7 +35,7 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 
 	q := goqu.Dialect(st.dbDriverName).Insert(st.attributeTableName).Rows(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -44,7 +44,7 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -62,7 +62,7 @@ func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute At
 		Where(goqu.C(COLUMN_ID).Eq(attribute.ID())).
 		Set(record)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -71,7 +71,7 @@ func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute At
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -81,7 +81,7 @@ func (st *storeImplementation) AttributeDelete(ctx context.Context, id string) e
 		Delete(st.attributeTableName).
 		Where(goqu.C(COLUMN_ID).Eq(id))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -90,7 +90,7 @@ func (st *storeImplementation) AttributeDelete(ctx context.Context, id string) e
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -100,7 +100,7 @@ func (st *storeImplementation) AttributesDeleteByEntityID(ctx context.Context, e
 		Delete(st.attributeTableName).
 		Where(goqu.C(COLUMN_ENTITY_ID).Eq(entityID))
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return errSql
 	}
@@ -109,7 +109,7 @@ func (st *storeImplementation) AttributesDeleteByEntityID(ctx context.Context, e
 		log.Println(sqlStr)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr)
+	_, err := st.database.Exec(ctx, sqlStr, params...)
 	return err
 }
 
@@ -176,7 +176,7 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 func (st *storeImplementation) AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error) {
 	q := st.AttributeQuery(options)
 
-	sqlStr, _, errSql := q.ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -185,7 +185,7 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 		log.Println(sqlStr)
 	}
 
-	attributeMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	attributeMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return nil, err
 	}
