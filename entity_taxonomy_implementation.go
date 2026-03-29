@@ -19,6 +19,7 @@ var _ EntityTaxonomyInterface = (*entityTaxonomyImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewEntityTaxonomy creates a new entity-taxonomy assignment with default values
+// Generates a new short ID and sets timestamps to the current time
 func NewEntityTaxonomy() EntityTaxonomyInterface {
 	o := &entityTaxonomyImplementation{}
 	o.SetID(GenerateShortID())
@@ -29,7 +30,8 @@ func NewEntityTaxonomy() EntityTaxonomyInterface {
 	return o
 }
 
-// NewEntityTaxonomyFromExistingData creates an entity-taxonomy assignment from a raw data map (e.g. from DB rows)
+// NewEntityTaxonomyFromExistingData creates an entity-taxonomy assignment from a raw data map (e.g., from DB rows)
+// Used internally when hydrating entity-taxonomy assignments from database results
 func NewEntityTaxonomyFromExistingData(data map[string]string) EntityTaxonomyInterface {
 	o := &entityTaxonomyImplementation{}
 	o.Hydrate(data)

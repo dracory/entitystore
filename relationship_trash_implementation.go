@@ -21,6 +21,7 @@ var _ RelationshipTrashInterface = (*relationshipTrashImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewRelationshipTrash creates a new relationship trash record with default values
+// Sets default deleted_at timestamp and empty deleted_by
 func NewRelationshipTrash() RelationshipTrashInterface {
 	o := &relationshipTrashImplementation{}
 	o.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
@@ -28,7 +29,8 @@ func NewRelationshipTrash() RelationshipTrashInterface {
 	return o
 }
 
-// NewRelationshipTrashFromExistingData creates a relationship trash record from a raw data map
+// NewRelationshipTrashFromExistingData creates a relationship trash record from a raw data map (e.g., from DB rows)
+// Used internally when hydrating trashed relationships from database results
 func NewRelationshipTrashFromExistingData(data map[string]string) RelationshipTrashInterface {
 	o := &relationshipTrashImplementation{}
 	o.Hydrate(data)

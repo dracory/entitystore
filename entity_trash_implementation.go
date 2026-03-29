@@ -19,6 +19,7 @@ var _ EntityTrashInterface = (*entityTrashImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewEntityTrash creates a new entity trash record with default values
+// Generates a new short ID and sets timestamps to the current time
 func NewEntityTrash() EntityTrashInterface {
 	o := &entityTrashImplementation{}
 	o.SetType("")
@@ -31,7 +32,8 @@ func NewEntityTrash() EntityTrashInterface {
 	return o
 }
 
-// NewEntityTrashFromExistingData creates an entity trash record from a raw data map
+// NewEntityTrashFromExistingData creates an entity trash record from a raw data map (e.g., from DB rows)
+// Used internally when hydrating trashed entities from database results
 func NewEntityTrashFromExistingData(data map[string]string) EntityTrashInterface {
 	o := &entityTrashImplementation{}
 	o.Hydrate(data)

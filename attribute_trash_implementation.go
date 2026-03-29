@@ -19,6 +19,7 @@ var _ AttributeTrashInterface = (*attributeTrashImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewAttributeTrash creates a new attribute trash record with default values
+// Generates a new short ID and sets timestamps to the current time
 func NewAttributeTrash() AttributeTrashInterface {
 	o := &attributeTrashImplementation{}
 	o.SetID(GenerateShortID())
@@ -32,7 +33,8 @@ func NewAttributeTrash() AttributeTrashInterface {
 	return o
 }
 
-// NewAttributeTrashFromExistingData creates an attribute trash record from a raw data map
+// NewAttributeTrashFromExistingData creates an attribute trash record from a raw data map (e.g., from DB rows)
+// Used internally when hydrating trashed attributes from database results
 func NewAttributeTrashFromExistingData(data map[string]string) AttributeTrashInterface {
 	o := &attributeTrashImplementation{}
 	o.Hydrate(data)

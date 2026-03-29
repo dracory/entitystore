@@ -21,6 +21,7 @@ var _ TaxonomyTermInterface = (*taxonomyTermImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewTaxonomyTerm creates a new taxonomy term with default values
+// Generates a new short ID and sets timestamps to the current time
 func NewTaxonomyTerm() TaxonomyTermInterface {
 	o := &taxonomyTermImplementation{}
 	o.SetID(GenerateShortID())
@@ -34,7 +35,8 @@ func NewTaxonomyTerm() TaxonomyTermInterface {
 	return o
 }
 
-// NewTaxonomyTermFromExistingData creates a taxonomy term from a raw data map (e.g. from DB rows)
+// NewTaxonomyTermFromExistingData creates a taxonomy term from a raw data map (e.g., from DB rows)
+// Used internally when hydrating taxonomy terms from database results
 func NewTaxonomyTermFromExistingData(data map[string]string) TaxonomyTermInterface {
 	o := &taxonomyTermImplementation{}
 	o.Hydrate(data)

@@ -21,6 +21,7 @@ var _ TaxonomyTermTrashInterface = (*taxonomyTermTrashImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewTaxonomyTermTrash creates a new taxonomy term trash record with default values
+// Sets default deleted_at timestamp and empty deleted_by
 func NewTaxonomyTermTrash() TaxonomyTermTrashInterface {
 	o := &taxonomyTermTrashImplementation{}
 	o.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
@@ -28,7 +29,8 @@ func NewTaxonomyTermTrash() TaxonomyTermTrashInterface {
 	return o
 }
 
-// NewTaxonomyTermTrashFromExistingData creates a taxonomy term trash record from a raw data map
+// NewTaxonomyTermTrashFromExistingData creates a taxonomy term trash record from a raw data map (e.g., from DB rows)
+// Used internally when hydrating trashed taxonomy terms from database results
 func NewTaxonomyTermTrashFromExistingData(data map[string]string) TaxonomyTermTrashInterface {
 	o := &taxonomyTermTrashImplementation{}
 	o.Hydrate(data)

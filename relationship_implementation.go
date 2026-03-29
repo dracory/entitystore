@@ -21,13 +21,15 @@ var _ RelationshipInterface = (*relationshipImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewRelationship creates a new relationship with default values
+// Sets default sequence to 0
 func NewRelationship() RelationshipInterface {
 	o := &relationshipImplementation{}
 	o.SetSequence(0) // Default sequence to 0
 	return o
 }
 
-// NewRelationshipFromExistingData creates a relationship from a raw data map (e.g. from DB rows)
+// NewRelationshipFromExistingData creates a relationship from a raw data map (e.g., from DB rows)
+// Used internally when hydrating relationships from database results
 func NewRelationshipFromExistingData(data map[string]string) RelationshipInterface {
 	o := &relationshipImplementation{}
 	o.Hydrate(data)
