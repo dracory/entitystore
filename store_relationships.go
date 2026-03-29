@@ -197,10 +197,9 @@ func (st *storeImplementation) RelationshipFindByEntities(ctx context.Context, e
 	return nil, nil
 }
 
-// RelationshipList lists relationships matching the given query options.
-// Supports filtering by entity IDs, relationship type, parent ID, and pagination.
-// Default sort order is ascending by created_at.
-func (st *storeImplementation) RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error) {
+// relationshipSelectQuery builds a SELECT query for relationships with all filter conditions applied.
+// This is used by both RelationshipList and RelationshipCount to ensure consistent filtering.
+func (st *storeImplementation) relationshipSelectQuery(options RelationshipQueryOptions) *goqu.SelectDataset {
 	q := goqu.Dialect(st.dbDriverName).From(st.relationshipTableName)
 
 	if len(options.IDs) > 0 {
@@ -235,6 +234,15 @@ func (st *storeImplementation) RelationshipList(ctx context.Context, options Rel
 		q = q.Where(goqu.C(COLUMN_PARENT_ID).Eq(options.ParentID))
 	}
 
+	return q
+}
+
+// RelationshipList lists relationships matching the given query options.
+// Supports filtering by entity IDs, relationship type, parent ID, and pagination.
+// Default sort order is ascending by created_at.
+func (st *storeImplementation) RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error) {
+	q := st.relationshipSelectQuery(options)
+
 	sortByColumn := COLUMN_CREATED_AT
 	sortOrder := "asc"
 
@@ -260,7 +268,7 @@ func (st *storeImplementation) RelationshipList(ctx context.Context, options Rel
 		q = q.Limit(uint(options.Limit))
 	}
 
-	sqlStr, _, errSql := q.Select().ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
 	if errSql != nil {
 		return nil, errSql
 	}
@@ -269,7 +277,7 @@ func (st *storeImplementation) RelationshipList(ctx context.Context, options Rel
 		log.Println(sqlStr)
 	}
 
-	relationshipMaps, err := st.database.SelectToMapString(ctx, sqlStr)
+	relationshipMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -294,22 +302,9 @@ func (st *storeImplementation) RelationshipListRelated(ctx context.Context, rela
 // RelationshipCount counts relationships matching the given options.
 // Returns the total number of relationships that match the query criteria.
 func (st *storeImplementation) RelationshipCount(ctx context.Context, options RelationshipQueryOptions) (int64, error) {
-	options.CountOnly = true
-	q := goqu.Dialect(st.dbDriverName).From(st.relationshipTableName)
+	q := st.relationshipSelectQuery(options)
 
-	if options.EntityID != "" {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).Eq(options.EntityID))
-	}
-
-	if options.RelatedEntityID != "" {
-		q = q.Where(goqu.C(COLUMN_RELATED_ENTITY_ID).Eq(options.RelatedEntityID))
-	}
-
-	if options.RelationshipType != "" {
-		q = q.Where(goqu.C(COLUMN_RELATIONSHIP_TYPE).Eq(options.RelationshipType))
-	}
-
-	sqlStr, _, errSql := q.Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
+	sqlStr, params, errSql := q.Prepared(true).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
 	if errSql != nil {
 		return 0, errSql
 	}
@@ -318,7 +313,7 @@ func (st *storeImplementation) RelationshipCount(ctx context.Context, options Re
 		log.Println(sqlStr)
 	}
 
-	maps, err := st.database.SelectToMapString(ctx, sqlStr)
+	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
 	if err != nil {
 		return 0, err
 	}
