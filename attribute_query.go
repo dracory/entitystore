@@ -2,20 +2,23 @@ package entitystore
 
 import "github.com/doug-martin/goqu/v9"
 
+// AttributeQueryOptions provides filtering and pagination options for attribute queries
 type AttributeQueryOptions struct {
-	ID           string
-	IDs          []string
-	EntityID     string
-	EntityType   string
-	EntityHandle string
-	AttributeKey string
-	Limit        uint64
-	Offset       uint64
-	SortBy       string
-	SortOrder    string // asc / dec
-	CountOnly    bool
+	ID           string   // Filter by specific attribute ID
+	IDs          []string // Filter by multiple attribute IDs
+	EntityID     string   // Filter by associated entity ID
+	EntityType   string   // Filter by entity type (requires EntityHandle or join)
+	EntityHandle string   // Filter by entity handle (requires EntityType or join)
+	AttributeKey string   // Filter by attribute key/name
+	Limit        uint64   // Maximum number of results to return
+	Offset       uint64   // Number of results to skip
+	SortBy       string   // Column to sort by (default: id)
+	SortOrder    string   // Sort direction: "asc" or "desc"
+	CountOnly    bool     // Return only count, not results
 }
 
+// AttributeQuery builds a goqu query for attributes based on the provided options
+// Returns a SelectDataset that can be further customized or executed
 func (st *storeImplementation) AttributeQuery(options AttributeQueryOptions) *goqu.SelectDataset {
 	q := goqu.Dialect(st.dbDriverName).From(st.attributeTableName)
 

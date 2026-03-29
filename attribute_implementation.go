@@ -20,6 +20,7 @@ var _ AttributeInterface = (*attributeImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewAttribute creates a new attribute with default values
+// Generates a new short ID and sets timestamps to the current time
 func NewAttribute() AttributeInterface {
 	o := &attributeImplementation{}
 	o.SetID(GenerateShortID())
@@ -31,7 +32,8 @@ func NewAttribute() AttributeInterface {
 	return o
 }
 
-// NewAttributeFromExistingData creates an attribute from a raw data map (e.g. from DB rows)
+// NewAttributeFromExistingData creates an attribute from a raw data map (e.g., from DB rows)
+// Used internally when hydrating attributes from database results
 func NewAttributeFromExistingData(data map[string]string) AttributeInterface {
 	o := &attributeImplementation{}
 	o.Hydrate(data)

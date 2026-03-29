@@ -10,7 +10,8 @@ import (
 	"github.com/dromara/carbon/v2"
 )
 
-// EntityCreate persists a new entity record
+// EntityCreate persists a new entity record to the database
+// Automatically generates an ID if not set and timestamps if empty
 func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityInterface) error {
 	if entity == nil {
 		return errors.New("entity cannot be nil")
@@ -49,6 +50,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 }
 
 // EntityUpdate persists changes to an existing entity record
+// Automatically updates the updated_at timestamp
 func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityInterface) error {
 	entity.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
@@ -79,7 +81,8 @@ func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityIn
 	return err
 }
 
-// EntityDelete removes an entity record by ID
+// EntityDelete permanently removes an entity record by ID
+// Returns true if a record was deleted, false otherwise
 func (st *storeImplementation) EntityDelete(ctx context.Context, id string) (bool, error) {
 	q := goqu.Dialect(st.dbDriverName).
 		Delete(st.entityTableName).
@@ -103,7 +106,8 @@ func (st *storeImplementation) EntityDelete(ctx context.Context, id string) (boo
 	return affected > 0, nil
 }
 
-// EntityFindByID finds an entity by its ID
+// EntityFindByID finds an entity by its unique ID
+// Returns nil if not found
 func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID string) (EntityInterface, error) {
 	if entityID == "" {
 		return nil, errors.New("entity ID cannot be empty")
@@ -126,6 +130,7 @@ func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID stri
 }
 
 // EntityFindByHandle finds an entity by its type and handle
+// Returns nil if not found
 func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (EntityInterface, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
@@ -152,7 +157,8 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 	return nil, nil
 }
 
-// EntityList lists entities matching the given query options
+// EntityList retrieves entities matching the given query options
+// Supports filtering by ID, entity type, handle, and pagination
 func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error) {
 	q := st.EntityQuery(options)
 
@@ -179,7 +185,8 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 	return list, nil
 }
 
-// EntityCount counts entities
+// EntityCount counts entities matching the given query options
+// Useful for pagination calculations
 func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
 	q := st.EntityQuery(options)
 	q = q.Limit(1).Select(goqu.COUNT(goqu.Star()).As("count"))
@@ -205,12 +212,14 @@ func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQu
 	return count, nil
 }
 
-// EntityAttributeList lists all attributes for an entity
+// EntityAttributeList retrieves all attributes for a given entity
+// Convenience method that wraps AttributeList
 func (st *storeImplementation) EntityAttributeList(ctx context.Context, entityID string) ([]AttributeInterface, error) {
 	return st.AttributeList(ctx, AttributeQueryOptions{EntityID: entityID})
 }
 
 // EntityFindByAttribute finds an entity by type and attribute key/value
+// Returns nil if not found
 func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (EntityInterface, error) {
 	// Find by attribute first
 	attrs, err := st.AttributeList(ctx, AttributeQueryOptions{
@@ -230,7 +239,8 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 	return nil, nil
 }
 
-// EntityListByAttribute finds entities by type and attribute key/value
+// EntityListByAttribute finds all entities of a type with a specific attribute value
+// Returns an empty slice if none found
 func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error) {
 	// Get all entities of this type
 	entities, err := st.EntityList(ctx, EntityQueryOptions{EntityType: entityType})
@@ -249,7 +259,8 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 	return results, nil
 }
 
-// EntityCreateWithType is a shortcut to create an entity by providing only the type
+// EntityCreateWithType creates a new entity with only the type specified
+// Generates a new ID and timestamps automatically
 func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityType string) (EntityInterface, error) {
 	entity := NewEntity()
 	entity.SetType(entityType)
@@ -259,7 +270,8 @@ func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityT
 	return entity, nil
 }
 
-// EntityCreateWithTypeAndAttributes creates an entity with attributes
+// EntityCreateWithTypeAndAttributes creates a new entity with type and attributes
+// Generates a new ID and timestamps automatically
 func (st *storeImplementation) EntityCreateWithTypeAndAttributes(ctx context.Context, entityType string, attributes map[string]string) (EntityInterface, error) {
 	entity, err := st.EntityCreateWithType(ctx, entityType)
 	if err != nil {

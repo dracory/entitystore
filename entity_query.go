@@ -2,19 +2,22 @@ package entitystore
 
 import "github.com/doug-martin/goqu/v9"
 
+// EntityQueryOptions provides filtering and pagination options for entity queries
 type EntityQueryOptions struct {
-	ID           string
-	IDs          []string
-	EntityType   string
-	EntityHandle string
-	Limit        uint64
-	Offset       uint64
-	Search       string
-	SortBy       string
-	SortOrder    string // asc / dec
-	CountOnly    bool
+	ID           string   // Filter by specific entity ID
+	IDs          []string // Filter by multiple entity IDs
+	EntityType   string   // Filter by entity type
+	EntityHandle string   // Filter by entity handle
+	Limit        uint64   // Maximum number of results to return
+	Offset       uint64   // Number of results to skip
+	Search       string   // Text search (not implemented yet)
+	SortBy       string   // Column to sort by (default: id)
+	SortOrder    string   // Sort direction: "asc" or "desc"
+	CountOnly    bool     // Return only count, not results
 }
 
+// EntityQuery builds a goqu query for entities based on the provided options
+// Returns a SelectDataset that can be further customized or executed
 func (st *storeImplementation) EntityQuery(options EntityQueryOptions) *goqu.SelectDataset {
 	q := goqu.Dialect(st.dbDriverName).From(st.entityTableName)
 

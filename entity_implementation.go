@@ -19,6 +19,7 @@ var _ EntityInterface = (*entityImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewEntity creates a new entity with default values
+// Generates a new short ID and sets timestamps to the current time
 func NewEntity() EntityInterface {
 	o := &entityImplementation{}
 	o.SetType("")
@@ -29,7 +30,8 @@ func NewEntity() EntityInterface {
 	return o
 }
 
-// NewEntityFromExistingData creates an entity from a raw data map (e.g. from DB rows)
+// NewEntityFromExistingData creates an entity from a raw data map (e.g., from DB rows)
+// Used internally when hydrating entities from database results
 func NewEntityFromExistingData(data map[string]string) EntityInterface {
 	o := &entityImplementation{}
 	o.Hydrate(data)

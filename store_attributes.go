@@ -10,7 +10,8 @@ import (
 	"github.com/dromara/carbon/v2"
 )
 
-// AttributeCreate persists a new attribute record
+// AttributeCreate persists a new attribute record to the database
+// Automatically generates an ID if not set and timestamps if empty
 func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute AttributeInterface) error {
 	if attribute == nil {
 		return errors.New("attribute cannot be nil")
@@ -49,6 +50,7 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 }
 
 // AttributeUpdate persists changes to an existing attribute record
+// Automatically updates the updated_at timestamp
 func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute AttributeInterface) error {
 	attribute.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
@@ -75,7 +77,7 @@ func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute At
 	return err
 }
 
-// AttributeDelete removes an attribute record by ID
+// AttributeDelete permanently removes an attribute record by ID
 func (st *storeImplementation) AttributeDelete(ctx context.Context, id string) error {
 	q := goqu.Dialect(st.dbDriverName).
 		Delete(st.attributeTableName).
@@ -94,7 +96,7 @@ func (st *storeImplementation) AttributeDelete(ctx context.Context, id string) e
 	return err
 }
 
-// AttributesDeleteByEntityID removes all attributes for an entity
+// AttributesDeleteByEntityID permanently removes all attributes for a given entity
 func (st *storeImplementation) AttributesDeleteByEntityID(ctx context.Context, entityID string) error {
 	q := goqu.Dialect(st.dbDriverName).
 		Delete(st.attributeTableName).
@@ -113,7 +115,8 @@ func (st *storeImplementation) AttributesDeleteByEntityID(ctx context.Context, e
 	return err
 }
 
-// AttributeFind finds a single attribute by entity ID and attribute key
+// AttributeFind retrieves a single attribute by entity ID and attribute key
+// Returns nil if not found
 func (st *storeImplementation) AttributeFind(ctx context.Context, entityID string, attributeKey string) (AttributeInterface, error) {
 	if entityID == "" {
 		return nil, errors.New("entity id cannot be empty")
@@ -140,7 +143,8 @@ func (st *storeImplementation) AttributeFind(ctx context.Context, entityID strin
 	return nil, nil
 }
 
-// AttributeFindByHandle finds a single attribute by entity type, handle, and attribute key
+// AttributeFindByHandle retrieves an attribute by entity type, handle, and attribute key
+// Returns nil if not found
 func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
@@ -172,7 +176,8 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 	return nil, nil
 }
 
-// AttributeList lists attributes matching the given query options
+// AttributeList retrieves attributes matching the given query options
+// Supports filtering by entity ID, entity type, handle, and attribute key
 func (st *storeImplementation) AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error) {
 	q := st.AttributeQuery(options)
 
@@ -198,7 +203,8 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 	return list, nil
 }
 
-// AttributeSetString upserts a string attribute value for an entity
+// AttributeSetString creates or updates a string attribute value for an entity
+// If the attribute doesn't exist, it will be created
 func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error {
 	attr, err := st.AttributeFind(ctx, entityID, attributeKey)
 	if err != nil {
@@ -214,19 +220,22 @@ func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID 
 	return st.AttributeUpdate(ctx, attr)
 }
 
-// AttributeSetInt creates a new attribute or updates existing with int value
+// AttributeSetInt creates or updates an integer attribute value for an entity
+// Converts the int64 to a string for storage
 func (st *storeImplementation) AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attributeValue int64) error {
 	attributeValueAsString := strconv.FormatInt(attributeValue, 10)
 	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }
 
-// AttributeSetFloat creates a new attribute or updates existing with float value
+// AttributeSetFloat creates or updates a float attribute value for an entity
+// Converts the float64 to a string for storage
 func (st *storeImplementation) AttributeSetFloat(ctx context.Context, entityID string, attributeKey string, attributeValue float64) error {
 	attributeValueAsString := strconv.FormatFloat(attributeValue, 'f', 30, 64)
 	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }
 
 // AttributeCreateWithKeyAndValue creates a new attribute with the given key and value
+// Convenience method that creates and persists the attribute in one call
 func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error) {
 	attr := NewAttribute()
 	attr.SetEntityID(entityID)
@@ -240,7 +249,8 @@ func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Contex
 	return attr, nil
 }
 
-// AttributesSet upserts multiple entity attributes
+// AttributesSet creates or updates multiple entity attributes in a batch
+// If any attribute fails, the error is returned immediately
 func (st *storeImplementation) AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error {
 	for k, v := range attributes {
 		err := st.AttributeSetString(ctx, entityID, k, v)

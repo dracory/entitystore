@@ -1,28 +1,28 @@
 package entitystore
 
-// RelationshipQueryOptions defines the query options for relationship queries
+// RelationshipQueryOptions provides filtering and pagination options for relationship queries
 type RelationshipQueryOptions struct {
-	ID               string
-	IDs              []string
-	EntityID         string
-	EntityIDs        []string
-	RelatedEntityID  string
-	RelatedEntityIDs []string
-	RelationshipType string
-	ParentID         string
-	Limit            uint64
-	Offset           uint64
-	SortBy           string
-	SortOrder        string // asc / desc
-	CountOnly        bool
+	ID               string   // Filter by specific relationship ID
+	IDs              []string // Filter by multiple relationship IDs
+	EntityID         string   // Filter by source entity ID
+	EntityIDs        []string // Filter by multiple source entity IDs
+	RelatedEntityID  string   // Filter by target entity ID
+	RelatedEntityIDs []string // Filter by multiple target entity IDs
+	RelationshipType string   // Filter by relationship type
+	ParentID         string   // Filter by parent relationship ID
+	Limit            uint64   // Maximum number of results to return
+	Offset           uint64   // Number of results to skip
+	SortBy           string   // Column to sort by (default: id)
+	SortOrder        string   // Sort direction: "asc" or "desc"
+	CountOnly        bool     // Return only count, not results
 }
 
-// RelationshipOptions defines the options for creating a relationship
+// RelationshipOptions provides the options for creating a new relationship
 type RelationshipOptions struct {
-	EntityID         string
-	RelatedEntityID  string
-	RelationshipType string
-	ParentID         string
-	Sequence         int
-	Metadata         string
+	EntityID         string // Source entity ID
+	RelatedEntityID  string // Target/related entity ID
+	RelationshipType string // Type of relationship (e.g., "belongs_to", "has_many")
+	ParentID         string // Parent relationship ID for hierarchical relationships
+	Sequence         int    // Sort order for the relationship
+	Metadata         string // JSON metadata associated with the relationship
 }
