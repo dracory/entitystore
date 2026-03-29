@@ -40,7 +40,7 @@ func TestStoreAttributeFind(t *testing.T) {
 		t.Fatal("Attribute should be found")
 	}
 
-	if attr.GetAttributeValue() != "val1" {
+	if attr.GetValue() != "val1" {
 		t.Fatal("Attribute value mismatch")
 	}
 }

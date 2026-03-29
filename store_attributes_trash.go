@@ -14,8 +14,8 @@ func (st *storeImplementation) AttributeTrash(ctx context.Context, id string, de
 	trash := NewAttributeTrash()
 	trash.SetID(id)
 	trash.SetEntityID("")
-	trash.SetAttributeKey("unknown")
-	trash.SetAttributeValue("")
+	trash.SetKey("unknown")
+	trash.SetValue("")
 	trash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	trash.SetDeletedBy(deletedBy)
 

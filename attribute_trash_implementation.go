@@ -23,8 +23,8 @@ func NewAttributeTrash() AttributeTrashInterface {
 	o := &attributeTrashImplementation{}
 	o.SetID(GenerateShortID())
 	o.SetEntityID("")
-	o.SetAttributeKey("")
-	o.SetAttributeValue("")
+	o.SetKey("")
+	o.SetValue("")
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
@@ -50,20 +50,20 @@ func (o *attributeTrashImplementation) SetEntityID(entityID string) AttributeTra
 	return o
 }
 
-func (o *attributeTrashImplementation) GetAttributeKey() string {
+func (o *attributeTrashImplementation) GetKey() string {
 	return o.Get(COLUMN_ATTRIBUTE_KEY)
 }
 
-func (o *attributeTrashImplementation) SetAttributeKey(key string) AttributeTrashInterface {
+func (o *attributeTrashImplementation) SetKey(key string) AttributeTrashInterface {
 	o.Set(COLUMN_ATTRIBUTE_KEY, key)
 	return o
 }
 
-func (o *attributeTrashImplementation) GetAttributeValue() string {
+func (o *attributeTrashImplementation) GetValue() string {
 	return o.Get(COLUMN_ATTRIBUTE_VALUE)
 }
 
-func (o *attributeTrashImplementation) SetAttributeValue(value string) AttributeTrashInterface {
+func (o *attributeTrashImplementation) SetValue(value string) AttributeTrashInterface {
 	o.Set(COLUMN_ATTRIBUTE_VALUE, value)
 	return o
 }

@@ -222,7 +222,7 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 	}
 
 	for _, attr := range attrs {
-		if attr.GetAttributeValue() == attributeValue {
+		if attr.GetValue() == attributeValue {
 			return st.EntityFindByID(ctx, attr.GetEntityID())
 		}
 	}
@@ -243,7 +243,7 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 	var results []EntityInterface
 	for _, entity := range entities {
 		attr, err := st.AttributeFind(ctx, entity.ID(), attributeKey)
-		if err == nil && attr != nil && attr.GetAttributeValue() == attributeValue {
+		if err == nil && attr != nil && attr.GetValue() == attributeValue {
 			results = append(results, entity)
 		}
 	}

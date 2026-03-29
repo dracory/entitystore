@@ -60,8 +60,8 @@ func TestEntityCreateWithTypeAndAttributes(t *testing.T) {
 		t.Fatalf("Failed to find attribute: %v", err)
 	}
 
-	if attr.GetAttributeValue() != "Test Entity" {
-		t.Errorf("Expected name 'Test Entity', got '%s'", attr.GetAttributeValue())
+	if attr.GetValue() != "Test Entity" {
+		t.Errorf("Expected name 'Test Entity', got '%s'", attr.GetValue())
 	}
 }
 
@@ -93,8 +93,8 @@ func TestEntityFindByID(t *testing.T) {
 		t.Fatalf("Failed to find attribute: %v", err)
 	}
 
-	if attr.GetAttributeValue() != "Alice" {
-		t.Errorf("Expected name 'Alice', got '%s'", attr.GetAttributeValue())
+	if attr.GetValue() != "Alice" {
+		t.Errorf("Expected name 'Alice', got '%s'", attr.GetValue())
 	}
 }
 
@@ -169,8 +169,8 @@ func TestEntityUpdate(t *testing.T) {
 
 	// Verify
 	attr, _ := store.AttributeFind(ctx, entity.ID(), "name")
-	if attr.GetAttributeValue() != "Updated" {
-		t.Errorf("Expected name 'Updated', got '%s'", attr.GetAttributeValue())
+	if attr.GetValue() != "Updated" {
+		t.Errorf("Expected name 'Updated', got '%s'", attr.GetValue())
 	}
 }
 
@@ -220,7 +220,7 @@ func TestAttributeTypes(t *testing.T) {
 
 	// Find int attribute and verify conversion
 	for _, attr := range attrs {
-		if attr.GetAttributeKey() == "int_val" {
+		if attr.GetKey() == "int_val" {
 			intVal, err := attr.GetInt()
 			if err != nil {
 				t.Errorf("Failed to convert to int: %v", err)
@@ -230,7 +230,7 @@ func TestAttributeTypes(t *testing.T) {
 			}
 		}
 
-		if attr.GetAttributeKey() == "float_val" {
+		if attr.GetKey() == "float_val" {
 			floatVal, err := attr.GetFloat()
 			if err != nil {
 				t.Errorf("Failed to convert to float: %v", err)

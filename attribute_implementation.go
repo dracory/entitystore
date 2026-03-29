@@ -24,8 +24,8 @@ func NewAttribute() AttributeInterface {
 	o := &attributeImplementation{}
 	o.SetID(GenerateShortID())
 	o.SetEntityID("")
-	o.SetAttributeKey("")
-	o.SetAttributeValue("")
+	o.SetKey("")
+	o.SetValue("")
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	return o
@@ -49,20 +49,20 @@ func (o *attributeImplementation) SetEntityID(entityID string) AttributeInterfac
 	return o
 }
 
-func (o *attributeImplementation) GetAttributeKey() string {
+func (o *attributeImplementation) GetKey() string {
 	return o.Get(COLUMN_ATTRIBUTE_KEY)
 }
 
-func (o *attributeImplementation) SetAttributeKey(key string) AttributeInterface {
+func (o *attributeImplementation) SetKey(key string) AttributeInterface {
 	o.Set(COLUMN_ATTRIBUTE_KEY, key)
 	return o
 }
 
-func (o *attributeImplementation) GetAttributeValue() string {
+func (o *attributeImplementation) GetValue() string {
 	return o.Get(COLUMN_ATTRIBUTE_VALUE)
 }
 
-func (o *attributeImplementation) SetAttributeValue(value string) AttributeInterface {
+func (o *attributeImplementation) SetValue(value string) AttributeInterface {
 	o.Set(COLUMN_ATTRIBUTE_VALUE, value)
 	return o
 }
@@ -97,22 +97,22 @@ func (o *attributeImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
 
 // GetInt returns the attribute value parsed as int64
 func (o *attributeImplementation) GetInt() (int64, error) {
-	return cast.ToInt64E(o.GetAttributeValue())
+	return cast.ToInt64E(o.GetValue())
 }
 
 // GetFloat returns the attribute value parsed as float64
 func (o *attributeImplementation) GetFloat() (float64, error) {
-	return cast.ToFloat64E(o.GetAttributeValue())
+	return cast.ToFloat64E(o.GetValue())
 }
 
 // SetInt sets the attribute value from an int64
 func (o *attributeImplementation) SetInt(value int64) AttributeInterface {
-	o.SetAttributeValue(cast.ToString(value))
+	o.SetValue(cast.ToString(value))
 	return o
 }
 
 // SetFloat sets the attribute value from a float64
 func (o *attributeImplementation) SetFloat(value float64) AttributeInterface {
-	o.SetAttributeValue(cast.ToString(value))
+	o.SetValue(cast.ToString(value))
 	return o
 }

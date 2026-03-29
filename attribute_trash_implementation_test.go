@@ -24,15 +24,15 @@ func TestAttributeTrashImplementation(t *testing.T) {
 	}
 
 	// Test AttributeKey getter/setter
-	trash.SetAttributeKey("name")
-	if trash.GetAttributeKey() != "name" {
-		t.Errorf("expected AttributeKey 'name', got '%s'", trash.GetAttributeKey())
+	trash.SetKey("name")
+	if trash.GetKey() != "name" {
+		t.Errorf("expected AttributeKey 'name', got '%s'", trash.GetKey())
 	}
 
 	// Test AttributeValue getter/setter
-	trash.SetAttributeValue("value")
-	if trash.GetAttributeValue() != "value" {
-		t.Errorf("expected AttributeValue 'value', got '%s'", trash.GetAttributeValue())
+	trash.SetValue("value")
+	if trash.GetValue() != "value" {
+		t.Errorf("expected AttributeValue 'value', got '%s'", trash.GetValue())
 	}
 
 	// Test DeletedAt

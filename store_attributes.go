@@ -210,7 +210,7 @@ func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID 
 		return err
 	}
 
-	attr.SetAttributeValue(attributeValue)
+	attr.SetValue(attributeValue)
 	return st.AttributeUpdate(ctx, attr)
 }
 
@@ -230,8 +230,8 @@ func (st *storeImplementation) AttributeSetFloat(ctx context.Context, entityID s
 func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error) {
 	attr := NewAttribute()
 	attr.SetEntityID(entityID)
-	attr.SetAttributeKey(attributeKey)
-	attr.SetAttributeValue(attributeValue)
+	attr.SetKey(attributeKey)
+	attr.SetValue(attributeValue)
 
 	if err := st.AttributeCreate(ctx, attr); err != nil {
 		return nil, err

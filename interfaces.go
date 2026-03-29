@@ -42,8 +42,8 @@ type AttributeInterface interface {
 
 	// Core getters
 	GetEntityID() string
-	GetAttributeKey() string
-	GetAttributeValue() string
+	GetKey() string
+	GetValue() string
 	GetCreatedAt() string
 	GetCreatedAtCarbon() *carbon.Carbon
 	GetUpdatedAt() string
@@ -51,8 +51,8 @@ type AttributeInterface interface {
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) AttributeInterface
-	SetAttributeKey(key string) AttributeInterface
-	SetAttributeValue(value string) AttributeInterface
+	SetKey(key string) AttributeInterface
+	SetValue(value string) AttributeInterface
 	SetCreatedAt(createdAt string) AttributeInterface
 	SetUpdatedAt(updatedAt string) AttributeInterface
 
@@ -121,8 +121,8 @@ type AttributeTrashInterface interface {
 
 	// Core getters
 	GetEntityID() string
-	GetAttributeKey() string
-	GetAttributeValue() string
+	GetKey() string
+	GetValue() string
 	GetCreatedAt() string
 	GetCreatedAtCarbon() *carbon.Carbon
 	GetUpdatedAt() string
@@ -133,8 +133,8 @@ type AttributeTrashInterface interface {
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) AttributeTrashInterface
-	SetAttributeKey(key string) AttributeTrashInterface
-	SetAttributeValue(value string) AttributeTrashInterface
+	SetKey(key string) AttributeTrashInterface
+	SetValue(value string) AttributeTrashInterface
 	SetCreatedAt(createdAt string) AttributeTrashInterface
 	SetUpdatedAt(updatedAt string) AttributeTrashInterface
 	SetDeletedAt(deletedAt string) AttributeTrashInterface

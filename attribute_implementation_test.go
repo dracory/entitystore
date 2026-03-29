@@ -24,15 +24,15 @@ func TestAttributeImplementation(t *testing.T) {
 	}
 
 	// Test AttributeKey getter/setter
-	attr.SetAttributeKey("name")
-	if attr.GetAttributeKey() != "name" {
-		t.Errorf("expected AttributeKey 'name', got '%s'", attr.GetAttributeKey())
+	attr.SetKey("name")
+	if attr.GetKey() != "name" {
+		t.Errorf("expected AttributeKey 'name', got '%s'", attr.GetKey())
 	}
 
 	// Test AttributeValue getter/setter
-	attr.SetAttributeValue("iPhone")
-	if attr.GetAttributeValue() != "iPhone" {
-		t.Errorf("expected AttributeValue 'iPhone', got '%s'", attr.GetAttributeValue())
+	attr.SetValue("iPhone")
+	if attr.GetValue() != "iPhone" {
+		t.Errorf("expected AttributeValue 'iPhone', got '%s'", attr.GetValue())
 	}
 
 	// Test CreatedAt
@@ -66,12 +66,12 @@ func TestAttributeFromExistingData(t *testing.T) {
 		t.Errorf("expected EntityID 'entity456', got '%s'", attr.GetEntityID())
 	}
 
-	if attr.GetAttributeKey() != "price" {
-		t.Errorf("expected AttributeKey 'price', got '%s'", attr.GetAttributeKey())
+	if attr.GetKey() != "price" {
+		t.Errorf("expected AttributeKey 'price', got '%s'", attr.GetKey())
 	}
 
-	if attr.GetAttributeValue() != "999" {
-		t.Errorf("expected AttributeValue '999', got '%s'", attr.GetAttributeValue())
+	if attr.GetValue() != "999" {
+		t.Errorf("expected AttributeValue '999', got '%s'", attr.GetValue())
 	}
 }
 
@@ -102,18 +102,18 @@ func TestAttributeTypeConversions(t *testing.T) {
 func TestAttributeFluentInterface(t *testing.T) {
 	attr := NewAttribute().
 		SetEntityID("entity789").
-		SetAttributeKey("color").
-		SetAttributeValue("red")
+		SetKey("color").
+		SetValue("red")
 
 	if attr.GetEntityID() != "entity789" {
 		t.Errorf("expected EntityID 'entity789', got '%s'", attr.GetEntityID())
 	}
 
-	if attr.GetAttributeKey() != "color" {
-		t.Errorf("expected AttributeKey 'color', got '%s'", attr.GetAttributeKey())
+	if attr.GetKey() != "color" {
+		t.Errorf("expected AttributeKey 'color', got '%s'", attr.GetKey())
 	}
 
-	if attr.GetAttributeValue() != "red" {
-		t.Errorf("expected AttributeValue 'red', got '%s'", attr.GetAttributeValue())
+	if attr.GetValue() != "red" {
+		t.Errorf("expected AttributeValue 'red', got '%s'", attr.GetValue())
 	}
 }
