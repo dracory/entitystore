@@ -31,8 +31,12 @@ tasks:
         - echo "= 2. To install err check type 'task errcheck:install'         ="
         - echo "= 3. To run err check type 'task errcheck'                     ="
         - echo "= 4. To install nils check type 'task nilaway:install'         ="
-        - echo "= 3. To run nils check type 'task nilaway'                     ="
-        - echo "= 4. To run tests type 'task test'                             ="
+        - echo "= 5. To run nils check type 'task nilaway'                     ="
+        - echo "= 6. To run tests type 'task test'                             ="
+        - echo "= 7. To run basic example type 'task example:basic'            ="
+        - echo "= 8. To run relationships example type 'task example:rel'      ="
+        - echo "= 9. To run taxonomy example type 'task example:taxonomy'      ="
+        - echo "= 10. To run all examples type 'task example:all'              ="
         - echo "=                                                              ="
         - echo "================================================================"
     silent: true
@@ -156,3 +160,51 @@ tasks:
       - go test -tags mysql ./...
       - echo "Done!"
     silent: true
+
+  # ========================== #
+  # START: Examples            #
+  # ========================== #
+  example:basic:
+    desc: Run the basic example
+    cmds:
+      - echo "Running basic example..."
+      - go run examples/basic/main.go
+      - echo "Done!"
+    silent: true
+
+  example:rel:
+    desc: Run the relationships example
+    cmds:
+      - echo "Running relationships example..."
+      - go run examples/relationships/main.go
+      - echo "Done!"
+    silent: true
+
+  example:taxonomy:
+    desc: Run the taxonomy example
+    cmds:
+      - echo "Running taxonomy example..."
+      - go run examples/taxonomy/main.go
+      - echo "Done!"
+    silent: true
+
+  example:all:
+    desc: Run all examples
+    cmds:
+      - echo "Running all examples..."
+      - go run examples/basic/main.go
+      - go run examples/relationships/main.go
+      - go run examples/taxonomy/main.go
+      - echo "Done!"
+    silent: true
+
+  example:test:
+    desc: Run all example tests
+    cmds:
+      - echo "Running example tests..."
+      - go test ./examples/... -v
+      - echo "Done!"
+    silent: true
+  # ========================== #
+  # END: Examples              #
+  # ========================== #
