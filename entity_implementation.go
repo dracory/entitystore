@@ -84,19 +84,19 @@ func (o *entityImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
 
 // == DYNAMIC ATTRIBUTES =====================================================
 
-// GetTemp retrieves an in-memory attribute by key
-func (o *entityImplementation) GetTemp(key string) string {
+// GetTempKey retrieves an in-memory attribute by key
+func (o *entityImplementation) GetTempKey(key string) string {
 	return o.Get(key)
 }
 
-// SetTemp sets an in-memory attribute value
-func (o *entityImplementation) SetTemp(key string, value string) EntityInterface {
+// SetTempKey sets an in-memory attribute value
+func (o *entityImplementation) SetTempKey(key string, value string) EntityInterface {
 	o.Set(key, value)
 	return o
 }
 
-// GetAllTemp returns all dynamic attributes (excludes system columns)
-func (o *entityImplementation) GetAllTemp() map[string]string {
+// GetTempKeys returns all dynamic attributes (excludes system columns)
+func (o *entityImplementation) GetTempKeys() map[string]string {
 	systemColumns := map[string]bool{
 		COLUMN_ID:            true,
 		COLUMN_ENTITY_TYPE:   true,

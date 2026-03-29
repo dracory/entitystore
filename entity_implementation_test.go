@@ -76,23 +76,23 @@ func TestEntityFromExistingData(t *testing.T) {
 	}
 
 	// Test dynamic attribute access
-	if entity.GetTemp("custom_field") != "custom_value" {
-		t.Errorf("expected custom_field 'custom_value', got '%s'", entity.GetTemp("custom_field"))
+	if entity.GetTempKey("custom_field") != "custom_value" {
+		t.Errorf("expected custom_field 'custom_value', got '%s'", entity.GetTempKey("custom_field"))
 	}
 }
 
 func TestEntityDynamicAttributes(t *testing.T) {
 	entity := NewEntity()
 
-	// Test SetTemp / GetTemp
-	entity.SetTemp("name", "iPhone")
-	if entity.GetTemp("name") != "iPhone" {
-		t.Errorf("expected attribute 'name' to be 'iPhone', got '%s'", entity.GetTemp("name"))
+	// Test SetTempKey / GetTempKey
+	entity.SetTempKey("name", "iPhone")
+	if entity.GetTempKey("name") != "iPhone" {
+		t.Errorf("expected attribute 'name' to be 'iPhone', got '%s'", entity.GetTempKey("name"))
 	}
 
-	// Test GetAllTemp
-	entity.SetTemp("price", "999")
-	allAttrs := entity.GetAllTemp()
+	// Test GetTempKeys
+	entity.SetTempKey("price", "999")
+	allAttrs := entity.GetTempKeys()
 
 	if len(allAttrs) != 2 {
 		t.Errorf("expected 2 dynamic attributes, got %d", len(allAttrs))
@@ -108,7 +108,7 @@ func TestEntityDynamicAttributes(t *testing.T) {
 
 	// Test that system columns are excluded
 	if _, exists := allAttrs[COLUMN_ID]; exists {
-		t.Error("expected COLUMN_ID to be excluded from GetAllTemp")
+		t.Error("expected COLUMN_ID to be excluded from GetTempKeys")
 	}
 }
 
@@ -116,8 +116,8 @@ func TestEntityFluentInterface(t *testing.T) {
 	entity := NewEntity().
 		SetType("product").
 		SetHandle("iphone-15").
-		SetTemp("name", "iPhone 15").
-		SetTemp("price", "999")
+		SetTempKey("name", "iPhone 15").
+		SetTempKey("price", "999")
 
 	if entity.GetType() != "product" {
 		t.Errorf("expected EntityType 'product', got '%s'", entity.GetType())
@@ -127,15 +127,15 @@ func TestEntityFluentInterface(t *testing.T) {
 		t.Errorf("expected EntityHandle 'iphone-15', got '%s'", entity.GetHandle())
 	}
 
-	if entity.GetTemp("name") != "iPhone 15" {
-		t.Errorf("expected attribute 'name' = 'iPhone 15', got '%s'", entity.GetTemp("name"))
+	if entity.GetTempKey("name") != "iPhone 15" {
+		t.Errorf("expected attribute 'name' = 'iPhone 15', got '%s'", entity.GetTempKey("name"))
 	}
 }
 
 func TestEntityDataObject(t *testing.T) {
 	entity := NewEntity()
 	entity.SetType("test")
-	entity.SetTemp("foo", "bar")
+	entity.SetTempKey("foo", "bar")
 
 	// Test Data() returns underlying map
 	data := entity.Data()

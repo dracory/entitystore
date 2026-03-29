@@ -95,7 +95,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create category: %v", err)
 	}
-	fmt.Printf("   Category: %s (ID: %s)\n", fictionCategory.GetTemp("name"), fictionCategory.ID())
+	fmt.Printf("   Category: %s (ID: %s)\n", fictionCategory.GetTempKey("name"), fictionCategory.ID())
 
 	// Create MANY_TO_MANY relationship (books <-> categories)
 	fmt.Println("\n5. Creating MANY_TO_MANY relationships (books ↔ category)...")
@@ -133,7 +133,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to find book: %v", err)
 		}
-		fmt.Printf("   - %s\n", book.GetTemp("title"))
+		fmt.Printf("   - %s\n", book.GetTempKey("title"))
 	}
 
 	// Query reverse relationships
@@ -146,7 +146,7 @@ func main() {
 		log.Fatalf("Failed to list relationships: %v", err)
 	}
 	fmt.Printf("   Book '%s' is in %d categories\n",
-		book1.GetTemp("title"), len(book1Categories))
+		book1.GetTempKey("title"), len(book1Categories))
 
 	// Count relationships
 	fmt.Println("\n8. Counting relationships...")

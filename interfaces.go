@@ -28,10 +28,10 @@ type EntityInterface interface {
 	SetCreatedAt(createdAt string) EntityInterface
 	SetUpdatedAt(updatedAt string) EntityInterface
 
-	// Dynamic / extra attributes (in-memory only, not persisted)
-	GetTemp(key string) string
-	SetTemp(key string, value string) EntityInterface
-	GetAllTemp() map[string]string
+	// Dynamic / extra key-value pairs (in-memory only, not persisted)
+	GetTempKey(key string) string
+	SetTempKey(key string, value string) EntityInterface
+	GetTempKeys() map[string]string
 }
 
 // == ATTRIBUTE INTERFACE ====================================================

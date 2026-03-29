@@ -106,9 +106,9 @@ func main() {
 		"price": "14.99",
 		"sku":   "BK-HOBBIT-001",
 	})
-	fmt.Printf("   - %s (ID: %s)\n", macbook.GetTemp("name"), macbook.ID())
-	fmt.Printf("   - %s (ID: %s)\n", hpLaptop.GetTemp("name"), hpLaptop.ID())
-	fmt.Printf("   - %s (ID: %s)\n", theHobbit.GetTemp("name"), theHobbit.ID())
+	fmt.Printf("   - %s (ID: %s)\n", macbook.GetTempKey("name"), macbook.ID())
+	fmt.Printf("   - %s (ID: %s)\n", hpLaptop.GetTempKey("name"), hpLaptop.ID())
+	fmt.Printf("   - %s (ID: %s)\n", theHobbit.GetTempKey("name"), theHobbit.ID())
 
 	// Assign products to taxonomy terms
 	fmt.Println("\n4. Assigning products to taxonomy terms...")
@@ -116,13 +116,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to assign taxonomy: %v", err)
 	}
-	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetTemp("name"))
+	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetTempKey("name"))
 
 	store.EntityTaxonomyAssign(ctx, hpLaptop.ID(), categoriesTax.ID(), laptops.ID())
-	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetTemp("name"))
+	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetTempKey("name"))
 
 	store.EntityTaxonomyAssign(ctx, theHobbit.ID(), categoriesTax.ID(), books.ID())
-	fmt.Printf("   ✓ %s assigned to Books\n", theHobbit.GetTemp("name"))
+	fmt.Printf("   ✓ %s assigned to Books\n", theHobbit.GetTempKey("name"))
 
 	// Query taxonomy assignments
 	fmt.Println("\n5. Finding products in 'Laptops' category...")
@@ -136,7 +136,7 @@ func main() {
 	fmt.Printf("   Found %d products in Laptops:\n", len(assignments))
 	for _, assignment := range assignments {
 		product, _ := store.EntityFindByID(ctx, assignment.GetEntityID())
-		fmt.Printf("   - %s ($%s)\n", product.GetTemp("name"), product.GetTemp("price"))
+		fmt.Printf("   - %s ($%s)\n", product.GetTempKey("name"), product.GetTempKey("price"))
 	}
 
 	// List all terms in taxonomy
