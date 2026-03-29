@@ -46,8 +46,21 @@ func main() {
 	fmt.Printf("   Created person with ID: %s\n", person.ID())
 
 	// Retrieve attributes from store
-	nameAttr, _ := store.AttributeFind(ctx, person.ID(), "name")
-	ageAttr, _ := store.AttributeFind(ctx, person.ID(), "age")
+	nameAttr, err := store.AttributeFind(ctx, person.ID(), "name")
+	if err != nil {
+		log.Fatalf("Failed to find name attribute: %v", err)
+	}
+	if nameAttr == nil {
+		log.Fatal("Expected name attribute to be found")
+	}
+
+	ageAttr, err := store.AttributeFind(ctx, person.ID(), "age")
+	if err != nil {
+		log.Fatalf("Failed to find age attribute: %v", err)
+	}
+	if ageAttr == nil {
+		log.Fatal("Expected age attribute to be found")
+	}
 
 	fmt.Printf("   Name: %s\n", nameAttr.GetValue())
 	fmt.Printf("   Age: %s\n", ageAttr.GetValue())
@@ -65,8 +78,21 @@ func main() {
 	fmt.Printf("   Created product with ID: %s\n", product.ID())
 
 	// Retrieve attributes from store
-	prodNameAttr, _ := store.AttributeFind(ctx, product.ID(), "name")
-	prodPriceAttr, _ := store.AttributeFind(ctx, product.ID(), "price")
+	prodNameAttr, err := store.AttributeFind(ctx, product.ID(), "name")
+	if err != nil {
+		log.Fatalf("Failed to find name attribute: %v", err)
+	}
+	if prodNameAttr == nil {
+		log.Fatal("Expected name attribute to be found")
+	}
+
+	prodPriceAttr, err := store.AttributeFind(ctx, product.ID(), "price")
+	if err != nil {
+		log.Fatalf("Failed to find price attribute: %v", err)
+	}
+	if prodPriceAttr == nil {
+		log.Fatal("Expected price attribute to be found")
+	}
 
 	fmt.Printf("   Name: %s\n", prodNameAttr.GetValue())
 	fmt.Printf("   Price: %s\n", prodPriceAttr.GetValue())
@@ -88,7 +114,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to find entity: %v", err)
 	}
-	foundNameAttr, _ := store.AttributeFind(ctx, found.ID(), "name")
+	if found == nil {
+		log.Fatal("Expected entity to be found")
+	}
+	foundNameAttr, err := store.AttributeFind(ctx, found.ID(), "name")
+	if err != nil {
+		log.Fatalf("Failed to find attribute: %v", err)
+	}
+	if foundNameAttr == nil {
+		log.Fatal("Expected name attribute to be found")
+	}
 	fmt.Printf("   Found: %s (type: %s)\n", foundNameAttr.GetValue(), found.GetType())
 
 	// Update entity attributes via store

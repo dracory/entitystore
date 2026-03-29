@@ -52,60 +52,104 @@ func main() {
 	fmt.Println("\n2. Creating taxonomy terms (hierarchical categories)...")
 
 	// Top level: Electronics
-	electronics, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	electronics, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: categoriesTax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 		SortOrder:  1,
 	})
+	if err != nil {
+		log.Fatalf("Failed to create Electronics term: %v", err)
+	}
+	if electronics == nil {
+		log.Fatal("Expected Electronics term to be created")
+	}
 	fmt.Printf("   - Electronics (ID: %s)\n", electronics.ID())
 
 	// Sub-category: Computers (parent = Electronics)
-	computers, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	computers, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: categoriesTax.ID(),
 		Name:       "Computers",
 		Slug:       "computers",
 		ParentID:   electronics.ID(),
 		SortOrder:  1,
 	})
+	if err != nil {
+		log.Fatalf("Failed to create Computers term: %v", err)
+	}
+	if computers == nil {
+		log.Fatal("Expected Computers term to be created")
+	}
 	fmt.Printf("   - Computers (ID: %s, Parent: Electronics)\n", computers.ID())
 
 	// Sub-category: Laptops (parent = Computers)
-	laptops, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	laptops, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: categoriesTax.ID(),
 		Name:       "Laptops",
 		Slug:       "laptops",
 		ParentID:   computers.ID(),
 		SortOrder:  1,
 	})
+	if err != nil {
+		log.Fatalf("Failed to create Laptops term: %v", err)
+	}
+	if laptops == nil {
+		log.Fatal("Expected Laptops term to be created")
+	}
 	fmt.Printf("   - Laptops (ID: %s, Parent: Computers)\n", laptops.ID())
 
 	// Another top level: Books
-	books, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	books, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: categoriesTax.ID(),
 		Name:       "Books",
 		Slug:       "books",
 		SortOrder:  2,
 	})
+	if err != nil {
+		log.Fatalf("Failed to create Books term: %v", err)
+	}
+	if books == nil {
+		log.Fatal("Expected Books term to be created")
+	}
 	fmt.Printf("   - Books (ID: %s)\n", books.ID())
 
 	// Create product entities
 	fmt.Println("\n3. Creating product entities...")
-	macbook, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
+	macbook, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
 		"name":  "MacBook Pro",
 		"price": "1999.99",
 		"sku":   "MBP-16-001",
 	})
-	hpLaptop, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
+	if err != nil {
+		log.Fatalf("Failed to create MacBook: %v", err)
+	}
+	if macbook == nil {
+		log.Fatal("Expected MacBook to be created")
+	}
+
+	hpLaptop, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
 		"name":  "HP Pavilion",
 		"price": "699.99",
 		"sku":   "HP-PAV-001",
 	})
-	theHobbit, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
+	if err != nil {
+		log.Fatalf("Failed to create HP laptop: %v", err)
+	}
+	if hpLaptop == nil {
+		log.Fatal("Expected HP laptop to be created")
+	}
+
+	theHobbit, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
 		"name":  "The Hobbit",
 		"price": "14.99",
 		"sku":   "BK-HOBBIT-001",
 	})
+	if err != nil {
+		log.Fatalf("Failed to create The Hobbit: %v", err)
+	}
+	if theHobbit == nil {
+		log.Fatal("Expected theHobbit to be created")
+	}
 	fmt.Printf("   - %s (ID: %s)\n", macbook.GetTempKey("name"), macbook.ID())
 	fmt.Printf("   - %s (ID: %s)\n", hpLaptop.GetTempKey("name"), hpLaptop.ID())
 	fmt.Printf("   - %s (ID: %s)\n", theHobbit.GetTempKey("name"), theHobbit.ID())
@@ -118,7 +162,7 @@ func main() {
 	}
 	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetTempKey("name"))
 
-	store.EntityTaxonomyAssign(ctx, hpLaptop.ID(), categoriesTax.ID(), laptops.ID())
+	err = store.EntityTaxonomyAssign(ctx, hpLaptop.ID(), categoriesTax.ID(), laptops.ID())
 	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetTempKey("name"))
 
 	store.EntityTaxonomyAssign(ctx, theHobbit.ID(), categoriesTax.ID(), books.ID())
@@ -135,7 +179,15 @@ func main() {
 	}
 	fmt.Printf("   Found %d products in Laptops:\n", len(assignments))
 	for _, assignment := range assignments {
-		product, _ := store.EntityFindByID(ctx, assignment.GetEntityID())
+		product, err := store.EntityFindByID(ctx, assignment.GetEntityID())
+		if err != nil {
+			log.Printf("Failed to find product: %v", err)
+			continue
+		}
+		if product == nil {
+			log.Printf("Product not found for entity ID: %s", assignment.GetEntityID())
+			continue
+		}
 		fmt.Printf("   - %s ($%s)\n", product.GetTempKey("name"), product.GetTempKey("price"))
 	}
 

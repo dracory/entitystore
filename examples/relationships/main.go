@@ -133,6 +133,10 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to find book: %v", err)
 		}
+		if book == nil {
+			log.Printf("Book not found for entity ID: %s", rel.GetEntityID())
+			continue
+		}
 		fmt.Printf("   - %s\n", book.GetTempKey("title"))
 	}
 

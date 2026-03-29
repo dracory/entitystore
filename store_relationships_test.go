@@ -609,12 +609,14 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 		t.Errorf("Expected 1 item in trash, got %d", len(trashItems))
 	}
 
-	if trashItems[0].GetDeletedBy() != "user_123" {
-		t.Errorf("Expected deleted_by to be 'user_123', got '%s'", trashItems[0].GetDeletedBy())
-	}
+	if len(trashItems) > 0 {
+		if trashItems[0].GetDeletedBy() != "user_123" {
+			t.Errorf("Expected deleted_by to be 'user_123', got '%s'", trashItems[0].GetDeletedBy())
+		}
 
-	if trashItems[0].GetMetadata() != "{\"test\": \"data\"}" {
-		t.Errorf("Metadata should be preserved in trash, got '%s'", trashItems[0].GetMetadata())
+		if trashItems[0].GetMetadata() != "{\"test\": \"data\"}" {
+			t.Errorf("Metadata should be preserved in trash, got '%s'", trashItems[0].GetMetadata())
+		}
 	}
 
 	// Restore it
