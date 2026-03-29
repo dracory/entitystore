@@ -17,19 +17,19 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 	}
 
 	// Validate required fields
-	if relationship.EntityID() == "" {
+	if relationship.GetEntityID() == "" {
 		return errors.New("entity_id is required")
 	}
-	if relationship.RelatedEntityID() == "" {
+	if relationship.GetRelatedEntityID() == "" {
 		return errors.New("related_entity_id is required")
 	}
-	if relationship.RelationshipType() == "" {
+	if relationship.GetRelationshipType() == "" {
 		return errors.New("relationship_type is required")
 	}
 
 	// Prevent self-referencing relationships for belongs_to and has_many types
-	if relationship.EntityID() == relationship.RelatedEntityID() {
-		if relationship.RelationshipType() == RELATIONSHIP_TYPE_BELONGS_TO || relationship.RelationshipType() == RELATIONSHIP_TYPE_HAS_MANY {
+	if relationship.GetEntityID() == relationship.GetRelatedEntityID() {
+		if relationship.GetRelationshipType() == RELATIONSHIP_TYPE_BELONGS_TO || relationship.GetRelationshipType() == RELATIONSHIP_TYPE_HAS_MANY {
 			return errors.New("self-referencing relationships not allowed for belongs_to and has_many types")
 		}
 	}
@@ -38,7 +38,7 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		relationship.SetID(GenerateShortID())
 	}
 
-	if relationship.CreatedAt() == "" {
+	if relationship.GetCreatedAt() == "" {
 		relationship.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 

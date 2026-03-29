@@ -32,7 +32,7 @@ func TestEntityCreateWithAttributes(t *testing.T) {
 	}
 
 	attr, err := store.AttributeFind(context.Background(), entity.ID(), "name")
-	if err != nil || attr == nil || attr.AttributeValue() != "Hello world" {
+	if err != nil || attr == nil || attr.GetAttributeValue() != "Hello world" {
 		t.Fatalf("Entity attribute mismatch")
 	}
 }

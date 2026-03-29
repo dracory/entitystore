@@ -37,7 +37,7 @@ func NewRelationshipTrashFromExistingData(data map[string]string) RelationshipTr
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *relationshipTrashImplementation) EntityID() string {
+func (o *relationshipTrashImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
 
@@ -46,7 +46,7 @@ func (o *relationshipTrashImplementation) SetEntityID(entityID string) Relations
 	return o
 }
 
-func (o *relationshipTrashImplementation) RelatedEntityID() string {
+func (o *relationshipTrashImplementation) GetRelatedEntityID() string {
 	return o.Get(COLUMN_RELATED_ENTITY_ID)
 }
 
@@ -55,7 +55,7 @@ func (o *relationshipTrashImplementation) SetRelatedEntityID(relatedID string) R
 	return o
 }
 
-func (o *relationshipTrashImplementation) RelationshipType() string {
+func (o *relationshipTrashImplementation) GetRelationshipType() string {
 	return o.Get(COLUMN_RELATIONSHIP_TYPE)
 }
 
@@ -64,7 +64,7 @@ func (o *relationshipTrashImplementation) SetRelationshipType(relType string) Re
 	return o
 }
 
-func (o *relationshipTrashImplementation) ParentID() string {
+func (o *relationshipTrashImplementation) GetParentID() string {
 	return o.Get(COLUMN_PARENT_ID)
 }
 
@@ -73,7 +73,7 @@ func (o *relationshipTrashImplementation) SetParentID(parentID string) Relations
 	return o
 }
 
-func (o *relationshipTrashImplementation) Sequence() int {
+func (o *relationshipTrashImplementation) GetSequence() int {
 	val, _ := strconv.Atoi(o.Get(COLUMN_SEQUENCE))
 	return val
 }
@@ -83,7 +83,7 @@ func (o *relationshipTrashImplementation) SetSequence(sequence int) Relationship
 	return o
 }
 
-func (o *relationshipTrashImplementation) Metadata() string {
+func (o *relationshipTrashImplementation) GetMetadata() string {
 	return o.Get(COLUMN_METADATA)
 }
 
@@ -92,7 +92,7 @@ func (o *relationshipTrashImplementation) SetMetadata(metadata string) Relations
 	return o
 }
 
-func (o *relationshipTrashImplementation) CreatedAt() string {
+func (o *relationshipTrashImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -101,11 +101,11 @@ func (o *relationshipTrashImplementation) SetCreatedAt(createdAt string) Relatio
 	return o
 }
 
-func (o *relationshipTrashImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *relationshipTrashImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *relationshipTrashImplementation) DeletedAt() string {
+func (o *relationshipTrashImplementation) GetDeletedAt() string {
 	return o.Get(COLUMN_DELETED_AT)
 }
 
@@ -114,11 +114,11 @@ func (o *relationshipTrashImplementation) SetDeletedAt(deletedAt string) Relatio
 	return o
 }
 
-func (o *relationshipTrashImplementation) DeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.DeletedAt(), carbon.UTC)
+func (o *relationshipTrashImplementation) GetDeletedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetDeletedAt(), carbon.UTC)
 }
 
-func (o *relationshipTrashImplementation) DeletedBy() string {
+func (o *relationshipTrashImplementation) GetDeletedBy() string {
 	return o.Get(COLUMN_DELETED_BY)
 }
 

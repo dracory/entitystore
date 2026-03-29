@@ -29,10 +29,10 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 	// Move entity to trash
 	trash := NewEntityTrash()
 	trash.SetID(entity.ID())
-	trash.SetEntityType(entity.EntityType())
-	trash.SetEntityHandle(entity.EntityHandle())
-	trash.SetCreatedAt(entity.CreatedAt())
-	trash.SetUpdatedAt(entity.UpdatedAt())
+	trash.SetEntityType(entity.GetEntityType())
+	trash.SetEntityHandle(entity.GetEntityHandle())
+	trash.SetCreatedAt(entity.GetCreatedAt())
+	trash.SetUpdatedAt(entity.GetUpdatedAt())
 	trash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	trash.SetDeletedBy("")
 
@@ -60,11 +60,11 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 	for _, attr := range attributes {
 		attrTrash := NewAttributeTrash()
 		attrTrash.SetID(attr.ID())
-		attrTrash.SetEntityID(attr.EntityID())
-		attrTrash.SetAttributeKey(attr.AttributeKey())
-		attrTrash.SetAttributeValue(attr.AttributeValue())
-		attrTrash.SetCreatedAt(attr.CreatedAt())
-		attrTrash.SetUpdatedAt(attr.UpdatedAt())
+		attrTrash.SetEntityID(attr.GetEntityID())
+		attrTrash.SetAttributeKey(attr.GetAttributeKey())
+		attrTrash.SetAttributeValue(attr.GetAttributeValue())
+		attrTrash.SetCreatedAt(attr.GetCreatedAt())
+		attrTrash.SetUpdatedAt(attr.GetUpdatedAt())
 		attrTrash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 		attrTrash.SetDeletedBy("")
 

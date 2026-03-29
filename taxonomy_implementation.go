@@ -43,7 +43,7 @@ func NewTaxonomyFromExistingData(data map[string]string) TaxonomyInterface {
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *taxonomyImplementation) Name() string {
+func (o *taxonomyImplementation) GetName() string {
 	return o.Get(COLUMN_NAME)
 }
 
@@ -52,7 +52,7 @@ func (o *taxonomyImplementation) SetName(name string) TaxonomyInterface {
 	return o
 }
 
-func (o *taxonomyImplementation) Slug() string {
+func (o *taxonomyImplementation) GetSlug() string {
 	return o.Get(COLUMN_SLUG)
 }
 
@@ -61,7 +61,7 @@ func (o *taxonomyImplementation) SetSlug(slug string) TaxonomyInterface {
 	return o
 }
 
-func (o *taxonomyImplementation) Description() string {
+func (o *taxonomyImplementation) GetDescription() string {
 	return o.Get(COLUMN_DESCRIPTION)
 }
 
@@ -70,7 +70,7 @@ func (o *taxonomyImplementation) SetDescription(desc string) TaxonomyInterface {
 	return o
 }
 
-func (o *taxonomyImplementation) ParentID() string {
+func (o *taxonomyImplementation) GetParentID() string {
 	return o.Get(COLUMN_PARENT_ID)
 }
 
@@ -79,7 +79,7 @@ func (o *taxonomyImplementation) SetParentID(parentID string) TaxonomyInterface 
 	return o
 }
 
-func (o *taxonomyImplementation) EntityTypes() []string {
+func (o *taxonomyImplementation) GetEntityTypes() []string {
 	typesStr := o.Get(COLUMN_ENTITY_TYPES)
 	if typesStr == "" {
 		return []string{}
@@ -100,7 +100,7 @@ func (o *taxonomyImplementation) SetEntityTypes(types []string) TaxonomyInterfac
 	return o
 }
 
-func (o *taxonomyImplementation) CreatedAt() string {
+func (o *taxonomyImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -109,11 +109,11 @@ func (o *taxonomyImplementation) SetCreatedAt(createdAt string) TaxonomyInterfac
 	return o
 }
 
-func (o *taxonomyImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *taxonomyImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *taxonomyImplementation) UpdatedAt() string {
+func (o *taxonomyImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -122,6 +122,6 @@ func (o *taxonomyImplementation) SetUpdatedAt(updatedAt string) TaxonomyInterfac
 	return o
 }
 
-func (o *taxonomyImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *taxonomyImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }

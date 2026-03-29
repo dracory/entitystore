@@ -36,7 +36,7 @@ func NewRelationshipFromExistingData(data map[string]string) RelationshipInterfa
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *relationshipImplementation) EntityID() string {
+func (o *relationshipImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
 
@@ -45,7 +45,7 @@ func (o *relationshipImplementation) SetEntityID(entityID string) RelationshipIn
 	return o
 }
 
-func (o *relationshipImplementation) RelatedEntityID() string {
+func (o *relationshipImplementation) GetRelatedEntityID() string {
 	return o.Get(COLUMN_RELATED_ENTITY_ID)
 }
 
@@ -54,7 +54,7 @@ func (o *relationshipImplementation) SetRelatedEntityID(relatedID string) Relati
 	return o
 }
 
-func (o *relationshipImplementation) RelationshipType() string {
+func (o *relationshipImplementation) GetRelationshipType() string {
 	return o.Get(COLUMN_RELATIONSHIP_TYPE)
 }
 
@@ -63,7 +63,7 @@ func (o *relationshipImplementation) SetRelationshipType(relType string) Relatio
 	return o
 }
 
-func (o *relationshipImplementation) ParentID() string {
+func (o *relationshipImplementation) GetParentID() string {
 	return o.Get(COLUMN_PARENT_ID)
 }
 
@@ -72,7 +72,7 @@ func (o *relationshipImplementation) SetParentID(parentID string) RelationshipIn
 	return o
 }
 
-func (o *relationshipImplementation) Sequence() int {
+func (o *relationshipImplementation) GetSequence() int {
 	val, _ := strconv.Atoi(o.Get(COLUMN_SEQUENCE))
 	return val
 }
@@ -82,7 +82,7 @@ func (o *relationshipImplementation) SetSequence(sequence int) RelationshipInter
 	return o
 }
 
-func (o *relationshipImplementation) Metadata() string {
+func (o *relationshipImplementation) GetMetadata() string {
 	return o.Get(COLUMN_METADATA)
 }
 
@@ -91,7 +91,7 @@ func (o *relationshipImplementation) SetMetadata(metadata string) RelationshipIn
 	return o
 }
 
-func (o *relationshipImplementation) CreatedAt() string {
+func (o *relationshipImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -100,6 +100,6 @@ func (o *relationshipImplementation) SetCreatedAt(createdAt string) Relationship
 	return o
 }
 
-func (o *relationshipImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *relationshipImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }

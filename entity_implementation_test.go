@@ -19,33 +19,33 @@ func TestEntityImplementation(t *testing.T) {
 
 	// Test EntityType getter/setter
 	entity.SetEntityType("product")
-	if entity.EntityType() != "product" {
-		t.Errorf("expected EntityType 'product', got '%s'", entity.EntityType())
+	if entity.GetEntityType() != "product" {
+		t.Errorf("expected EntityType 'product', got '%s'", entity.GetEntityType())
 	}
 
 	// Test EntityHandle getter/setter
 	entity.SetEntityHandle("my-handle")
-	if entity.EntityHandle() != "my-handle" {
-		t.Errorf("expected EntityHandle 'my-handle', got '%s'", entity.EntityHandle())
+	if entity.GetEntityHandle() != "my-handle" {
+		t.Errorf("expected EntityHandle 'my-handle', got '%s'", entity.GetEntityHandle())
 	}
 
 	// Test CreatedAt
-	if entity.CreatedAt() == "" {
+	if entity.GetCreatedAt() == "" {
 		t.Error("expected CreatedAt to be set")
 	}
 
 	// Test UpdatedAt
-	if entity.UpdatedAt() == "" {
+	if entity.GetUpdatedAt() == "" {
 		t.Error("expected UpdatedAt to be set")
 	}
 
 	// Test Carbon helpers
-	createdAtCarbon := entity.CreatedAtCarbon()
+	createdAtCarbon := entity.GetCreatedAtCarbon()
 	if createdAtCarbon == nil {
 		t.Error("expected CreatedAtCarbon to return valid carbon")
 	}
 
-	updatedAtCarbon := entity.UpdatedAtCarbon()
+	updatedAtCarbon := entity.GetUpdatedAtCarbon()
 	if updatedAtCarbon == nil {
 		t.Error("expected UpdatedAtCarbon to return valid carbon")
 	}
@@ -67,32 +67,32 @@ func TestEntityFromExistingData(t *testing.T) {
 		t.Errorf("expected ID 'abc123', got '%s'", entity.ID())
 	}
 
-	if entity.EntityType() != "product" {
-		t.Errorf("expected EntityType 'product', got '%s'", entity.EntityType())
+	if entity.GetEntityType() != "product" {
+		t.Errorf("expected EntityType 'product', got '%s'", entity.GetEntityType())
 	}
 
-	if entity.EntityHandle() != "my-handle" {
-		t.Errorf("expected EntityHandle 'my-handle', got '%s'", entity.EntityHandle())
+	if entity.GetEntityHandle() != "my-handle" {
+		t.Errorf("expected EntityHandle 'my-handle', got '%s'", entity.GetEntityHandle())
 	}
 
 	// Test dynamic attribute access
-	if entity.GetAttribute("custom_field") != "custom_value" {
-		t.Errorf("expected custom_field 'custom_value', got '%s'", entity.GetAttribute("custom_field"))
+	if entity.GetTemp("custom_field") != "custom_value" {
+		t.Errorf("expected custom_field 'custom_value', got '%s'", entity.GetTemp("custom_field"))
 	}
 }
 
 func TestEntityDynamicAttributes(t *testing.T) {
 	entity := NewEntity()
 
-	// Test SetAttribute / GetAttribute
-	entity.SetAttribute("name", "iPhone")
-	if entity.GetAttribute("name") != "iPhone" {
-		t.Errorf("expected attribute 'name' to be 'iPhone', got '%s'", entity.GetAttribute("name"))
+	// Test SetTemp / GetTemp
+	entity.SetTemp("name", "iPhone")
+	if entity.GetTemp("name") != "iPhone" {
+		t.Errorf("expected attribute 'name' to be 'iPhone', got '%s'", entity.GetTemp("name"))
 	}
 
-	// Test GetAllAttributes
-	entity.SetAttribute("price", "999")
-	allAttrs := entity.GetAllAttributes()
+	// Test GetAllTemp
+	entity.SetTemp("price", "999")
+	allAttrs := entity.GetAllTemp()
 
 	if len(allAttrs) != 2 {
 		t.Errorf("expected 2 dynamic attributes, got %d", len(allAttrs))
@@ -108,7 +108,7 @@ func TestEntityDynamicAttributes(t *testing.T) {
 
 	// Test that system columns are excluded
 	if _, exists := allAttrs[COLUMN_ID]; exists {
-		t.Error("expected COLUMN_ID to be excluded from GetAllAttributes")
+		t.Error("expected COLUMN_ID to be excluded from GetAllTemp")
 	}
 }
 
@@ -116,26 +116,26 @@ func TestEntityFluentInterface(t *testing.T) {
 	entity := NewEntity().
 		SetEntityType("product").
 		SetEntityHandle("iphone-15").
-		SetAttribute("name", "iPhone 15").
-		SetAttribute("price", "999")
+		SetTemp("name", "iPhone 15").
+		SetTemp("price", "999")
 
-	if entity.EntityType() != "product" {
-		t.Errorf("expected EntityType 'product', got '%s'", entity.EntityType())
+	if entity.GetEntityType() != "product" {
+		t.Errorf("expected EntityType 'product', got '%s'", entity.GetEntityType())
 	}
 
-	if entity.EntityHandle() != "iphone-15" {
-		t.Errorf("expected EntityHandle 'iphone-15', got '%s'", entity.EntityHandle())
+	if entity.GetEntityHandle() != "iphone-15" {
+		t.Errorf("expected EntityHandle 'iphone-15', got '%s'", entity.GetEntityHandle())
 	}
 
-	if entity.GetAttribute("name") != "iPhone 15" {
-		t.Errorf("expected attribute 'name' = 'iPhone 15', got '%s'", entity.GetAttribute("name"))
+	if entity.GetTemp("name") != "iPhone 15" {
+		t.Errorf("expected attribute 'name' = 'iPhone 15', got '%s'", entity.GetTemp("name"))
 	}
 }
 
 func TestEntityDataObject(t *testing.T) {
 	entity := NewEntity()
 	entity.SetEntityType("test")
-	entity.SetAttribute("foo", "bar")
+	entity.SetTemp("foo", "bar")
 
 	// Test Data() returns underlying map
 	data := entity.Data()
@@ -154,7 +154,7 @@ func TestEntityDataObject(t *testing.T) {
 	if entity.ID() != "new-id" {
 		t.Errorf("expected ID 'new-id' after Hydrate, got '%s'", entity.ID())
 	}
-	if entity.EntityType() != "hydrated" {
-		t.Errorf("expected EntityType 'hydrated' after Hydrate, got '%s'", entity.EntityType())
+	if entity.GetEntityType() != "hydrated" {
+		t.Errorf("expected EntityType 'hydrated' after Hydrate, got '%s'", entity.GetEntityType())
 	}
 }

@@ -40,7 +40,7 @@ func NewEntityTrashFromExistingData(data map[string]string) EntityTrashInterface
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *entityTrashImplementation) EntityType() string {
+func (o *entityTrashImplementation) GetEntityType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }
 
@@ -49,7 +49,7 @@ func (o *entityTrashImplementation) SetEntityType(entityType string) EntityTrash
 	return o
 }
 
-func (o *entityTrashImplementation) EntityHandle() string {
+func (o *entityTrashImplementation) GetEntityHandle() string {
 	return o.Get(COLUMN_ENTITY_HANDLE)
 }
 
@@ -58,7 +58,7 @@ func (o *entityTrashImplementation) SetEntityHandle(handle string) EntityTrashIn
 	return o
 }
 
-func (o *entityTrashImplementation) CreatedAt() string {
+func (o *entityTrashImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -67,11 +67,11 @@ func (o *entityTrashImplementation) SetCreatedAt(createdAt string) EntityTrashIn
 	return o
 }
 
-func (o *entityTrashImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *entityTrashImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *entityTrashImplementation) UpdatedAt() string {
+func (o *entityTrashImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -80,11 +80,11 @@ func (o *entityTrashImplementation) SetUpdatedAt(updatedAt string) EntityTrashIn
 	return o
 }
 
-func (o *entityTrashImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *entityTrashImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }
 
-func (o *entityTrashImplementation) DeletedAt() string {
+func (o *entityTrashImplementation) GetDeletedAt() string {
 	return o.Get(COLUMN_DELETED_AT)
 }
 
@@ -93,11 +93,11 @@ func (o *entityTrashImplementation) SetDeletedAt(deletedAt string) EntityTrashIn
 	return o
 }
 
-func (o *entityTrashImplementation) DeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.DeletedAt(), carbon.UTC)
+func (o *entityTrashImplementation) GetDeletedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetDeletedAt(), carbon.UTC)
 }
 
-func (o *entityTrashImplementation) DeletedBy() string {
+func (o *entityTrashImplementation) GetDeletedBy() string {
 	return o.Get(COLUMN_DELETED_BY)
 }
 

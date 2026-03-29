@@ -40,7 +40,7 @@ func NewAttributeFromExistingData(data map[string]string) AttributeInterface {
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *attributeImplementation) EntityID() string {
+func (o *attributeImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
 
@@ -49,7 +49,7 @@ func (o *attributeImplementation) SetEntityID(entityID string) AttributeInterfac
 	return o
 }
 
-func (o *attributeImplementation) AttributeKey() string {
+func (o *attributeImplementation) GetAttributeKey() string {
 	return o.Get(COLUMN_ATTRIBUTE_KEY)
 }
 
@@ -58,7 +58,7 @@ func (o *attributeImplementation) SetAttributeKey(key string) AttributeInterface
 	return o
 }
 
-func (o *attributeImplementation) AttributeValue() string {
+func (o *attributeImplementation) GetAttributeValue() string {
 	return o.Get(COLUMN_ATTRIBUTE_VALUE)
 }
 
@@ -67,7 +67,7 @@ func (o *attributeImplementation) SetAttributeValue(value string) AttributeInter
 	return o
 }
 
-func (o *attributeImplementation) CreatedAt() string {
+func (o *attributeImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -76,11 +76,11 @@ func (o *attributeImplementation) SetCreatedAt(createdAt string) AttributeInterf
 	return o
 }
 
-func (o *attributeImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *attributeImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *attributeImplementation) UpdatedAt() string {
+func (o *attributeImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -89,20 +89,20 @@ func (o *attributeImplementation) SetUpdatedAt(updatedAt string) AttributeInterf
 	return o
 }
 
-func (o *attributeImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *attributeImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }
 
 // == TYPE CONVERSIONS =======================================================
 
 // GetInt returns the attribute value parsed as int64
 func (o *attributeImplementation) GetInt() (int64, error) {
-	return cast.ToInt64E(o.AttributeValue())
+	return cast.ToInt64E(o.GetAttributeValue())
 }
 
 // GetFloat returns the attribute value parsed as float64
 func (o *attributeImplementation) GetFloat() (float64, error) {
-	return cast.ToFloat64E(o.AttributeValue())
+	return cast.ToFloat64E(o.GetAttributeValue())
 }
 
 // SetInt sets the attribute value from an int64

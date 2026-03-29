@@ -20,11 +20,11 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 		attribute.SetID(GenerateShortID())
 	}
 
-	if attribute.CreatedAt() == "" {
+	if attribute.GetCreatedAt() == "" {
 		attribute.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	if attribute.UpdatedAt() == "" {
+	if attribute.GetUpdatedAt() == "" {
 		attribute.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 

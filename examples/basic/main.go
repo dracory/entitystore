@@ -49,8 +49,8 @@ func main() {
 	nameAttr, _ := store.AttributeFind(ctx, person.ID(), "name")
 	ageAttr, _ := store.AttributeFind(ctx, person.ID(), "age")
 
-	fmt.Printf("   Name: %s\n", nameAttr.AttributeValue())
-	fmt.Printf("   Age: %s\n", ageAttr.AttributeValue())
+	fmt.Printf("   Name: %s\n", nameAttr.GetAttributeValue())
+	fmt.Printf("   Age: %s\n", ageAttr.GetAttributeValue())
 
 	// Create a product entity
 	fmt.Println("\n2. Creating a product entity...")
@@ -68,8 +68,8 @@ func main() {
 	prodNameAttr, _ := store.AttributeFind(ctx, product.ID(), "name")
 	prodPriceAttr, _ := store.AttributeFind(ctx, product.ID(), "price")
 
-	fmt.Printf("   Name: %s\n", prodNameAttr.AttributeValue())
-	fmt.Printf("   Price: %s\n", prodPriceAttr.AttributeValue())
+	fmt.Printf("   Name: %s\n", prodNameAttr.GetAttributeValue())
+	fmt.Printf("   Price: %s\n", prodPriceAttr.GetAttributeValue())
 
 	// List all entities
 	fmt.Println("\n3. Listing all entities...")
@@ -79,7 +79,7 @@ func main() {
 	}
 	fmt.Printf("   Found %d entities:\n", len(entities))
 	for _, e := range entities {
-		fmt.Printf("   - [%s] %s (handle: %s)\n", e.EntityType(), e.ID(), e.EntityHandle())
+		fmt.Printf("   - [%s] %s (handle: %s)\n", e.GetEntityType(), e.ID(), e.GetEntityHandle())
 	}
 
 	// Find entity by ID
@@ -89,7 +89,7 @@ func main() {
 		log.Fatalf("Failed to find entity: %v", err)
 	}
 	foundNameAttr, _ := store.AttributeFind(ctx, found.ID(), "name")
-	fmt.Printf("   Found: %s (type: %s)\n", foundNameAttr.AttributeValue(), found.EntityType())
+	fmt.Printf("   Found: %s (type: %s)\n", foundNameAttr.GetAttributeValue(), found.GetEntityType())
 
 	// Update entity attributes via store
 	fmt.Println("\n5. Updating entity attributes...")
@@ -111,7 +111,7 @@ func main() {
 	}
 	fmt.Printf("   Found %d attributes:\n", len(attrs))
 	for _, attr := range attrs {
-		fmt.Printf("   - %s: %s\n", attr.AttributeKey(), attr.AttributeValue())
+		fmt.Printf("   - %s: %s\n", attr.GetAttributeKey(), attr.GetAttributeValue())
 	}
 
 	// Count entities

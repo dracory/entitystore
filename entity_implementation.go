@@ -38,7 +38,7 @@ func NewEntityFromExistingData(data map[string]string) EntityInterface {
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *entityImplementation) EntityType() string {
+func (o *entityImplementation) GetEntityType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }
 
@@ -47,7 +47,7 @@ func (o *entityImplementation) SetEntityType(entityType string) EntityInterface 
 	return o
 }
 
-func (o *entityImplementation) EntityHandle() string {
+func (o *entityImplementation) GetEntityHandle() string {
 	return o.Get(COLUMN_ENTITY_HANDLE)
 }
 
@@ -56,7 +56,7 @@ func (o *entityImplementation) SetEntityHandle(handle string) EntityInterface {
 	return o
 }
 
-func (o *entityImplementation) CreatedAt() string {
+func (o *entityImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -65,11 +65,11 @@ func (o *entityImplementation) SetCreatedAt(createdAt string) EntityInterface {
 	return o
 }
 
-func (o *entityImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *entityImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *entityImplementation) UpdatedAt() string {
+func (o *entityImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -78,25 +78,25 @@ func (o *entityImplementation) SetUpdatedAt(updatedAt string) EntityInterface {
 	return o
 }
 
-func (o *entityImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *entityImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }
 
 // == DYNAMIC ATTRIBUTES =====================================================
 
-// GetAttribute retrieves an in-memory attribute by key
-func (o *entityImplementation) GetAttribute(key string) string {
+// GetTemp retrieves an in-memory attribute by key
+func (o *entityImplementation) GetTemp(key string) string {
 	return o.Get(key)
 }
 
-// SetAttribute sets an in-memory attribute value
-func (o *entityImplementation) SetAttribute(key string, value string) EntityInterface {
+// SetTemp sets an in-memory attribute value
+func (o *entityImplementation) SetTemp(key string, value string) EntityInterface {
 	o.Set(key, value)
 	return o
 }
 
-// GetAllAttributes returns all dynamic attributes (excludes system columns)
-func (o *entityImplementation) GetAllAttributes() map[string]string {
+// GetAllTemp returns all dynamic attributes (excludes system columns)
+func (o *entityImplementation) GetAllTemp() map[string]string {
 	systemColumns := map[string]bool{
 		COLUMN_ID:            true,
 		COLUMN_ENTITY_TYPE:   true,

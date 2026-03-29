@@ -50,7 +50,7 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 	if term == nil {
 		return errors.New("taxonomy term not found")
 	}
-	if term.TaxonomyID() != taxonomyID {
+	if term.GetTaxonomyID() != taxonomyID {
 		return errors.New("taxonomy term does not belong to the specified taxonomy")
 	}
 

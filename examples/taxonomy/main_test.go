@@ -16,11 +16,11 @@ func setupTestStore(t *testing.T) (entitystore.StoreInterface, *sql.DB, func()) 
 	}
 
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
-		DB:                     db,
-		EntityTableName:        "test_entities",
-		AttributeTableName:     "test_attributes",
-		TaxonomiesEnabled:      true,
-		AutomigrateEnabled:     true,
+		DB:                 db,
+		EntityTableName:    "test_entities",
+		AttributeTableName: "test_attributes",
+		TaxonomiesEnabled:  true,
+		AutomigrateEnabled: true,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
@@ -53,12 +53,12 @@ func TestTaxonomyCreate(t *testing.T) {
 		t.Error("Taxonomy ID should not be empty")
 	}
 
-	if tax.Name() != "Categories" {
-		t.Errorf("Expected name 'Categories', got '%s'", tax.Name())
+	if tax.GetName() != "Categories" {
+		t.Errorf("Expected name 'Categories', got '%s'", tax.GetName())
 	}
 
-	if tax.Slug() != "categories" {
-		t.Errorf("Expected slug 'categories', got '%s'", tax.Slug())
+	if tax.GetSlug() != "categories" {
+		t.Errorf("Expected slug 'categories', got '%s'", tax.GetSlug())
 	}
 }
 
@@ -82,8 +82,8 @@ func TestTaxonomyFindBySlug(t *testing.T) {
 		t.Fatal("Taxonomy should be found")
 	}
 
-	if found.Name() != "Categories" {
-		t.Errorf("Expected name 'Categories', got '%s'", found.Name())
+	if found.GetName() != "Categories" {
+		t.Errorf("Expected name 'Categories', got '%s'", found.GetName())
 	}
 }
 
@@ -147,12 +147,12 @@ func TestTaxonomyTermCreate(t *testing.T) {
 		t.Fatalf("Failed to create term: %v", err)
 	}
 
-	if term.TaxonomyID() != tax.ID() {
-		t.Errorf("Expected TaxonomyID %s, got %s", tax.ID(), term.TaxonomyID())
+	if term.GetTaxonomyID() != tax.ID() {
+		t.Errorf("Expected TaxonomyID %s, got %s", tax.ID(), term.GetTaxonomyID())
 	}
 
-	if term.Name() != "Electronics" {
-		t.Errorf("Expected name 'Electronics', got '%s'", term.Name())
+	if term.GetName() != "Electronics" {
+		t.Errorf("Expected name 'Electronics', got '%s'", term.GetName())
 	}
 }
 
@@ -185,8 +185,8 @@ func TestTaxonomyTermHierarchy(t *testing.T) {
 		t.Fatalf("Failed to create child term: %v", err)
 	}
 
-	if child.ParentID() != parent.ID() {
-		t.Errorf("Expected ParentID %s, got %s", parent.ID(), child.ParentID())
+	if child.GetParentID() != parent.ID() {
+		t.Errorf("Expected ParentID %s, got %s", parent.ID(), child.GetParentID())
 	}
 }
 
@@ -350,8 +350,8 @@ func TestTaxonomyUpdate(t *testing.T) {
 
 	// Verify
 	found, _ := store.TaxonomyFind(ctx, tax.ID())
-	if found.Description() != "Updated description" {
-		t.Errorf("Expected description 'Updated description', got '%s'", found.Description())
+	if found.GetDescription() != "Updated description" {
+		t.Errorf("Expected description 'Updated description', got '%s'", found.GetDescription())
 	}
 }
 
@@ -382,8 +382,8 @@ func TestTaxonomyTermUpdate(t *testing.T) {
 
 	// Verify
 	found, _ := store.TaxonomyTermFind(ctx, term.ID())
-	if found.SortOrder() != 5 {
-		t.Errorf("Expected sort order 5, got %d", found.SortOrder())
+	if found.GetSortOrder() != 5 {
+		t.Errorf("Expected sort order 5, got %d", found.GetSortOrder())
 	}
 }
 

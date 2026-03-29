@@ -19,29 +19,29 @@ func TestAttributeImplementation(t *testing.T) {
 
 	// Test EntityID getter/setter
 	attr.SetEntityID("entity123")
-	if attr.EntityID() != "entity123" {
-		t.Errorf("expected EntityID 'entity123', got '%s'", attr.EntityID())
+	if attr.GetEntityID() != "entity123" {
+		t.Errorf("expected EntityID 'entity123', got '%s'", attr.GetEntityID())
 	}
 
 	// Test AttributeKey getter/setter
 	attr.SetAttributeKey("name")
-	if attr.AttributeKey() != "name" {
-		t.Errorf("expected AttributeKey 'name', got '%s'", attr.AttributeKey())
+	if attr.GetAttributeKey() != "name" {
+		t.Errorf("expected AttributeKey 'name', got '%s'", attr.GetAttributeKey())
 	}
 
 	// Test AttributeValue getter/setter
 	attr.SetAttributeValue("iPhone")
-	if attr.AttributeValue() != "iPhone" {
-		t.Errorf("expected AttributeValue 'iPhone', got '%s'", attr.AttributeValue())
+	if attr.GetAttributeValue() != "iPhone" {
+		t.Errorf("expected AttributeValue 'iPhone', got '%s'", attr.GetAttributeValue())
 	}
 
 	// Test CreatedAt
-	if attr.CreatedAt() == "" {
+	if attr.GetCreatedAt() == "" {
 		t.Error("expected CreatedAt to be set")
 	}
 
 	// Test UpdatedAt
-	if attr.UpdatedAt() == "" {
+	if attr.GetUpdatedAt() == "" {
 		t.Error("expected UpdatedAt to be set")
 	}
 }
@@ -62,16 +62,16 @@ func TestAttributeFromExistingData(t *testing.T) {
 		t.Errorf("expected ID 'attr123', got '%s'", attr.ID())
 	}
 
-	if attr.EntityID() != "entity456" {
-		t.Errorf("expected EntityID 'entity456', got '%s'", attr.EntityID())
+	if attr.GetEntityID() != "entity456" {
+		t.Errorf("expected EntityID 'entity456', got '%s'", attr.GetEntityID())
 	}
 
-	if attr.AttributeKey() != "price" {
-		t.Errorf("expected AttributeKey 'price', got '%s'", attr.AttributeKey())
+	if attr.GetAttributeKey() != "price" {
+		t.Errorf("expected AttributeKey 'price', got '%s'", attr.GetAttributeKey())
 	}
 
-	if attr.AttributeValue() != "999" {
-		t.Errorf("expected AttributeValue '999', got '%s'", attr.AttributeValue())
+	if attr.GetAttributeValue() != "999" {
+		t.Errorf("expected AttributeValue '999', got '%s'", attr.GetAttributeValue())
 	}
 }
 
@@ -105,15 +105,15 @@ func TestAttributeFluentInterface(t *testing.T) {
 		SetAttributeKey("color").
 		SetAttributeValue("red")
 
-	if attr.EntityID() != "entity789" {
-		t.Errorf("expected EntityID 'entity789', got '%s'", attr.EntityID())
+	if attr.GetEntityID() != "entity789" {
+		t.Errorf("expected EntityID 'entity789', got '%s'", attr.GetEntityID())
 	}
 
-	if attr.AttributeKey() != "color" {
-		t.Errorf("expected AttributeKey 'color', got '%s'", attr.AttributeKey())
+	if attr.GetAttributeKey() != "color" {
+		t.Errorf("expected AttributeKey 'color', got '%s'", attr.GetAttributeKey())
 	}
 
-	if attr.AttributeValue() != "red" {
-		t.Errorf("expected AttributeValue 'red', got '%s'", attr.AttributeValue())
+	if attr.GetAttributeValue() != "red" {
+		t.Errorf("expected AttributeValue 'red', got '%s'", attr.GetAttributeValue())
 	}
 }

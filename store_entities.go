@@ -20,11 +20,11 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 		entity.SetID(GenerateShortID())
 	}
 
-	if entity.CreatedAt() == "" {
+	if entity.GetCreatedAt() == "" {
 		entity.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	if entity.UpdatedAt() == "" {
+	if entity.GetUpdatedAt() == "" {
 		entity.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
@@ -222,8 +222,8 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 	}
 
 	for _, attr := range attrs {
-		if attr.AttributeValue() == attributeValue {
-			return st.EntityFindByID(ctx, attr.EntityID())
+		if attr.GetAttributeValue() == attributeValue {
+			return st.EntityFindByID(ctx, attr.GetEntityID())
 		}
 	}
 
@@ -241,7 +241,7 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 	var results []EntityInterface
 	for _, entity := range entities {
 		attr, err := st.AttributeFind(ctx, entity.ID(), attributeKey)
-		if err == nil && attr != nil && attr.AttributeValue() == attributeValue {
+		if err == nil && attr != nil && attr.GetAttributeValue() == attributeValue {
 			results = append(results, entity)
 		}
 	}

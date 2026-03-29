@@ -43,7 +43,7 @@ func NewTaxonomyTermFromExistingData(data map[string]string) TaxonomyTermInterfa
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *taxonomyTermImplementation) TaxonomyID() string {
+func (o *taxonomyTermImplementation) GetTaxonomyID() string {
 	return o.Get(COLUMN_TAXONOMY_ID)
 }
 
@@ -52,7 +52,7 @@ func (o *taxonomyTermImplementation) SetTaxonomyID(taxonomyID string) TaxonomyTe
 	return o
 }
 
-func (o *taxonomyTermImplementation) Name() string {
+func (o *taxonomyTermImplementation) GetName() string {
 	return o.Get(COLUMN_NAME)
 }
 
@@ -61,7 +61,7 @@ func (o *taxonomyTermImplementation) SetName(name string) TaxonomyTermInterface 
 	return o
 }
 
-func (o *taxonomyTermImplementation) Slug() string {
+func (o *taxonomyTermImplementation) GetSlug() string {
 	return o.Get(COLUMN_SLUG)
 }
 
@@ -70,7 +70,7 @@ func (o *taxonomyTermImplementation) SetSlug(slug string) TaxonomyTermInterface 
 	return o
 }
 
-func (o *taxonomyTermImplementation) ParentID() string {
+func (o *taxonomyTermImplementation) GetParentID() string {
 	return o.Get(COLUMN_PARENT_ID)
 }
 
@@ -79,7 +79,7 @@ func (o *taxonomyTermImplementation) SetParentID(parentID string) TaxonomyTermIn
 	return o
 }
 
-func (o *taxonomyTermImplementation) SortOrder() int {
+func (o *taxonomyTermImplementation) GetSortOrder() int {
 	val, _ := strconv.Atoi(o.Get(COLUMN_SORT_ORDER))
 	return val
 }
@@ -89,7 +89,7 @@ func (o *taxonomyTermImplementation) SetSortOrder(order int) TaxonomyTermInterfa
 	return o
 }
 
-func (o *taxonomyTermImplementation) CreatedAt() string {
+func (o *taxonomyTermImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -98,11 +98,11 @@ func (o *taxonomyTermImplementation) SetCreatedAt(createdAt string) TaxonomyTerm
 	return o
 }
 
-func (o *taxonomyTermImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *taxonomyTermImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTermImplementation) UpdatedAt() string {
+func (o *taxonomyTermImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -111,6 +111,6 @@ func (o *taxonomyTermImplementation) SetUpdatedAt(updatedAt string) TaxonomyTerm
 	return o
 }
 
-func (o *taxonomyTermImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *taxonomyTermImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }

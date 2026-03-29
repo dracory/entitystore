@@ -37,7 +37,7 @@ func NewTaxonomyTermTrashFromExistingData(data map[string]string) TaxonomyTermTr
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *taxonomyTermTrashImplementation) TaxonomyID() string {
+func (o *taxonomyTermTrashImplementation) GetTaxonomyID() string {
 	return o.Get(COLUMN_TAXONOMY_ID)
 }
 
@@ -46,7 +46,7 @@ func (o *taxonomyTermTrashImplementation) SetTaxonomyID(taxonomyID string) Taxon
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) Name() string {
+func (o *taxonomyTermTrashImplementation) GetName() string {
 	return o.Get(COLUMN_NAME)
 }
 
@@ -55,7 +55,7 @@ func (o *taxonomyTermTrashImplementation) SetName(name string) TaxonomyTermTrash
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) Slug() string {
+func (o *taxonomyTermTrashImplementation) GetSlug() string {
 	return o.Get(COLUMN_SLUG)
 }
 
@@ -64,7 +64,7 @@ func (o *taxonomyTermTrashImplementation) SetSlug(slug string) TaxonomyTermTrash
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) ParentID() string {
+func (o *taxonomyTermTrashImplementation) GetParentID() string {
 	return o.Get(COLUMN_PARENT_ID)
 }
 
@@ -73,7 +73,7 @@ func (o *taxonomyTermTrashImplementation) SetParentID(parentID string) TaxonomyT
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) SortOrder() int {
+func (o *taxonomyTermTrashImplementation) GetSortOrder() int {
 	val, _ := strconv.Atoi(o.Get(COLUMN_SORT_ORDER))
 	return val
 }
@@ -83,7 +83,7 @@ func (o *taxonomyTermTrashImplementation) SetSortOrder(order int) TaxonomyTermTr
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) CreatedAt() string {
+func (o *taxonomyTermTrashImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -92,11 +92,11 @@ func (o *taxonomyTermTrashImplementation) SetCreatedAt(createdAt string) Taxonom
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *taxonomyTermTrashImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTermTrashImplementation) UpdatedAt() string {
+func (o *taxonomyTermTrashImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -105,11 +105,11 @@ func (o *taxonomyTermTrashImplementation) SetUpdatedAt(updatedAt string) Taxonom
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *taxonomyTermTrashImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTermTrashImplementation) DeletedAt() string {
+func (o *taxonomyTermTrashImplementation) GetDeletedAt() string {
 	return o.Get(COLUMN_DELETED_AT)
 }
 
@@ -118,11 +118,11 @@ func (o *taxonomyTermTrashImplementation) SetDeletedAt(deletedAt string) Taxonom
 	return o
 }
 
-func (o *taxonomyTermTrashImplementation) DeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.DeletedAt(), carbon.UTC)
+func (o *taxonomyTermTrashImplementation) GetDeletedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetDeletedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTermTrashImplementation) DeletedBy() string {
+func (o *taxonomyTermTrashImplementation) GetDeletedBy() string {
 	return o.Get(COLUMN_DELETED_BY)
 }
 

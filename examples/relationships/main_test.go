@@ -16,11 +16,11 @@ func setupTestStore(t *testing.T) (entitystore.StoreInterface, *sql.DB, func()) 
 	}
 
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
-		DB:                      db,
-		EntityTableName:         "test_entities",
-		AttributeTableName:      "test_attributes",
-		RelationshipsEnabled:    true,
-		AutomigrateEnabled:      true,
+		DB:                   db,
+		EntityTableName:      "test_entities",
+		AttributeTableName:   "test_attributes",
+		RelationshipsEnabled: true,
+		AutomigrateEnabled:   true,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
@@ -57,12 +57,12 @@ func TestRelationshipCreate(t *testing.T) {
 		t.Error("Relationship ID should not be empty")
 	}
 
-	if rel.EntityID() != child.ID() {
-		t.Errorf("Expected EntityID %s, got %s", child.ID(), rel.EntityID())
+	if rel.GetEntityID() != child.ID() {
+		t.Errorf("Expected EntityID %s, got %s", child.ID(), rel.GetEntityID())
 	}
 
-	if rel.RelatedEntityID() != parent.ID() {
-		t.Errorf("Expected RelatedEntityID %s, got %s", parent.ID(), rel.RelatedEntityID())
+	if rel.GetRelatedEntityID() != parent.ID() {
+		t.Errorf("Expected RelatedEntityID %s, got %s", parent.ID(), rel.GetRelatedEntityID())
 	}
 }
 
@@ -88,8 +88,8 @@ func TestRelationshipFindByEntities(t *testing.T) {
 		t.Fatalf("Failed to find relationship: %v", err)
 	}
 
-	if found.EntityID() != child.ID() {
-		t.Errorf("Expected EntityID %s, got %s", child.ID(), found.EntityID())
+	if found.GetEntityID() != child.ID() {
+		t.Errorf("Expected EntityID %s, got %s", child.ID(), found.GetEntityID())
 	}
 }
 
@@ -192,8 +192,8 @@ func TestRelationshipTypes(t *testing.T) {
 			t.Errorf("Failed to create %s relationship: %v", tt.relType, err)
 			continue
 		}
-		if rel.RelationshipType() != tt.relType {
-			t.Errorf("Expected type %s, got %s", tt.relType, rel.RelationshipType())
+		if rel.GetRelationshipType() != tt.relType {
+			t.Errorf("Expected type %s, got %s", tt.relType, rel.GetRelationshipType())
 		}
 	}
 }

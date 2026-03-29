@@ -37,7 +37,7 @@ func NewTaxonomyTrashFromExistingData(data map[string]string) TaxonomyTrashInter
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *taxonomyTrashImplementation) Name() string {
+func (o *taxonomyTrashImplementation) GetName() string {
 	return o.Get(COLUMN_NAME)
 }
 
@@ -46,7 +46,7 @@ func (o *taxonomyTrashImplementation) SetName(name string) TaxonomyTrashInterfac
 	return o
 }
 
-func (o *taxonomyTrashImplementation) Slug() string {
+func (o *taxonomyTrashImplementation) GetSlug() string {
 	return o.Get(COLUMN_SLUG)
 }
 
@@ -55,7 +55,7 @@ func (o *taxonomyTrashImplementation) SetSlug(slug string) TaxonomyTrashInterfac
 	return o
 }
 
-func (o *taxonomyTrashImplementation) Description() string {
+func (o *taxonomyTrashImplementation) GetDescription() string {
 	return o.Get(COLUMN_DESCRIPTION)
 }
 
@@ -64,7 +64,7 @@ func (o *taxonomyTrashImplementation) SetDescription(desc string) TaxonomyTrashI
 	return o
 }
 
-func (o *taxonomyTrashImplementation) ParentID() string {
+func (o *taxonomyTrashImplementation) GetParentID() string {
 	return o.Get(COLUMN_PARENT_ID)
 }
 
@@ -73,7 +73,7 @@ func (o *taxonomyTrashImplementation) SetParentID(parentID string) TaxonomyTrash
 	return o
 }
 
-func (o *taxonomyTrashImplementation) EntityTypes() []string {
+func (o *taxonomyTrashImplementation) GetEntityTypes() []string {
 	typesStr := o.Get(COLUMN_ENTITY_TYPES)
 	if typesStr == "" {
 		return []string{}
@@ -94,7 +94,7 @@ func (o *taxonomyTrashImplementation) SetEntityTypes(types []string) TaxonomyTra
 	return o
 }
 
-func (o *taxonomyTrashImplementation) CreatedAt() string {
+func (o *taxonomyTrashImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -103,11 +103,11 @@ func (o *taxonomyTrashImplementation) SetCreatedAt(createdAt string) TaxonomyTra
 	return o
 }
 
-func (o *taxonomyTrashImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *taxonomyTrashImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTrashImplementation) UpdatedAt() string {
+func (o *taxonomyTrashImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -116,11 +116,11 @@ func (o *taxonomyTrashImplementation) SetUpdatedAt(updatedAt string) TaxonomyTra
 	return o
 }
 
-func (o *taxonomyTrashImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *taxonomyTrashImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTrashImplementation) DeletedAt() string {
+func (o *taxonomyTrashImplementation) GetDeletedAt() string {
 	return o.Get(COLUMN_DELETED_AT)
 }
 
@@ -129,11 +129,11 @@ func (o *taxonomyTrashImplementation) SetDeletedAt(deletedAt string) TaxonomyTra
 	return o
 }
 
-func (o *taxonomyTrashImplementation) DeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.DeletedAt(), carbon.UTC)
+func (o *taxonomyTrashImplementation) GetDeletedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetDeletedAt(), carbon.UTC)
 }
 
-func (o *taxonomyTrashImplementation) DeletedBy() string {
+func (o *taxonomyTrashImplementation) GetDeletedBy() string {
 	return o.Get(COLUMN_DELETED_BY)
 }
 

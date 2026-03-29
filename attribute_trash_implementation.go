@@ -41,7 +41,7 @@ func NewAttributeTrashFromExistingData(data map[string]string) AttributeTrashInt
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *attributeTrashImplementation) EntityID() string {
+func (o *attributeTrashImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
 
@@ -50,7 +50,7 @@ func (o *attributeTrashImplementation) SetEntityID(entityID string) AttributeTra
 	return o
 }
 
-func (o *attributeTrashImplementation) AttributeKey() string {
+func (o *attributeTrashImplementation) GetAttributeKey() string {
 	return o.Get(COLUMN_ATTRIBUTE_KEY)
 }
 
@@ -59,7 +59,7 @@ func (o *attributeTrashImplementation) SetAttributeKey(key string) AttributeTras
 	return o
 }
 
-func (o *attributeTrashImplementation) AttributeValue() string {
+func (o *attributeTrashImplementation) GetAttributeValue() string {
 	return o.Get(COLUMN_ATTRIBUTE_VALUE)
 }
 
@@ -68,7 +68,7 @@ func (o *attributeTrashImplementation) SetAttributeValue(value string) Attribute
 	return o
 }
 
-func (o *attributeTrashImplementation) CreatedAt() string {
+func (o *attributeTrashImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -77,11 +77,11 @@ func (o *attributeTrashImplementation) SetCreatedAt(createdAt string) AttributeT
 	return o
 }
 
-func (o *attributeTrashImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *attributeTrashImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }
 
-func (o *attributeTrashImplementation) UpdatedAt() string {
+func (o *attributeTrashImplementation) GetUpdatedAt() string {
 	return o.Get(COLUMN_UPDATED_AT)
 }
 
@@ -90,11 +90,11 @@ func (o *attributeTrashImplementation) SetUpdatedAt(updatedAt string) AttributeT
 	return o
 }
 
-func (o *attributeTrashImplementation) UpdatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.UpdatedAt(), carbon.UTC)
+func (o *attributeTrashImplementation) GetUpdatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetUpdatedAt(), carbon.UTC)
 }
 
-func (o *attributeTrashImplementation) DeletedAt() string {
+func (o *attributeTrashImplementation) GetDeletedAt() string {
 	return o.Get(COLUMN_DELETED_AT)
 }
 
@@ -103,11 +103,11 @@ func (o *attributeTrashImplementation) SetDeletedAt(deletedAt string) AttributeT
 	return o
 }
 
-func (o *attributeTrashImplementation) DeletedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.DeletedAt(), carbon.UTC)
+func (o *attributeTrashImplementation) GetDeletedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetDeletedAt(), carbon.UTC)
 }
 
-func (o *attributeTrashImplementation) DeletedBy() string {
+func (o *attributeTrashImplementation) GetDeletedBy() string {
 	return o.Get(COLUMN_DELETED_BY)
 }
 

@@ -38,7 +38,7 @@ func NewEntityTaxonomyFromExistingData(data map[string]string) EntityTaxonomyInt
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *entityTaxonomyImplementation) EntityID() string {
+func (o *entityTaxonomyImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
 
@@ -47,7 +47,7 @@ func (o *entityTaxonomyImplementation) SetEntityID(entityID string) EntityTaxono
 	return o
 }
 
-func (o *entityTaxonomyImplementation) TaxonomyID() string {
+func (o *entityTaxonomyImplementation) GetTaxonomyID() string {
 	return o.Get(COLUMN_TAXONOMY_ID)
 }
 
@@ -56,7 +56,7 @@ func (o *entityTaxonomyImplementation) SetTaxonomyID(taxonomyID string) EntityTa
 	return o
 }
 
-func (o *entityTaxonomyImplementation) TermID() string {
+func (o *entityTaxonomyImplementation) GetTermID() string {
 	return o.Get(COLUMN_TERM_ID)
 }
 
@@ -65,7 +65,7 @@ func (o *entityTaxonomyImplementation) SetTermID(termID string) EntityTaxonomyIn
 	return o
 }
 
-func (o *entityTaxonomyImplementation) CreatedAt() string {
+func (o *entityTaxonomyImplementation) GetCreatedAt() string {
 	return o.Get(COLUMN_CREATED_AT)
 }
 
@@ -74,6 +74,6 @@ func (o *entityTaxonomyImplementation) SetCreatedAt(createdAt string) EntityTaxo
 	return o
 }
 
-func (o *entityTaxonomyImplementation) CreatedAtCarbon() *carbon.Carbon {
-	return carbon.Parse(o.CreatedAt(), carbon.UTC)
+func (o *entityTaxonomyImplementation) GetCreatedAtCarbon() *carbon.Carbon {
+	return carbon.Parse(o.GetCreatedAt(), carbon.UTC)
 }

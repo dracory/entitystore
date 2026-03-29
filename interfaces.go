@@ -15,12 +15,12 @@ type EntityInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityType() string
-	EntityHandle() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
+	GetEntityType() string
+	GetEntityHandle() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityType(entityType string) EntityInterface
@@ -28,10 +28,10 @@ type EntityInterface interface {
 	SetCreatedAt(createdAt string) EntityInterface
 	SetUpdatedAt(updatedAt string) EntityInterface
 
-	// Dynamic / extra attributes (in-memory)
-	GetAttribute(key string) string
-	SetAttribute(key string, value string) EntityInterface
-	GetAllAttributes() map[string]string
+	// Dynamic / extra attributes (in-memory only, not persisted)
+	GetTemp(key string) string
+	SetTemp(key string, value string) EntityInterface
+	GetAllTemp() map[string]string
 }
 
 // == ATTRIBUTE INTERFACE ====================================================
@@ -41,13 +41,13 @@ type AttributeInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityID() string
-	AttributeKey() string
-	AttributeValue() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
+	GetEntityID() string
+	GetAttributeKey() string
+	GetAttributeValue() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) AttributeInterface
@@ -70,14 +70,14 @@ type RelationshipInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityID() string
-	RelatedEntityID() string
-	RelationshipType() string
-	ParentID() string
-	Sequence() int
-	Metadata() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
+	GetEntityID() string
+	GetRelatedEntityID() string
+	GetRelationshipType() string
+	GetParentID() string
+	GetSequence() int
+	GetMetadata() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) RelationshipInterface
@@ -96,15 +96,15 @@ type EntityTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityType() string
-	EntityHandle() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
-	DeletedAt() string
-	DeletedAtCarbon() *carbon.Carbon
-	DeletedBy() string
+	GetEntityType() string
+	GetEntityHandle() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
+	GetDeletedAt() string
+	GetDeletedAtCarbon() *carbon.Carbon
+	GetDeletedBy() string
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityType(entityType string) EntityTrashInterface
@@ -120,16 +120,16 @@ type AttributeTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityID() string
-	AttributeKey() string
-	AttributeValue() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
-	DeletedAt() string
-	DeletedAtCarbon() *carbon.Carbon
-	DeletedBy() string
+	GetEntityID() string
+	GetAttributeKey() string
+	GetAttributeValue() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
+	GetDeletedAt() string
+	GetDeletedAtCarbon() *carbon.Carbon
+	GetDeletedBy() string
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) AttributeTrashInterface
@@ -146,17 +146,17 @@ type RelationshipTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityID() string
-	RelatedEntityID() string
-	RelationshipType() string
-	ParentID() string
-	Sequence() int
-	Metadata() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	DeletedAt() string
-	DeletedAtCarbon() *carbon.Carbon
-	DeletedBy() string
+	GetEntityID() string
+	GetRelatedEntityID() string
+	GetRelationshipType() string
+	GetParentID() string
+	GetSequence() int
+	GetMetadata() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetDeletedAt() string
+	GetDeletedAtCarbon() *carbon.Carbon
+	GetDeletedBy() string
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) RelationshipTrashInterface
@@ -177,15 +177,15 @@ type TaxonomyInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	Name() string
-	Slug() string
-	Description() string
-	ParentID() string
-	EntityTypes() []string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
+	GetName() string
+	GetSlug() string
+	GetDescription() string
+	GetParentID() string
+	GetEntityTypes() []string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetName(name string) TaxonomyInterface
@@ -202,15 +202,15 @@ type TaxonomyTermInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	TaxonomyID() string
-	Name() string
-	Slug() string
-	ParentID() string
-	SortOrder() int
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
+	GetTaxonomyID() string
+	GetName() string
+	GetSlug() string
+	GetParentID() string
+	GetSortOrder() int
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetTaxonomyID(taxonomyID string) TaxonomyTermInterface
@@ -227,11 +227,11 @@ type EntityTaxonomyInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	EntityID() string
-	TaxonomyID() string
-	TermID() string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
+	GetEntityID() string
+	GetTaxonomyID() string
+	GetTermID() string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetEntityID(entityID string) EntityTaxonomyInterface
@@ -245,18 +245,18 @@ type TaxonomyTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	Name() string
-	Slug() string
-	Description() string
-	ParentID() string
-	EntityTypes() []string
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
-	DeletedAt() string
-	DeletedAtCarbon() *carbon.Carbon
-	DeletedBy() string
+	GetName() string
+	GetSlug() string
+	GetDescription() string
+	GetParentID() string
+	GetEntityTypes() []string
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
+	GetDeletedAt() string
+	GetDeletedAtCarbon() *carbon.Carbon
+	GetDeletedBy() string
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetName(name string) TaxonomyTrashInterface
@@ -275,18 +275,18 @@ type TaxonomyTermTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	TaxonomyID() string
-	Name() string
-	Slug() string
-	ParentID() string
-	SortOrder() int
-	CreatedAt() string
-	CreatedAtCarbon() *carbon.Carbon
-	UpdatedAt() string
-	UpdatedAtCarbon() *carbon.Carbon
-	DeletedAt() string
-	DeletedAtCarbon() *carbon.Carbon
-	DeletedBy() string
+	GetTaxonomyID() string
+	GetName() string
+	GetSlug() string
+	GetParentID() string
+	GetSortOrder() int
+	GetCreatedAt() string
+	GetCreatedAtCarbon() *carbon.Carbon
+	GetUpdatedAt() string
+	GetUpdatedAtCarbon() *carbon.Carbon
+	GetDeletedAt() string
+	GetDeletedAtCarbon() *carbon.Carbon
+	GetDeletedBy() string
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
 	SetTaxonomyID(taxonomyID string) TaxonomyTermTrashInterface

@@ -38,7 +38,7 @@ func TestEntityAttributesCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal("Entity title could not be retrieved:", err)
 	}
-	if titleAttr == nil || titleAttr.AttributeValue() != "Product 1" {
+	if titleAttr == nil || titleAttr.GetAttributeValue() != "Product 1" {
 		t.Fatal("Title is incorrect:", titleAttr)
 	}
 
@@ -94,7 +94,7 @@ func TestEntityAttributesCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal("Entity description could not be retrieved:", err)
 	}
-	if descAttr == nil || descAttr.AttributeValue() != "Description text" {
+	if descAttr == nil || descAttr.GetAttributeValue() != "Description text" {
 		t.Fatal("Description is incorrect:", descAttr)
 	}
 }

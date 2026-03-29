@@ -52,7 +52,7 @@ func TestRelationshipCreate(t *testing.T) {
 		t.Error("Relationship ID should be set after creation")
 	}
 
-	if rel.CreatedAt() == "" {
+	if rel.GetCreatedAt() == "" {
 		t.Error("Relationship CreatedAt should be set after creation")
 	}
 }
@@ -101,16 +101,16 @@ func TestRelationshipCreateByOptions(t *testing.T) {
 		t.Error("Relationship ID should be set")
 	}
 
-	if rel.EntityID() != entity1.ID() {
-		t.Errorf("EntityID mismatch: expected %s, got %s", entity1.ID(), rel.EntityID())
+	if rel.GetEntityID() != entity1.ID() {
+		t.Errorf("EntityID mismatch: expected %s, got %s", entity1.ID(), rel.GetEntityID())
 	}
 
-	if rel.RelatedEntityID() != entity2.ID() {
-		t.Errorf("RelatedEntityID mismatch: expected %s, got %s", entity2.ID(), rel.RelatedEntityID())
+	if rel.GetRelatedEntityID() != entity2.ID() {
+		t.Errorf("RelatedEntityID mismatch: expected %s, got %s", entity2.ID(), rel.GetRelatedEntityID())
 	}
 
-	if rel.Sequence() != 5 {
-		t.Errorf("Sequence mismatch: expected 5, got %d", rel.Sequence())
+	if rel.GetSequence() != 5 {
+		t.Errorf("Sequence mismatch: expected 5, got %d", rel.GetSequence())
 	}
 }
 
@@ -441,12 +441,12 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 		t.Errorf("Expected 1 item in trash, got %d", len(trashItems))
 	}
 
-	if trashItems[0].DeletedBy() != "user_123" {
-		t.Errorf("Expected deleted_by to be 'user_123', got '%s'", trashItems[0].DeletedBy())
+	if trashItems[0].GetDeletedBy() != "user_123" {
+		t.Errorf("Expected deleted_by to be 'user_123', got '%s'", trashItems[0].GetDeletedBy())
 	}
 
-	if trashItems[0].Metadata() != "{\"test\": \"data\"}" {
-		t.Errorf("Metadata should be preserved in trash, got '%s'", trashItems[0].Metadata())
+	if trashItems[0].GetMetadata() != "{\"test\": \"data\"}" {
+		t.Errorf("Metadata should be preserved in trash, got '%s'", trashItems[0].GetMetadata())
 	}
 
 	// Restore it
@@ -465,8 +465,8 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 		t.Error("Relationship should be restored to main table")
 	}
 
-	if found2.Metadata() != "{\"test\": \"data\"}" {
-		t.Errorf("Metadata should be preserved after restore, got '%s'", found2.Metadata())
+	if found2.GetMetadata() != "{\"test\": \"data\"}" {
+		t.Errorf("Metadata should be preserved after restore, got '%s'", found2.GetMetadata())
 	}
 
 	// Verify it's gone from trash

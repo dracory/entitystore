@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create author: %v", err)
 	}
-	fmt.Printf("   Created author: %s (ID: %s)\n", author.GetAttribute("name"), author.ID())
+	fmt.Printf("   Created author: %s (ID: %s)\n", "Jane Smith", author.ID())
 
 	// Create Book entities
 	fmt.Println("\n2. Creating Book entities...")
@@ -58,12 +58,11 @@ func main() {
 		"title": "The Adventure",
 		"isbn":  "978-0987654321",
 	})
-	title1 := book1.GetAttribute("title")
-	fmt.Println("title1:", title1)
-	title2 := book2.GetAttribute("title")
-	fmt.Println("title2:", title2)
-	fmt.Printf("   Book 1: %s (ID: %s)\n", title1, book1.ID())
-	fmt.Printf("   Book 2: %s (ID: %s)\n", title2, book2.ID())
+	if err != nil {
+		log.Fatalf("Failed to create book: %v", err)
+	}
+	fmt.Printf("   Book 1: %s (ID: %s)\n", "The Mystery", book1.ID())
+	fmt.Printf("   Book 2: %s (ID: %s)\n", "The Adventure", book2.ID())
 
 	// Create BELONGS_TO relationship (book belongs to author)
 	fmt.Println("\n3. Creating BELONGS_TO relationships (books → author)...")
@@ -96,7 +95,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create category: %v", err)
 	}
-	fmt.Printf("   Category: %s (ID: %s)\n", fictionCategory.GetAttribute("name"), fictionCategory.ID())
+	fmt.Printf("   Category: %s (ID: %s)\n", fictionCategory.GetTemp("name"), fictionCategory.ID())
 
 	// Create MANY_TO_MANY relationship (books <-> categories)
 	fmt.Println("\n5. Creating MANY_TO_MANY relationships (books ↔ category)...")
@@ -130,11 +129,11 @@ func main() {
 	}
 	fmt.Printf("   Found %d books belonging to author:\n", len(relationships))
 	for _, rel := range relationships {
-		book, err := store.EntityFindByID(ctx, rel.EntityID())
+		book, err := store.EntityFindByID(ctx, rel.GetEntityID())
 		if err != nil {
 			log.Fatalf("Failed to find book: %v", err)
 		}
-		fmt.Printf("   - %s\n", book.GetAttribute("title"))
+		fmt.Printf("   - %s\n", book.GetTemp("title"))
 	}
 
 	// Query reverse relationships
@@ -147,7 +146,7 @@ func main() {
 		log.Fatalf("Failed to list relationships: %v", err)
 	}
 	fmt.Printf("   Book '%s' is in %d categories\n",
-		book1.GetAttribute("title"), len(book1Categories))
+		book1.GetTemp("title"), len(book1Categories))
 
 	// Count relationships
 	fmt.Println("\n8. Counting relationships...")

@@ -14,7 +14,7 @@ func TestNewRelationshipTrash(t *testing.T) {
 	}
 
 	// Should have deleted_at set
-	if trash.DeletedAt() == "" {
+	if trash.GetDeletedAt() == "" {
 		t.Error("NewRelationshipTrash() should set DeletedAt")
 	}
 }
@@ -30,58 +30,58 @@ func TestRelationshipTrashSettersAndGetters(t *testing.T) {
 
 	// Test EntityID
 	trash.SetEntityID("entity_123")
-	if trash.EntityID() != "entity_123" {
-		t.Errorf("SetEntityID/GetEntityID failed: expected 'entity_123', got '%s'", trash.EntityID())
+	if trash.GetEntityID() != "entity_123" {
+		t.Errorf("SetEntityID/GetEntityID failed: expected 'entity_123', got '%s'", trash.GetEntityID())
 	}
 
 	// Test RelatedEntityID
 	trash.SetRelatedEntityID("related_456")
-	if trash.RelatedEntityID() != "related_456" {
-		t.Errorf("SetRelatedEntityID/GetRelatedEntityID failed: expected 'related_456', got '%s'", trash.RelatedEntityID())
+	if trash.GetRelatedEntityID() != "related_456" {
+		t.Errorf("SetRelatedEntityID/GetRelatedEntityID failed: expected 'related_456', got '%s'", trash.GetRelatedEntityID())
 	}
 
 	// Test RelationshipType
 	trash.SetRelationshipType(RELATIONSHIP_TYPE_HAS_MANY)
-	if trash.RelationshipType() != RELATIONSHIP_TYPE_HAS_MANY {
-		t.Errorf("SetRelationshipType/GetRelationshipType failed: expected '%s', got '%s'", RELATIONSHIP_TYPE_HAS_MANY, trash.RelationshipType())
+	if trash.GetRelationshipType() != RELATIONSHIP_TYPE_HAS_MANY {
+		t.Errorf("SetRelationshipType/GetRelationshipType failed: expected '%s', got '%s'", RELATIONSHIP_TYPE_HAS_MANY, trash.GetRelationshipType())
 	}
 
 	// Test ParentID
 	trash.SetParentID("parent_789")
-	if trash.ParentID() != "parent_789" {
-		t.Errorf("SetParentID/GetParentID failed: expected 'parent_789', got '%s'", trash.ParentID())
+	if trash.GetParentID() != "parent_789" {
+		t.Errorf("SetParentID/GetParentID failed: expected 'parent_789', got '%s'", trash.GetParentID())
 	}
 
 	// Test Sequence
 	trash.SetSequence(100)
-	if trash.Sequence() != 100 {
-		t.Errorf("SetSequence/GetSequence failed: expected 100, got %d", trash.Sequence())
+	if trash.GetSequence() != 100 {
+		t.Errorf("SetSequence/GetSequence failed: expected 100, got %d", trash.GetSequence())
 	}
 
 	// Test Metadata
 	trash.SetMetadata("{\"deleted\": true}")
-	if trash.Metadata() != "{\"deleted\": true}" {
-		t.Errorf("SetMetadata/GetMetadata failed: expected '{\"deleted\": true}', got '%s'", trash.Metadata())
+	if trash.GetMetadata() != "{\"deleted\": true}" {
+		t.Errorf("SetMetadata/GetMetadata failed: expected '{\"deleted\": true}', got '%s'", trash.GetMetadata())
 	}
 
 	// Test CreatedAt
 	testTime := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
 	trash.SetCreatedAt(testTime)
-	if trash.CreatedAt() != testTime {
-		t.Errorf("SetCreatedAt/GetCreatedAt failed: expected '%s', got '%s'", testTime, trash.CreatedAt())
+	if trash.GetCreatedAt() != testTime {
+		t.Errorf("SetCreatedAt/GetCreatedAt failed: expected '%s', got '%s'", testTime, trash.GetCreatedAt())
 	}
 
 	// Test DeletedAt
 	deletedTime := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
 	trash.SetDeletedAt(deletedTime)
-	if trash.DeletedAt() != deletedTime {
-		t.Errorf("SetDeletedAt/GetDeletedAt failed: expected '%s', got '%s'", deletedTime, trash.DeletedAt())
+	if trash.GetDeletedAt() != deletedTime {
+		t.Errorf("SetDeletedAt/GetDeletedAt failed: expected '%s', got '%s'", deletedTime, trash.GetDeletedAt())
 	}
 
 	// Test DeletedBy
 	trash.SetDeletedBy("user_123")
-	if trash.DeletedBy() != "user_123" {
-		t.Errorf("SetDeletedBy/GetDeletedBy failed: expected 'user_123', got '%s'", trash.DeletedBy())
+	if trash.GetDeletedBy() != "user_123" {
+		t.Errorf("SetDeletedBy/GetDeletedBy failed: expected 'user_123', got '%s'", trash.GetDeletedBy())
 	}
 }
 
@@ -91,7 +91,7 @@ func TestRelationshipTrashCreatedAtCarbon(t *testing.T) {
 	testTime := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
 	trash.SetCreatedAt(testTime)
 
-	carbonTime := trash.CreatedAtCarbon()
+	carbonTime := trash.GetCreatedAtCarbon()
 	if carbonTime == nil {
 		t.Error("CreatedAtCarbon() returned nil")
 	}
@@ -107,7 +107,7 @@ func TestRelationshipTrashDeletedAtCarbon(t *testing.T) {
 	testTime := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
 	trash.SetDeletedAt(testTime)
 
-	carbonTime := trash.DeletedAtCarbon()
+	carbonTime := trash.GetDeletedAtCarbon()
 	if carbonTime == nil {
 		t.Error("DeletedAtCarbon() returned nil")
 	}
@@ -127,8 +127,8 @@ func TestNewRelationshipTrashFromExistingData(t *testing.T) {
 		COLUMN_PARENT_ID:         "parent_000",
 		COLUMN_SEQUENCE:          "3",
 		COLUMN_METADATA:          "{\"reason\": \"test\"}",
-		COLUMN_CREATED_AT:      now,
-		COLUMN_DELETED_AT:      now,
+		COLUMN_CREATED_AT:        now,
+		COLUMN_DELETED_AT:        now,
 		COLUMN_DELETED_BY:        "admin_001",
 	}
 
@@ -138,32 +138,32 @@ func TestNewRelationshipTrashFromExistingData(t *testing.T) {
 		t.Errorf("ID from existing data failed: expected 'trash_123', got '%s'", trash.ID())
 	}
 
-	if trash.EntityID() != "entity_456" {
-		t.Errorf("EntityID from existing data failed: expected 'entity_456', got '%s'", trash.EntityID())
+	if trash.GetEntityID() != "entity_456" {
+		t.Errorf("EntityID from existing data failed: expected 'entity_456', got '%s'", trash.GetEntityID())
 	}
 
-	if trash.RelatedEntityID() != "entity_789" {
-		t.Errorf("RelatedEntityID from existing data failed: expected 'entity_789', got '%s'", trash.RelatedEntityID())
+	if trash.GetRelatedEntityID() != "entity_789" {
+		t.Errorf("RelatedEntityID from existing data failed: expected 'entity_789', got '%s'", trash.GetRelatedEntityID())
 	}
 
-	if trash.RelationshipType() != RELATIONSHIP_TYPE_BELONGS_TO {
-		t.Errorf("RelationshipType from existing data failed: expected '%s', got '%s'", RELATIONSHIP_TYPE_BELONGS_TO, trash.RelationshipType())
+	if trash.GetRelationshipType() != RELATIONSHIP_TYPE_BELONGS_TO {
+		t.Errorf("RelationshipType from existing data failed: expected '%s', got '%s'", RELATIONSHIP_TYPE_BELONGS_TO, trash.GetRelationshipType())
 	}
 
-	if trash.ParentID() != "parent_000" {
-		t.Errorf("ParentID from existing data failed: expected 'parent_000', got '%s'", trash.ParentID())
+	if trash.GetParentID() != "parent_000" {
+		t.Errorf("ParentID from existing data failed: expected 'parent_000', got '%s'", trash.GetParentID())
 	}
 
-	if trash.Sequence() != 3 {
-		t.Errorf("Sequence from existing data failed: expected 3, got %d", trash.Sequence())
+	if trash.GetSequence() != 3 {
+		t.Errorf("Sequence from existing data failed: expected 3, got %d", trash.GetSequence())
 	}
 
-	if trash.Metadata() != "{\"reason\": \"test\"}" {
-		t.Errorf("Metadata from existing data failed: expected '{\"reason\": \"test\"}', got '%s'", trash.Metadata())
+	if trash.GetMetadata() != "{\"reason\": \"test\"}" {
+		t.Errorf("Metadata from existing data failed: expected '{\"reason\": \"test\"}', got '%s'", trash.GetMetadata())
 	}
 
-	if trash.DeletedBy() != "admin_001" {
-		t.Errorf("DeletedBy from existing data failed: expected 'admin_001', got '%s'", trash.DeletedBy())
+	if trash.GetDeletedBy() != "admin_001" {
+		t.Errorf("DeletedBy from existing data failed: expected 'admin_001', got '%s'", trash.GetDeletedBy())
 	}
 }
 

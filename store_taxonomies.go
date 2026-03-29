@@ -25,10 +25,10 @@ func (st *storeImplementation) TaxonomyCreate(ctx context.Context, taxonomy Taxo
 	}
 
 	// Validate required fields
-	if taxonomy.Name() == "" {
+	if taxonomy.GetName() == "" {
 		return errors.New("taxonomy name is required")
 	}
-	if taxonomy.Slug() == "" {
+	if taxonomy.GetSlug() == "" {
 		return errors.New("taxonomy slug is required")
 	}
 
@@ -36,10 +36,10 @@ func (st *storeImplementation) TaxonomyCreate(ctx context.Context, taxonomy Taxo
 		taxonomy.SetID(GenerateShortID())
 	}
 
-	if taxonomy.CreatedAt() == "" {
+	if taxonomy.GetCreatedAt() == "" {
 		taxonomy.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
-	if taxonomy.UpdatedAt() == "" {
+	if taxonomy.GetUpdatedAt() == "" {
 		taxonomy.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
@@ -322,8 +322,8 @@ func (st *storeImplementation) TaxonomyUpdate(ctx context.Context, taxonomy Taxo
 	}
 
 	// Check for slug conflicts with other taxonomies
-	if taxonomy.Slug() != "" {
-		existing, err := st.TaxonomyFindBySlug(ctx, taxonomy.Slug())
+	if taxonomy.GetSlug() != "" {
+		existing, err := st.TaxonomyFindBySlug(ctx, taxonomy.GetSlug())
 		if err != nil {
 			return err
 		}

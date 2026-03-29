@@ -25,13 +25,13 @@ func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term Taxo
 	}
 
 	// Validate required fields
-	if term.Name() == "" {
+	if term.GetName() == "" {
 		return errors.New("taxonomy term name is required")
 	}
-	if term.Slug() == "" {
+	if term.GetSlug() == "" {
 		return errors.New("taxonomy term slug is required")
 	}
-	if term.TaxonomyID() == "" {
+	if term.GetTaxonomyID() == "" {
 		return errors.New("taxonomy ID is required")
 	}
 
@@ -39,10 +39,10 @@ func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term Taxo
 		term.SetID(GenerateShortID())
 	}
 
-	if term.CreatedAt() == "" {
+	if term.GetCreatedAt() == "" {
 		term.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
-	if term.UpdatedAt() == "" {
+	if term.GetUpdatedAt() == "" {
 		term.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
@@ -323,8 +323,8 @@ func (st *storeImplementation) TaxonomyTermUpdate(ctx context.Context, term Taxo
 	}
 
 	// Check for slug conflicts within the same taxonomy
-	if term.Slug() != "" && term.TaxonomyID() != "" {
-		existing, err := st.TaxonomyTermFindBySlug(ctx, term.TaxonomyID(), term.Slug())
+	if term.GetSlug() != "" && term.GetTaxonomyID() != "" {
+		existing, err := st.TaxonomyTermFindBySlug(ctx, term.GetTaxonomyID(), term.GetSlug())
 		if err != nil {
 			return err
 		}

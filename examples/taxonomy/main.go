@@ -45,8 +45,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create taxonomy: %v", err)
 	}
-	fmt.Printf("   Created taxonomy: %s (ID: %s)\n", categoriesTax.Name(), categoriesTax.ID())
-	fmt.Printf("   Slug: %s, Entity Types: %v\n", categoriesTax.Slug(), categoriesTax.EntityTypes())
+	fmt.Printf("   Created taxonomy: %s (ID: %s)\n", categoriesTax.GetName(), categoriesTax.ID())
+	fmt.Printf("   Slug: %s, Entity Types: %v\n", categoriesTax.GetSlug(), categoriesTax.GetEntityTypes())
 
 	// Create taxonomy terms (hierarchical categories)
 	fmt.Println("\n2. Creating taxonomy terms (hierarchical categories)...")
@@ -106,9 +106,9 @@ func main() {
 		"price": "14.99",
 		"sku":   "BK-HOBBIT-001",
 	})
-	fmt.Printf("   - %s (ID: %s)\n", macbook.GetAttribute("name"), macbook.ID())
-	fmt.Printf("   - %s (ID: %s)\n", hpLaptop.GetAttribute("name"), hpLaptop.ID())
-	fmt.Printf("   - %s (ID: %s)\n", theHobbit.GetAttribute("name"), theHobbit.ID())
+	fmt.Printf("   - %s (ID: %s)\n", macbook.GetTemp("name"), macbook.ID())
+	fmt.Printf("   - %s (ID: %s)\n", hpLaptop.GetTemp("name"), hpLaptop.ID())
+	fmt.Printf("   - %s (ID: %s)\n", theHobbit.GetTemp("name"), theHobbit.ID())
 
 	// Assign products to taxonomy terms
 	fmt.Println("\n4. Assigning products to taxonomy terms...")
@@ -116,13 +116,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to assign taxonomy: %v", err)
 	}
-	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetAttribute("name"))
+	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetTemp("name"))
 
 	store.EntityTaxonomyAssign(ctx, hpLaptop.ID(), categoriesTax.ID(), laptops.ID())
-	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetAttribute("name"))
+	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetTemp("name"))
 
 	store.EntityTaxonomyAssign(ctx, theHobbit.ID(), categoriesTax.ID(), books.ID())
-	fmt.Printf("   ✓ %s assigned to Books\n", theHobbit.GetAttribute("name"))
+	fmt.Printf("   ✓ %s assigned to Books\n", theHobbit.GetTemp("name"))
 
 	// Query taxonomy assignments
 	fmt.Println("\n5. Finding products in 'Laptops' category...")
@@ -135,8 +135,8 @@ func main() {
 	}
 	fmt.Printf("   Found %d products in Laptops:\n", len(assignments))
 	for _, assignment := range assignments {
-		product, _ := store.EntityFindByID(ctx, assignment.EntityID())
-		fmt.Printf("   - %s ($%s)\n", product.GetAttribute("name"), product.GetAttribute("price"))
+		product, _ := store.EntityFindByID(ctx, assignment.GetEntityID())
+		fmt.Printf("   - %s ($%s)\n", product.GetTemp("name"), product.GetTemp("price"))
 	}
 
 	// List all terms in taxonomy
@@ -147,27 +147,27 @@ func main() {
 	fmt.Printf("   Found %d terms:\n", len(terms))
 	for _, term := range terms {
 		parentInfo := ""
-		if term.ParentID() != "" {
-			parent, _ := store.TaxonomyTermFind(ctx, term.ParentID())
+		if term.GetParentID() != "" {
+			parent, _ := store.TaxonomyTermFind(ctx, term.GetParentID())
 			if parent != nil {
-				parentInfo = fmt.Sprintf(" (parent: %s)", parent.Name())
+				parentInfo = fmt.Sprintf(" (parent: %s)", parent.GetName())
 			}
 		}
-		fmt.Printf("   - %s%s\n", term.Name(), parentInfo)
+		fmt.Printf("   - %s%s\n", term.GetName(), parentInfo)
 	}
 
 	// Find taxonomy by slug
 	fmt.Println("\n7. Finding taxonomy by slug...")
 	foundTax, _ := store.TaxonomyFindBySlug(ctx, "product_categories")
 	if foundTax != nil {
-		fmt.Printf("   Found: %s\n", foundTax.Name())
+		fmt.Printf("   Found: %s\n", foundTax.GetName())
 	}
 
 	// Find term by slug
 	fmt.Println("\n8. Finding term by slug within taxonomy...")
 	foundTerm, _ := store.TaxonomyTermFindBySlug(ctx, categoriesTax.ID(), "laptops")
 	if foundTerm != nil {
-		fmt.Printf("   Found: %s\n", foundTerm.Name())
+		fmt.Printf("   Found: %s\n", foundTerm.GetName())
 	}
 
 	// Count terms in taxonomy

@@ -33,12 +33,12 @@ func TestEntityCreateWithType(t *testing.T) {
 	}
 
 	// CreatedAt() is now a string — use CreatedAtCarbon() for time comparisons
-	createdAt := entity.CreatedAtCarbon()
+	createdAt := entity.GetCreatedAtCarbon()
 	if createdAt.IsZero() {
 		t.Fatal("Entity CreatedAt is empty")
 	}
 
-	updatedAt := entity.UpdatedAtCarbon()
+	updatedAt := entity.GetUpdatedAtCarbon()
 	if updatedAt.IsZero() {
 		t.Fatal("Entity UpdatedAt is empty")
 	}

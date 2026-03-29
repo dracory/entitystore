@@ -19,31 +19,31 @@ func TestAttributeTrashImplementation(t *testing.T) {
 
 	// Test EntityID getter/setter
 	trash.SetEntityID("entity123")
-	if trash.EntityID() != "entity123" {
-		t.Errorf("expected EntityID 'entity123', got '%s'", trash.EntityID())
+	if trash.GetEntityID() != "entity123" {
+		t.Errorf("expected EntityID 'entity123', got '%s'", trash.GetEntityID())
 	}
 
 	// Test AttributeKey getter/setter
 	trash.SetAttributeKey("name")
-	if trash.AttributeKey() != "name" {
-		t.Errorf("expected AttributeKey 'name', got '%s'", trash.AttributeKey())
+	if trash.GetAttributeKey() != "name" {
+		t.Errorf("expected AttributeKey 'name', got '%s'", trash.GetAttributeKey())
 	}
 
 	// Test AttributeValue getter/setter
 	trash.SetAttributeValue("value")
-	if trash.AttributeValue() != "value" {
-		t.Errorf("expected AttributeValue 'value', got '%s'", trash.AttributeValue())
+	if trash.GetAttributeValue() != "value" {
+		t.Errorf("expected AttributeValue 'value', got '%s'", trash.GetAttributeValue())
 	}
 
 	// Test DeletedAt
-	if trash.DeletedAt() == "" {
+	if trash.GetDeletedAt() == "" {
 		t.Error("expected DeletedAt to be set")
 	}
 
 	// Test DeletedBy getter/setter
 	trash.SetDeletedBy("user456")
-	if trash.DeletedBy() != "user456" {
-		t.Errorf("expected DeletedBy 'user456', got '%s'", trash.DeletedBy())
+	if trash.GetDeletedBy() != "user456" {
+		t.Errorf("expected DeletedBy 'user456', got '%s'", trash.GetDeletedBy())
 	}
 }
 
@@ -65,11 +65,11 @@ func TestAttributeTrashFromExistingData(t *testing.T) {
 		t.Errorf("expected ID 'attrtrash123', got '%s'", trash.ID())
 	}
 
-	if trash.EntityID() != "entity789" {
-		t.Errorf("expected EntityID 'entity789', got '%s'", trash.EntityID())
+	if trash.GetEntityID() != "entity789" {
+		t.Errorf("expected EntityID 'entity789', got '%s'", trash.GetEntityID())
 	}
 
-	if trash.DeletedBy() != "admin" {
-		t.Errorf("expected DeletedBy 'admin', got '%s'", trash.DeletedBy())
+	if trash.GetDeletedBy() != "admin" {
+		t.Errorf("expected DeletedBy 'admin', got '%s'", trash.GetDeletedBy())
 	}
 }
