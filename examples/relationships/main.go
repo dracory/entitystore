@@ -95,7 +95,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create category: %v", err)
 	}
-	fmt.Printf("   Category: %s (ID: %s)\n", fictionCategory.GetTempKey("name"), fictionCategory.ID())
+	fmt.Printf("   Category: Fiction (ID: %s)\n", fictionCategory.ID())
 
 	// Create MANY_TO_MANY relationship (books <-> categories)
 	fmt.Println("\n5. Creating MANY_TO_MANY relationships (books ↔ category)...")
@@ -137,7 +137,16 @@ func main() {
 			log.Printf("Book not found for entity ID: %s", rel.GetEntityID())
 			continue
 		}
-		fmt.Printf("   - %s\n", book.GetTempKey("title"))
+		titleAttr, err := store.AttributeFind(ctx, book.ID(), "title")
+		if err != nil {
+			log.Printf("Failed to find title attribute: %v", err)
+			continue
+		}
+		title := "Unknown"
+		if titleAttr != nil {
+			title = titleAttr.GetValue()
+		}
+		fmt.Printf("   - %s\n", title)
 	}
 
 	// Query reverse relationships
@@ -149,8 +158,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to list relationships: %v", err)
 	}
-	fmt.Printf("   Book '%s' is in %d categories\n",
-		book1.GetTempKey("title"), len(book1Categories))
+	fmt.Printf("   Book 'The Mystery' is in %d categories\n",
+		len(book1Categories))
 
 	// Count relationships
 	fmt.Println("\n8. Counting relationships...")
@@ -189,7 +198,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to count relationships: %v", err)
 	}
-	fmt.Printf("    Total relationships after delete: %d\n", count)
+	fmt.Printf("   Total relationships after delete: %d\n", count)
 
 	fmt.Println("\n=== Example completed successfully! ===")
 }

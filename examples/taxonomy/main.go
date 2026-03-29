@@ -150,9 +150,9 @@ func main() {
 	if theHobbit == nil {
 		log.Fatal("Expected theHobbit to be created")
 	}
-	fmt.Printf("   - %s (ID: %s)\n", macbook.GetTempKey("name"), macbook.ID())
-	fmt.Printf("   - %s (ID: %s)\n", hpLaptop.GetTempKey("name"), hpLaptop.ID())
-	fmt.Printf("   - %s (ID: %s)\n", theHobbit.GetTempKey("name"), theHobbit.ID())
+	fmt.Printf("   - MacBook Pro (ID: %s)\n", macbook.ID())
+	fmt.Printf("   - HP Pavilion (ID: %s)\n", hpLaptop.ID())
+	fmt.Printf("   - The Hobbit (ID: %s)\n", theHobbit.ID())
 
 	// Assign products to taxonomy terms
 	fmt.Println("\n4. Assigning products to taxonomy terms...")
@@ -160,19 +160,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to assign taxonomy: %v", err)
 	}
-	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetTempKey("name"))
+	fmt.Printf("   ✓ MacBook Pro assigned to Laptops\n")
 
 	err = store.EntityTaxonomyAssign(ctx, hpLaptop.ID(), categoriesTax.ID(), laptops.ID())
 	if err != nil {
 		log.Fatalf("Failed to assign taxonomy: %v", err)
 	}
-	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetTempKey("name"))
+	fmt.Printf("   ✓ HP Pavilion assigned to Laptops\n")
 
 	err = store.EntityTaxonomyAssign(ctx, theHobbit.ID(), categoriesTax.ID(), books.ID())
 	if err != nil {
 		log.Fatalf("Failed to assign taxonomy: %v", err)
 	}
-	fmt.Printf("   ✓ %s assigned to Books\n", theHobbit.GetTempKey("name"))
+	fmt.Printf("   ✓ The Hobbit assigned to Books\n")
 
 	// Query taxonomy assignments
 	fmt.Println("\n5. Finding products in 'Laptops' category...")
@@ -194,14 +194,35 @@ func main() {
 			log.Printf("Product not found for entity ID: %s", assignment.GetEntityID())
 			continue
 		}
-		fmt.Printf("   - %s ($%s)\n", product.GetTempKey("name"), product.GetTempKey("price"))
+		nameAttr, err := store.AttributeFind(ctx, product.ID(), "name")
+		if err != nil {
+			log.Printf("Failed to find name attribute: %v", err)
+			continue
+		}
+		priceAttr, err := store.AttributeFind(ctx, product.ID(), "price")
+		if err != nil {
+			log.Printf("Failed to find price attribute: %v", err)
+			continue
+		}
+		name := "Unknown"
+		price := "N/A"
+		if nameAttr != nil {
+			name = nameAttr.GetValue()
+		}
+		if priceAttr != nil {
+			price = priceAttr.GetValue()
+		}
+		fmt.Printf("   - %s ($%s)\n", name, price)
 	}
 
 	// List all terms in taxonomy
 	fmt.Println("\n6. Listing all terms in 'Product Categories' taxonomy...")
-	terms, _ := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
+	terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
 		TaxonomyID: categoriesTax.ID(),
 	})
+	if err != nil {
+		log.Fatalf("Failed to list terms: %v", err)
+	}
 	fmt.Printf("   Found %d terms:\n", len(terms))
 	for _, term := range terms {
 		parentInfo := ""
@@ -216,30 +237,42 @@ func main() {
 
 	// Find taxonomy by slug
 	fmt.Println("\n7. Finding taxonomy by slug...")
-	foundTax, _ := store.TaxonomyFindBySlug(ctx, "product_categories")
+	foundTax, err := store.TaxonomyFindBySlug(ctx, "product_categories")
+	if err != nil {
+		log.Fatalf("Failed to find taxonomy: %v", err)
+	}
 	if foundTax != nil {
 		fmt.Printf("   Found: %s\n", foundTax.GetName())
 	}
 
 	// Find term by slug
 	fmt.Println("\n8. Finding term by slug within taxonomy...")
-	foundTerm, _ := store.TaxonomyTermFindBySlug(ctx, categoriesTax.ID(), "laptops")
+	foundTerm, err := store.TaxonomyTermFindBySlug(ctx, categoriesTax.ID(), "laptops")
+	if err != nil {
+		log.Fatalf("Failed to find term: %v", err)
+	}
 	if foundTerm != nil {
 		fmt.Printf("   Found: %s\n", foundTerm.GetName())
 	}
 
 	// Count terms in taxonomy
 	fmt.Println("\n9. Counting taxonomy terms...")
-	termCount, _ := store.TaxonomyTermCount(ctx, entitystore.TaxonomyTermQueryOptions{
+	termCount, err := store.TaxonomyTermCount(ctx, entitystore.TaxonomyTermQueryOptions{
 		TaxonomyID: categoriesTax.ID(),
 	})
+	if err != nil {
+		log.Fatalf("Failed to count terms: %v", err)
+	}
 	fmt.Printf("   Total terms in Product Categories: %d\n", termCount)
 
 	// Count entity assignments
 	fmt.Println("\n10. Counting entity-taxonomy assignments...")
-	assignmentCount, _ := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{
+	assignmentCount, err := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{
 		TaxonomyID: categoriesTax.ID(),
 	})
+	if err != nil {
+		log.Fatalf("Failed to count assignments: %v", err)
+	}
 	fmt.Printf("    Total product assignments: %d\n", assignmentCount)
 
 	// Remove assignment
@@ -251,7 +284,10 @@ func main() {
 	fmt.Println("    ✓ Removed The Hobbit from Books category")
 
 	// Verify removal
-	assignmentCount, _ = store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{})
+	assignmentCount, err = store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{})
+	if err != nil {
+		log.Fatalf("Failed to count assignments: %v", err)
+	}
 	fmt.Printf("    Total assignments after removal: %d\n", assignmentCount)
 
 	// Update taxonomy
