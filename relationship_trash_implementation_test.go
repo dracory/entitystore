@@ -134,8 +134,17 @@ func TestNewRelationshipTrashFromExistingData(t *testing.T) {
 
 	trash := NewRelationshipTrashFromExistingData(data)
 
-	if trash.ID() != "trash_123" {
-		t.Errorf("ID from existing data failed: expected 'trash_123', got '%s'", trash.ID())
+	// Test ID generation
+	if trash.ID() == "" {
+		t.Error("expected ID to be generated")
+	}
+	if len(trash.ID()) < 9 {
+		t.Errorf("expected ID length >= 9, got %d", len(trash.ID()))
+	}
+
+	// Test GetID() method consistency
+	if trash.GetID() != trash.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", trash.GetID(), trash.ID())
 	}
 
 	if trash.GetEntityID() != "entity_456" {

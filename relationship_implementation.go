@@ -36,6 +36,10 @@ func NewRelationshipFromExistingData(data map[string]string) RelationshipInterfa
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *relationshipImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *relationshipImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }

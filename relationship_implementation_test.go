@@ -23,6 +23,11 @@ func TestRelationshipSettersAndGetters(t *testing.T) {
 		t.Errorf("SetID/GetID failed: expected 'test_id_123', got '%s'", rel.ID())
 	}
 
+	// Test GetID() method consistency
+	if rel.GetID() != rel.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", rel.GetID(), rel.ID())
+	}
+
 	// Test EntityID
 	rel.SetEntityID("entity_123")
 	if rel.GetEntityID() != "entity_123" {

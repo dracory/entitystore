@@ -38,6 +38,10 @@ func NewEntityFromExistingData(data map[string]string) EntityInterface {
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *entityImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *entityImplementation) GetType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }

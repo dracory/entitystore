@@ -15,6 +15,7 @@ type EntityInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetType() string
 	GetHandle() string
 	GetCreatedAt() string
@@ -41,6 +42,7 @@ type AttributeInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetEntityID() string
 	GetKey() string
 	GetValue() string
@@ -70,6 +72,7 @@ type RelationshipInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetEntityID() string
 	GetRelatedEntityID() string
 	GetRelationshipType() string
@@ -96,6 +99,7 @@ type EntityTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetType() string
 	GetHandle() string
 	GetCreatedAt() string
@@ -120,6 +124,7 @@ type AttributeTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetEntityID() string
 	GetKey() string
 	GetValue() string
@@ -146,6 +151,7 @@ type RelationshipTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetEntityID() string
 	GetRelatedEntityID() string
 	GetRelationshipType() string
@@ -177,6 +183,7 @@ type TaxonomyInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetName() string
 	GetSlug() string
 	GetDescription() string
@@ -202,6 +209,7 @@ type TaxonomyTermInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetTaxonomyID() string
 	GetName() string
 	GetSlug() string
@@ -227,6 +235,7 @@ type EntityTaxonomyInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetEntityID() string
 	GetTaxonomyID() string
 	GetTermID() string
@@ -245,6 +254,7 @@ type TaxonomyTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetName() string
 	GetSlug() string
 	GetDescription() string
@@ -275,6 +285,7 @@ type TaxonomyTermTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
+	GetID() string
 	GetTaxonomyID() string
 	GetName() string
 	GetSlug() string

@@ -40,6 +40,10 @@ func NewEntityTrashFromExistingData(data map[string]string) EntityTrashInterface
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *entityTrashImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *entityTrashImplementation) GetType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }

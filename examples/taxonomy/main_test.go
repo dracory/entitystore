@@ -53,6 +53,11 @@ func TestTaxonomyCreate(t *testing.T) {
 		t.Error("Taxonomy ID should not be empty")
 	}
 
+	// Test GetID() method consistency
+	if tax.GetID() != tax.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", tax.GetID(), tax.ID())
+	}
+
 	if tax.GetName() != "Categories" {
 		t.Errorf("Expected name 'Categories', got '%s'", tax.GetName())
 	}
@@ -149,6 +154,11 @@ func TestTaxonomyTermCreate(t *testing.T) {
 
 	if term.GetTaxonomyID() != tax.ID() {
 		t.Errorf("Expected TaxonomyID %s, got %s", tax.ID(), term.GetTaxonomyID())
+	}
+
+	// Test GetID() method consistency
+	if term.GetID() != term.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", term.GetID(), term.ID())
 	}
 
 	if term.GetName() != "Electronics" {

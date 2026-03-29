@@ -17,6 +17,11 @@ func TestEntityImplementation(t *testing.T) {
 		t.Errorf("expected ID length >= 9, got %d", len(entity.ID()))
 	}
 
+	// Test GetID() method consistency
+	if entity.GetID() != entity.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", entity.GetID(), entity.ID())
+	}
+
 	// Test EntityType getter/setter
 	entity.SetType("product")
 	if entity.GetType() != "product" {

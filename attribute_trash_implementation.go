@@ -41,6 +41,10 @@ func NewAttributeTrashFromExistingData(data map[string]string) AttributeTrashInt
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *attributeTrashImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *attributeTrashImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }

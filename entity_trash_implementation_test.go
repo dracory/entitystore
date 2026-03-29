@@ -17,6 +17,11 @@ func TestEntityTrashImplementation(t *testing.T) {
 		t.Errorf("expected ID length >= 9, got %d", len(trash.ID()))
 	}
 
+	// Test GetID() method consistency
+	if trash.GetID() != trash.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", trash.GetID(), trash.ID())
+	}
+
 	// Test EntityType getter/setter
 	trash.SetType("product")
 	if trash.GetType() != "product" {

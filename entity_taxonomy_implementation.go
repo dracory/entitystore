@@ -38,6 +38,10 @@ func NewEntityTaxonomyFromExistingData(data map[string]string) EntityTaxonomyInt
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *entityTaxonomyImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *entityTaxonomyImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }

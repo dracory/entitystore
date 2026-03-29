@@ -37,6 +37,10 @@ func NewTaxonomyTermTrashFromExistingData(data map[string]string) TaxonomyTermTr
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *taxonomyTermTrashImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *taxonomyTermTrashImplementation) GetTaxonomyID() string {
 	return o.Get(COLUMN_TAXONOMY_ID)
 }

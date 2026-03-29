@@ -40,6 +40,10 @@ func NewAttributeFromExistingData(data map[string]string) AttributeInterface {
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *attributeImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *attributeImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }

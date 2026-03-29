@@ -17,6 +17,11 @@ func TestAttributeImplementation(t *testing.T) {
 		t.Errorf("expected ID length >= 9, got %d", len(attr.ID()))
 	}
 
+	// Test GetID() method consistency
+	if attr.GetID() != attr.ID() {
+		t.Errorf("expected GetID() '%s' to match ID() '%s'", attr.GetID(), attr.ID())
+	}
+
 	// Test EntityID getter/setter
 	attr.SetEntityID("entity123")
 	if attr.GetEntityID() != "entity123" {

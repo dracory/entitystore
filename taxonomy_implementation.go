@@ -43,6 +43,10 @@ func NewTaxonomyFromExistingData(data map[string]string) TaxonomyInterface {
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *taxonomyImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *taxonomyImplementation) GetName() string {
 	return o.Get(COLUMN_NAME)
 }

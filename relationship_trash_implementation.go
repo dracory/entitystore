@@ -37,6 +37,10 @@ func NewRelationshipTrashFromExistingData(data map[string]string) RelationshipTr
 
 // == GETTERS & SETTERS ======================================================
 
+func (o *relationshipTrashImplementation) GetID() string {
+	return o.ID()
+}
+
 func (o *relationshipTrashImplementation) GetEntityID() string {
 	return o.Get(COLUMN_ENTITY_ID)
 }
