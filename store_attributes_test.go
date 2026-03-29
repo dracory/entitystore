@@ -60,8 +60,14 @@ func TestStoreAttributeList(t *testing.T) {
 	}
 
 	entityID := "test-entity"
-	store.AttributeSetString(context.Background(), entityID, "attr1", "val1")
-	store.AttributeSetString(context.Background(), entityID, "attr2", "val2")
+	err = store.AttributeSetString(context.Background(), entityID, "attr1", "val1")
+	if err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+	err = store.AttributeSetString(context.Background(), entityID, "attr2", "val2")
+	if err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
 
 	list, err := store.AttributeList(context.Background(), AttributeQueryOptions{EntityID: entityID})
 	if err != nil {

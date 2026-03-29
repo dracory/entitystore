@@ -45,7 +45,7 @@ func (st *storeImplementation) RelationshipTrash(ctx context.Context, relationsh
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	// Insert into trash
 	record := goqu.Record{}
@@ -137,7 +137,7 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	// Insert into main table
 	record := goqu.Record{}

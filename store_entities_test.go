@@ -45,7 +45,10 @@ func TestStoreEntityFindByID(t *testing.T) {
 
 	entity := NewEntity()
 	entity.SetType("product")
-	store.EntityCreate(context.Background(), entity)
+	err = store.EntityCreate(context.Background(), entity)
+	if err != nil {
+		t.Fatal("EntityCreate failed:", err)
+	}
 
 	found, err := store.EntityFindByID(context.Background(), entity.ID())
 	if err != nil {
@@ -71,7 +74,10 @@ func TestStoreEntityList(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		entity := NewEntity()
 		entity.SetType("product")
-		store.EntityCreate(context.Background(), entity)
+		err = store.EntityCreate(context.Background(), entity)
+		if err != nil {
+			t.Fatal("EntityCreate failed:", err)
+		}
 	}
 
 	list, err := store.EntityList(context.Background(), EntityQueryOptions{})

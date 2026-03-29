@@ -26,7 +26,7 @@ func setupTestStore(t *testing.T) (entitystore.StoreInterface, *sql.DB, func()) 
 	}
 
 	cleanup := func() {
-		db.Close()
+		db.Close() //nolint:errcheck
 	}
 
 	return store, db, cleanup

@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	// Create the store with relationships enabled
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{

@@ -27,7 +27,7 @@ func setupTestStore(t *testing.T) (entitystore.StoreInterface, *sql.DB, func()) 
 	}
 
 	cleanup := func() {
-		db.Close()
+		db.Close() //nolint:errcheck
 	}
 
 	return store, db, cleanup
@@ -73,10 +73,13 @@ func TestTaxonomyFindBySlug(t *testing.T) {
 
 	ctx := context.Background()
 
-	store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	_, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
 
 	found, err := store.TaxonomyFindBySlug(ctx, "categories")
 	if err != nil {
@@ -378,7 +381,10 @@ func TestEntityTaxonomyRemove(t *testing.T) {
 	}
 
 	// Assign and then remove
-	store.EntityTaxonomyAssign(ctx, entity.ID(), tax.ID(), term.ID())
+	err = store.EntityTaxonomyAssign(ctx, entity.ID(), tax.ID(), term.ID())
+	if err != nil {
+		t.Fatalf("Failed to assign taxonomy: %v", err)
+	}
 	err = store.EntityTaxonomyRemove(ctx, entity.ID(), tax.ID(), term.ID())
 	if err != nil {
 		t.Fatalf("Failed to remove assignment: %v", err)

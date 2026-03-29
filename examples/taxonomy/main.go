@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	// Create the store with taxonomies enabled
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
@@ -163,9 +163,15 @@ func main() {
 	fmt.Printf("   ✓ %s assigned to Laptops\n", macbook.GetTempKey("name"))
 
 	err = store.EntityTaxonomyAssign(ctx, hpLaptop.ID(), categoriesTax.ID(), laptops.ID())
+	if err != nil {
+		log.Fatalf("Failed to assign taxonomy: %v", err)
+	}
 	fmt.Printf("   ✓ %s assigned to Laptops\n", hpLaptop.GetTempKey("name"))
 
-	store.EntityTaxonomyAssign(ctx, theHobbit.ID(), categoriesTax.ID(), books.ID())
+	err = store.EntityTaxonomyAssign(ctx, theHobbit.ID(), categoriesTax.ID(), books.ID())
+	if err != nil {
+		log.Fatalf("Failed to assign taxonomy: %v", err)
+	}
 	fmt.Printf("   ✓ %s assigned to Books\n", theHobbit.GetTempKey("name"))
 
 	// Query taxonomy assignments
@@ -251,7 +257,10 @@ func main() {
 	// Update taxonomy
 	fmt.Println("\n12. Updating taxonomy...")
 	categoriesTax.SetDescription("Organized product categories for e-commerce")
-	store.TaxonomyUpdate(ctx, categoriesTax)
+	err = store.TaxonomyUpdate(ctx, categoriesTax)
+	if err != nil {
+		log.Fatalf("Failed to update taxonomy: %v", err)
+	}
 	fmt.Println("    ✓ Updated taxonomy description")
 
 	fmt.Println("\n=== Example completed successfully! ===")
