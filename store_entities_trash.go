@@ -29,8 +29,8 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 	// Move entity to trash
 	trash := NewEntityTrash()
 	trash.SetID(entity.ID())
-	trash.SetEntityType(entity.GetEntityType())
-	trash.SetEntityHandle(entity.GetEntityHandle())
+	trash.SetType(entity.GetType())
+	trash.SetHandle(entity.GetHandle())
 	trash.SetCreatedAt(entity.GetCreatedAt())
 	trash.SetUpdatedAt(entity.GetUpdatedAt())
 	trash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
@@ -99,7 +99,7 @@ func (st *storeImplementation) EntityRestore(ctx context.Context, id string) err
 	// For simplicity, create entity directly in trash
 	trash := NewEntityTrash()
 	trash.SetID(id)
-	trash.SetEntityType("unknown")
+	trash.SetType("unknown")
 	trash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
 	// Create entity from trash

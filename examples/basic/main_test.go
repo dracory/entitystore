@@ -50,8 +50,8 @@ func TestEntityCreateWithTypeAndAttributes(t *testing.T) {
 		t.Error("Entity ID should not be empty")
 	}
 
-	if entity.GetEntityType() != "test" {
-		t.Errorf("Expected entity type 'test', got '%s'", entity.GetEntityType())
+	if entity.GetType() != "test" {
+		t.Errorf("Expected entity type 'test', got '%s'", entity.GetType())
 	}
 
 	// Verify attributes via store

@@ -21,8 +21,8 @@ var _ EntityInterface = (*entityImplementation)(nil)
 // NewEntity creates a new entity with default values
 func NewEntity() EntityInterface {
 	o := &entityImplementation{}
-	o.SetEntityType("")
-	o.SetEntityHandle("")
+	o.SetType("")
+	o.SetHandle("")
 	o.SetID(GenerateShortID())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
@@ -38,20 +38,20 @@ func NewEntityFromExistingData(data map[string]string) EntityInterface {
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *entityImplementation) GetEntityType() string {
+func (o *entityImplementation) GetType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }
 
-func (o *entityImplementation) SetEntityType(entityType string) EntityInterface {
+func (o *entityImplementation) SetType(entityType string) EntityInterface {
 	o.Set(COLUMN_ENTITY_TYPE, entityType)
 	return o
 }
 
-func (o *entityImplementation) GetEntityHandle() string {
+func (o *entityImplementation) GetHandle() string {
 	return o.Get(COLUMN_ENTITY_HANDLE)
 }
 
-func (o *entityImplementation) SetEntityHandle(handle string) EntityInterface {
+func (o *entityImplementation) SetHandle(handle string) EntityInterface {
 	o.Set(COLUMN_ENTITY_HANDLE, handle)
 	return o
 }

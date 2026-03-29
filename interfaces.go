@@ -15,16 +15,16 @@ type EntityInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	GetEntityType() string
-	GetEntityHandle() string
+	GetType() string
+	GetHandle() string
 	GetCreatedAt() string
 	GetCreatedAtCarbon() *carbon.Carbon
 	GetUpdatedAt() string
 	GetUpdatedAtCarbon() *carbon.Carbon
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
-	SetEntityType(entityType string) EntityInterface
-	SetEntityHandle(handle string) EntityInterface
+	SetType(entityType string) EntityInterface
+	SetHandle(handle string) EntityInterface
 	SetCreatedAt(createdAt string) EntityInterface
 	SetUpdatedAt(updatedAt string) EntityInterface
 
@@ -96,8 +96,8 @@ type EntityTrashInterface interface {
 	dataobject.DataObjectInterface
 
 	// Core getters
-	GetEntityType() string
-	GetEntityHandle() string
+	GetType() string
+	GetHandle() string
 	GetCreatedAt() string
 	GetCreatedAtCarbon() *carbon.Carbon
 	GetUpdatedAt() string
@@ -107,8 +107,8 @@ type EntityTrashInterface interface {
 	GetDeletedBy() string
 
 	// Core setters (fluent) — ID() / SetID() come from DataObjectInterface
-	SetEntityType(entityType string) EntityTrashInterface
-	SetEntityHandle(handle string) EntityTrashInterface
+	SetType(entityType string) EntityTrashInterface
+	SetHandle(handle string) EntityTrashInterface
 	SetCreatedAt(createdAt string) EntityTrashInterface
 	SetUpdatedAt(updatedAt string) EntityTrashInterface
 	SetDeletedAt(deletedAt string) EntityTrashInterface

@@ -79,7 +79,7 @@ func main() {
 	}
 	fmt.Printf("   Found %d entities:\n", len(entities))
 	for _, e := range entities {
-		fmt.Printf("   - [%s] %s (handle: %s)\n", e.GetEntityType(), e.ID(), e.GetEntityHandle())
+		fmt.Printf("   - [%s] %s (handle: %s)\n", e.GetType(), e.ID(), e.GetHandle())
 	}
 
 	// Find entity by ID
@@ -89,7 +89,7 @@ func main() {
 		log.Fatalf("Failed to find entity: %v", err)
 	}
 	foundNameAttr, _ := store.AttributeFind(ctx, found.ID(), "name")
-	fmt.Printf("   Found: %s (type: %s)\n", foundNameAttr.GetAttributeValue(), found.GetEntityType())
+	fmt.Printf("   Found: %s (type: %s)\n", foundNameAttr.GetAttributeValue(), found.GetType())
 
 	// Update entity attributes via store
 	fmt.Println("\n5. Updating entity attributes...")

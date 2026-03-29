@@ -18,15 +18,15 @@ func TestEntityTrashImplementation(t *testing.T) {
 	}
 
 	// Test EntityType getter/setter
-	trash.SetEntityType("product")
-	if trash.GetEntityType() != "product" {
-		t.Errorf("expected EntityType 'product', got '%s'", trash.GetEntityType())
+	trash.SetType("product")
+	if trash.GetType() != "product" {
+		t.Errorf("expected EntityType 'product', got '%s'", trash.GetType())
 	}
 
 	// Test EntityHandle getter/setter
-	trash.SetEntityHandle("my-handle")
-	if trash.GetEntityHandle() != "my-handle" {
-		t.Errorf("expected EntityHandle 'my-handle', got '%s'", trash.GetEntityHandle())
+	trash.SetHandle("my-handle")
+	if trash.GetHandle() != "my-handle" {
+		t.Errorf("expected EntityHandle 'my-handle', got '%s'", trash.GetHandle())
 	}
 
 	// Test DeletedAt
@@ -58,8 +58,8 @@ func TestEntityTrashFromExistingData(t *testing.T) {
 		t.Errorf("expected ID 'trash123', got '%s'", trash.ID())
 	}
 
-	if trash.GetEntityType() != "product" {
-		t.Errorf("expected EntityType 'product', got '%s'", trash.GetEntityType())
+	if trash.GetType() != "product" {
+		t.Errorf("expected EntityType 'product', got '%s'", trash.GetType())
 	}
 
 	if trash.GetDeletedBy() != "admin" {

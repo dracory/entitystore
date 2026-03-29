@@ -21,8 +21,8 @@ var _ EntityTrashInterface = (*entityTrashImplementation)(nil)
 // NewEntityTrash creates a new entity trash record with default values
 func NewEntityTrash() EntityTrashInterface {
 	o := &entityTrashImplementation{}
-	o.SetEntityType("")
-	o.SetEntityHandle("")
+	o.SetType("")
+	o.SetHandle("")
 	o.SetID(GenerateShortID())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
@@ -40,20 +40,20 @@ func NewEntityTrashFromExistingData(data map[string]string) EntityTrashInterface
 
 // == GETTERS & SETTERS ======================================================
 
-func (o *entityTrashImplementation) GetEntityType() string {
+func (o *entityTrashImplementation) GetType() string {
 	return o.Get(COLUMN_ENTITY_TYPE)
 }
 
-func (o *entityTrashImplementation) SetEntityType(entityType string) EntityTrashInterface {
+func (o *entityTrashImplementation) SetType(entityType string) EntityTrashInterface {
 	o.Set(COLUMN_ENTITY_TYPE, entityType)
 	return o
 }
 
-func (o *entityTrashImplementation) GetEntityHandle() string {
+func (o *entityTrashImplementation) GetHandle() string {
 	return o.Get(COLUMN_ENTITY_HANDLE)
 }
 
-func (o *entityTrashImplementation) SetEntityHandle(handle string) EntityTrashInterface {
+func (o *entityTrashImplementation) SetHandle(handle string) EntityTrashInterface {
 	o.Set(COLUMN_ENTITY_HANDLE, handle)
 	return o
 }

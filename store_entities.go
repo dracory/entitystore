@@ -227,7 +227,9 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 		}
 	}
 
-	return nil, nil
+	trash := NewEntity()
+	trash.SetType("unknown")
+	return trash, nil
 }
 
 // EntityListByAttribute finds entities by type and attribute key/value
@@ -252,7 +254,7 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 // EntityCreateWithType is a shortcut to create an entity by providing only the type
 func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityType string) (EntityInterface, error) {
 	entity := NewEntity()
-	entity.SetEntityType(entityType)
+	entity.SetType(entityType)
 	if err := st.EntityCreate(ctx, entity); err != nil {
 		return entity, err
 	}

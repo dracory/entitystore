@@ -18,8 +18,8 @@ func TestStoreEntityCreate(t *testing.T) {
 	}
 
 	entity := NewEntity()
-	entity.SetEntityType("product")
-	entity.SetEntityHandle("iphone-15")
+	entity.SetType("product")
+	entity.SetHandle("iphone-15")
 
 	err = store.EntityCreate(context.Background(), entity)
 	if err != nil {
@@ -44,7 +44,7 @@ func TestStoreEntityFindByID(t *testing.T) {
 	}
 
 	entity := NewEntity()
-	entity.SetEntityType("product")
+	entity.SetType("product")
 	store.EntityCreate(context.Background(), entity)
 
 	found, err := store.EntityFindByID(context.Background(), entity.ID())
@@ -70,7 +70,7 @@ func TestStoreEntityList(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		entity := NewEntity()
-		entity.SetEntityType("product")
+		entity.SetType("product")
 		store.EntityCreate(context.Background(), entity)
 	}
 
