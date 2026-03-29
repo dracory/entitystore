@@ -59,6 +59,9 @@ func TestEntityCreateWithTypeAndAttributes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to find attribute: %v", err)
 	}
+	if attr == nil {
+		t.Fatal("Expected attribute to be found")
+	}
 
 	if attr.GetValue() != "Test Entity" {
 		t.Errorf("Expected name 'Test Entity', got '%s'", attr.GetValue())
@@ -72,15 +75,24 @@ func TestEntityFindByID(t *testing.T) {
 	ctx := context.Background()
 
 	// Create entity
-	created, _ := store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{
+	created, err := store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{
 		"name": "Alice",
 		"age":  "25",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+	if created == nil {
+		t.Fatal("Expected entity to be created")
+	}
 
 	// Find by ID
 	found, err := store.EntityFindByID(ctx, created.ID())
 	if err != nil {
 		t.Fatalf("Failed to find entity: %v", err)
+	}
+	if found == nil {
+		t.Fatal("Expected entity to be found")
 	}
 
 	if found.ID() != created.ID() {
@@ -91,6 +103,9 @@ func TestEntityFindByID(t *testing.T) {
 	attr, err := store.AttributeFind(ctx, found.ID(), "name")
 	if err != nil {
 		t.Fatalf("Failed to find attribute: %v", err)
+	}
+	if attr == nil {
+		t.Fatal("Expected attribute to be found")
 	}
 
 	if attr.GetValue() != "Alice" {
@@ -105,9 +120,20 @@ func TestEntityList(t *testing.T) {
 	ctx := context.Background()
 
 	// Create multiple entities
-	store.EntityCreateWithTypeAndAttributes(ctx, "type_a", map[string]string{"key": "1"})
-	store.EntityCreateWithTypeAndAttributes(ctx, "type_a", map[string]string{"key": "2"})
-	store.EntityCreateWithTypeAndAttributes(ctx, "type_b", map[string]string{"key": "3"})
+	_, err := store.EntityCreateWithTypeAndAttributes(ctx, "type_a", map[string]string{"key": "1"})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+
+	_, err = store.EntityCreateWithTypeAndAttributes(ctx, "type_a", map[string]string{"key": "2"})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+
+	_, err = store.EntityCreateWithTypeAndAttributes(ctx, "type_b", map[string]string{"key": "3"})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
 
 	// List all
 	all, err := store.EntityList(ctx, entitystore.EntityQueryOptions{})
@@ -133,9 +159,20 @@ func TestEntityCount(t *testing.T) {
 	ctx := context.Background()
 
 	// Create entities
-	store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{})
-	store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{})
-	store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{})
+	_, err := store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+
+	_, err = store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+
+	_, err = store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
 
 	// Count all
 	total, _ := store.EntityCount(ctx, entitystore.EntityQueryOptions{})
@@ -157,18 +194,30 @@ func TestEntityUpdate(t *testing.T) {
 	ctx := context.Background()
 
 	// Create entity
-	entity, _ := store.EntityCreateWithTypeAndAttributes(ctx, "test", map[string]string{
+	entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "test", map[string]string{
 		"name": "Original",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+	if entity == nil {
+		t.Fatal("Expected entity to be created")
+	}
 
 	// Update attribute via store
-	err := store.AttributeSetString(ctx, entity.ID(), "name", "Updated")
+	err = store.AttributeSetString(ctx, entity.ID(), "name", "Updated")
 	if err != nil {
 		t.Fatalf("Failed to update attribute: %v", err)
 	}
 
 	// Verify
-	attr, _ := store.AttributeFind(ctx, entity.ID(), "name")
+	attr, err := store.AttributeFind(ctx, entity.ID(), "name")
+	if err != nil {
+		t.Fatalf("Failed to find attribute: %v", err)
+	}
+	if attr == nil {
+		t.Fatal("Expected attribute to be found")
+	}
 	if attr.GetValue() != "Updated" {
 		t.Errorf("Expected name 'Updated', got '%s'", attr.GetValue())
 	}
@@ -181,7 +230,13 @@ func TestEntityTrash(t *testing.T) {
 	ctx := context.Background()
 
 	// Create and trash entity
-	entity, _ := store.EntityCreateWithTypeAndAttributes(ctx, "test", map[string]string{})
+	entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "test", map[string]string{})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+	if entity == nil {
+		t.Fatal("Expected entity to be created")
+	}
 	id := entity.ID()
 
 	deleted, err := store.EntityTrash(ctx, id)
@@ -206,14 +261,23 @@ func TestAttributeTypes(t *testing.T) {
 
 	ctx := context.Background()
 
-	entity, _ := store.EntityCreateWithTypeAndAttributes(ctx, "test", map[string]string{
+	entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "test", map[string]string{
 		"string_val": "hello",
 		"int_val":    "42",
 		"float_val":  "3.14",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+	if entity == nil {
+		t.Fatal("Expected entity to be created")
+	}
 
 	// Test string attribute
-	attrs, _ := store.EntityAttributeList(ctx, entity.ID())
+	attrs, err := store.EntityAttributeList(ctx, entity.ID())
+	if err != nil {
+		t.Fatalf("Failed to list attributes: %v", err)
+	}
 	if len(attrs) != 3 {
 		t.Fatalf("Expected 3 attributes, got %d", len(attrs))
 	}

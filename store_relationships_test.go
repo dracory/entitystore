@@ -132,15 +132,34 @@ func TestRelationshipFind(t *testing.T) {
 	}
 
 	// Create entities
-	entity1, _ := store.EntityCreateWithType(ctx, "post")
-	entity2, _ := store.EntityCreateWithType(ctx, "user")
+	entity1, err := store.EntityCreateWithType(ctx, "post")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
+
+	entity2, err := store.EntityCreateWithType(ctx, "user")
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	if entity2 == nil {
+		t.Fatal("Expected entity2 to be created")
+	}
 
 	// Create relationship
-	rel, _ := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	rel, err := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         entity1.ID(),
 		RelatedEntityID:  entity2.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 	})
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+	if rel == nil {
+		t.Fatal("Expected relationship to be created")
+	}
 
 	// Find by ID
 	found, err := store.RelationshipFind(ctx, rel.ID())
@@ -185,28 +204,46 @@ func TestRelationshipFindByEntities(t *testing.T) {
 	}
 
 	// Create entities
-	entity1, _ := store.EntityCreateWithType(ctx, "child")
-	entity2, _ := store.EntityCreateWithType(ctx, "parent")
+	entity1, err := store.EntityCreateWithType(ctx, "child")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
+
+	entity2, err := store.EntityCreateWithType(ctx, "parent")
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	if entity2 == nil {
+		t.Fatal("Expected entity2 to be created")
+	}
 
 	// Create relationship
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         entity1.ID(),
 		RelatedEntityID:  entity2.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 	})
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
 
 	// Find by entities
 	found, err := store.RelationshipFindByEntities(ctx, entity1.ID(), entity2.ID(), RELATIONSHIP_TYPE_BELONGS_TO)
 	if err != nil {
 		t.Fatalf("Failed to find relationship: %v", err)
 	}
-
 	if found == nil {
 		t.Fatal("Should have found the relationship")
 	}
 
 	// Try different type
-	notFound, _ := store.RelationshipFindByEntities(ctx, entity1.ID(), entity2.ID(), RELATIONSHIP_TYPE_HAS_MANY)
+	notFound, err := store.RelationshipFindByEntities(ctx, entity1.ID(), entity2.ID(), RELATIONSHIP_TYPE_HAS_MANY)
+	if err != nil {
+		t.Fatalf("Failed to find relationship: %v", err)
+	}
 	if notFound != nil {
 		t.Error("Should not find relationship with wrong type")
 	}
@@ -230,30 +267,68 @@ func TestRelationshipList(t *testing.T) {
 	}
 
 	// Create entities
-	author, _ := store.EntityCreateWithType(ctx, "author")
-	book1, _ := store.EntityCreateWithType(ctx, "book")
-	book2, _ := store.EntityCreateWithType(ctx, "book")
-	book3, _ := store.EntityCreateWithType(ctx, "book")
+	author, err := store.EntityCreateWithType(ctx, "author")
+	if err != nil {
+		t.Fatalf("Failed to create author: %v", err)
+	}
+	if author == nil {
+		t.Fatal("Expected author to be created")
+	}
+
+	book1, err := store.EntityCreateWithType(ctx, "book")
+	if err != nil {
+		t.Fatalf("Failed to create book1: %v", err)
+	}
+	if book1 == nil {
+		t.Fatal("Expected book1 to be created")
+	}
+
+	book2, err := store.EntityCreateWithType(ctx, "book")
+	if err != nil {
+		t.Fatalf("Failed to create book2: %v", err)
+	}
+	if book2 == nil {
+		t.Fatal("Expected book2 to be created")
+	}
+
+	book3, err := store.EntityCreateWithType(ctx, "book")
+	if err != nil {
+		t.Fatalf("Failed to create book3: %v", err)
+	}
+	if book3 == nil {
+		t.Fatal("Expected book3 to be created")
+	}
 
 	// Create relationships
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         book1.ID(),
 		RelatedEntityID:  author.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 		Sequence:         1,
 	})
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         book2.ID(),
 		RelatedEntityID:  author.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 		Sequence:         2,
 	})
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         book3.ID(),
 		RelatedEntityID:  author.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 		Sequence:         3,
 	})
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
 
 	// List all for author (as related entity)
 	rels, err := store.RelationshipListRelated(ctx, author.ID(), RELATIONSHIP_TYPE_BELONGS_TO)
@@ -298,13 +373,33 @@ func TestRelationshipDelete(t *testing.T) {
 	}
 
 	// Create entities and relationship
-	entity1, _ := store.EntityCreateWithType(ctx, "item")
-	entity2, _ := store.EntityCreateWithType(ctx, "category")
-	rel, _ := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	entity1, err := store.EntityCreateWithType(ctx, "item")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
+
+	entity2, err := store.EntityCreateWithType(ctx, "category")
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	if entity2 == nil {
+		t.Fatal("Expected entity2 to be created")
+	}
+
+	rel, err := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         entity1.ID(),
 		RelatedEntityID:  entity2.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 	})
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+	if rel == nil {
+		t.Fatal("Expected relationship to be created")
+	}
 
 	// Delete
 	deleted, err := store.RelationshipDelete(ctx, rel.ID())
@@ -317,7 +412,10 @@ func TestRelationshipDelete(t *testing.T) {
 	}
 
 	// Verify it's gone
-	found, _ := store.RelationshipFind(ctx, rel.ID())
+	found, err := store.RelationshipFind(ctx, rel.ID())
+	if err != nil {
+		t.Fatalf("Failed to find relationship: %v", err)
+	}
 	if found != nil {
 		t.Error("Relationship should be deleted")
 	}
@@ -347,29 +445,70 @@ func TestRelationshipDeleteAll(t *testing.T) {
 	}
 
 	// Create entity with multiple relationships
-	entity1, _ := store.EntityCreateWithType(ctx, "parent")
-	child1, _ := store.EntityCreateWithType(ctx, "child")
-	child2, _ := store.EntityCreateWithType(ctx, "child")
-	child3, _ := store.EntityCreateWithType(ctx, "child")
+	entity1, err := store.EntityCreateWithType(ctx, "parent")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
 
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	child1, err := store.EntityCreateWithType(ctx, "child")
+	if err != nil {
+		t.Fatalf("Failed to create child1: %v", err)
+	}
+	if child1 == nil {
+		t.Fatal("Expected child1 to be created")
+	}
+
+	child2, err := store.EntityCreateWithType(ctx, "child")
+	if err != nil {
+		t.Fatalf("Failed to create child2: %v", err)
+	}
+	if child2 == nil {
+		t.Fatal("Expected child2 to be created")
+	}
+
+	child3, err := store.EntityCreateWithType(ctx, "child")
+	if err != nil {
+		t.Fatalf("Failed to create child3: %v", err)
+	}
+	if child3 == nil {
+		t.Fatal("Expected child3 to be created")
+	}
+
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         child1.ID(),
 		RelatedEntityID:  entity1.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 	})
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         child2.ID(),
 		RelatedEntityID:  entity1.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 	})
-	_, _ = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+
+	_, err = store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         child3.ID(),
 		RelatedEntityID:  entity1.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 	})
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
 
 	// Count before delete
-	before, _ := store.RelationshipList(ctx, RelationshipQueryOptions{EntityID: child1.ID()})
+	before, err := store.RelationshipList(ctx, RelationshipQueryOptions{EntityID: child1.ID()})
+	if err != nil {
+		t.Fatalf("Failed to list relationships: %v", err)
+	}
 	if len(before) == 0 {
 		t.Fatal("Should have relationships before delete")
 	}
@@ -381,7 +520,10 @@ func TestRelationshipDeleteAll(t *testing.T) {
 	}
 
 	// Verify they're gone
-	after, _ := store.RelationshipListRelated(ctx, entity1.ID(), RELATIONSHIP_TYPE_BELONGS_TO)
+	after, err := store.RelationshipListRelated(ctx, entity1.ID(), RELATIONSHIP_TYPE_BELONGS_TO)
+	if err != nil {
+		t.Fatalf("Failed to list relationships: %v", err)
+	}
 	if len(after) != 0 {
 		t.Errorf("Expected 0 relationships after delete all, got %d", len(after))
 	}
@@ -406,14 +548,34 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 
 	// Create entities and relationship
-	entity1, _ := store.EntityCreateWithType(ctx, "post")
-	entity2, _ := store.EntityCreateWithType(ctx, "user")
-	rel, _ := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+	entity1, err := store.EntityCreateWithType(ctx, "post")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
+
+	entity2, err := store.EntityCreateWithType(ctx, "user")
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	if entity2 == nil {
+		t.Fatal("Expected entity2 to be created")
+	}
+
+	rel, err := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
 		EntityID:         entity1.ID(),
 		RelatedEntityID:  entity2.ID(),
 		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
 		Metadata:         "{\"test\": \"data\"}",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create relationship: %v", err)
+	}
+	if rel == nil {
+		t.Fatal("Expected relationship to be created")
+	}
 
 	// Trash it
 	trashed, err := store.RelationshipTrash(ctx, rel.ID(), "user_123")
@@ -426,16 +588,22 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 
 	// Verify it's in main table
-	found, _ := store.RelationshipFind(ctx, rel.ID())
+	found, err := store.RelationshipFind(ctx, rel.ID())
+	if err != nil {
+		t.Fatalf("Failed to find relationship: %v", err)
+	}
 	if found != nil {
 		t.Error("Relationship should not be in main table after trash")
 	}
 
 	// Verify it's in trash
-	trashItems, _ := store.RelationshipTrashList(ctx, RelationshipQueryOptions{
+	trashItems, err := store.RelationshipTrashList(ctx, RelationshipQueryOptions{
 		ID:    rel.ID(),
 		Limit: 1,
 	})
+	if err != nil {
+		t.Fatalf("Failed to list trash: %v", err)
+	}
 
 	if len(trashItems) != 1 {
 		t.Errorf("Expected 1 item in trash, got %d", len(trashItems))
@@ -460,9 +628,12 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 
 	// Verify it's back in main table
-	found2, _ := store.RelationshipFind(ctx, rel.ID())
+	found2, err := store.RelationshipFind(ctx, rel.ID())
+	if err != nil {
+		t.Fatalf("Failed to find relationship: %v", err)
+	}
 	if found2 == nil {
-		t.Error("Relationship should be restored to main table")
+		t.Fatal("Relationship should be restored to main table")
 	}
 
 	if found2.GetMetadata() != "{\"test\": \"data\"}" {
@@ -470,10 +641,13 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 
 	// Verify it's gone from trash
-	trashItems2, _ := store.RelationshipTrashList(ctx, RelationshipQueryOptions{
+	trashItems2, err := store.RelationshipTrashList(ctx, RelationshipQueryOptions{
 		ID:    rel.ID(),
 		Limit: 1,
 	})
+	if err != nil {
+		t.Fatalf("Failed to list trash: %v", err)
+	}
 
 	if len(trashItems2) != 0 {
 		t.Errorf("Expected 0 items in trash after restore, got %d", len(trashItems2))
@@ -498,8 +672,21 @@ func TestRelationshipDuplicatePrevention(t *testing.T) {
 	}
 
 	// Create entities
-	entity1, _ := store.EntityCreateWithType(ctx, "book")
-	entity2, _ := store.EntityCreateWithType(ctx, "author")
+	entity1, err := store.EntityCreateWithType(ctx, "book")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
+
+	entity2, err := store.EntityCreateWithType(ctx, "author")
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	if entity2 == nil {
+		t.Fatal("Expected entity2 to be created")
+	}
 
 	// Create first relationship
 	rel1, err := store.RelationshipCreateByOptions(ctx, RelationshipOptions{

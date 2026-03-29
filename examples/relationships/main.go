@@ -166,6 +166,8 @@ func main() {
 		entitystore.RELATIONSHIP_TYPE_BELONGS_TO)
 	if err != nil {
 		fmt.Printf("   Relationship not found: %v\n", err)
+	} else if foundRel == nil {
+		fmt.Println("   Relationship not found (nil)")
 	} else {
 		fmt.Printf("   Found relationship: %s\n", foundRel.ID())
 	}

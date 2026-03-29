@@ -98,14 +98,24 @@ func TestTaxonomyList(t *testing.T) {
 
 	ctx := context.Background()
 
-	store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	_, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
-	store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Tags",
 		Slug: "tags",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
 	taxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQueryOptions{})
 	if err != nil {
@@ -123,8 +133,18 @@ func TestTaxonomyCount(t *testing.T) {
 
 	ctx := context.Background()
 
-	store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{Name: "A", Slug: "a"})
-	store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{Name: "B", Slug: "b"})
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{Name: "A", Slug: "a"})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
+
+	_, err = store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{Name: "B", Slug: "b"})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
 
 	count, _ := store.TaxonomyCount(ctx, entitystore.TaxonomyQueryOptions{})
 	if count != 2 {
@@ -138,10 +158,16 @@ func TestTaxonomyTermCreate(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
 	term, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
@@ -172,17 +198,29 @@ func TestTaxonomyTermHierarchy(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
 	// Create parent term
-	parent, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	parent, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create parent term: %v", err)
+	}
+	if parent == nil {
+		t.Fatal("Expected parent term to be created")
+	}
 
 	// Create child term
 	child, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
@@ -206,21 +244,34 @@ func TestTaxonomyTermListByTaxonomy(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
-	store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	_, err = store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 	})
-	store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
+
+	_, err = store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Books",
 		Slug:       "books",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
 
 	terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
 		TaxonomyID: tax.ID(),
@@ -240,23 +291,41 @@ func TestEntityTaxonomyAssign(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
-	term, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	term, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
+	if term == nil {
+		t.Fatal("Expected term to be created")
+	}
 
-	entity, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
+	entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
 		"name": "Laptop",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+	if entity == nil {
+		t.Fatal("Expected entity to be created")
+	}
 
 	// Assign entity to term
-	err := store.EntityTaxonomyAssign(ctx, entity.ID(), tax.ID(), term.ID())
+	err = store.EntityTaxonomyAssign(ctx, entity.ID(), tax.ID(), term.ID())
 	if err != nil {
 		t.Fatalf("Failed to assign taxonomy: %v", err)
 	}
@@ -277,22 +346,40 @@ func TestEntityTaxonomyRemove(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
-	term, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	term, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
+	if term == nil {
+		t.Fatal("Expected term to be created")
+	}
 
-	entity, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", nil)
+	entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", nil)
+	if err != nil {
+		t.Fatalf("Failed to create entity: %v", err)
+	}
+	if entity == nil {
+		t.Fatal("Expected entity to be created")
+	}
 
 	// Assign and then remove
 	store.EntityTaxonomyAssign(ctx, entity.ID(), tax.ID(), term.ID())
-	err := store.EntityTaxonomyRemove(ctx, entity.ID(), tax.ID(), term.ID())
+	err = store.EntityTaxonomyRemove(ctx, entity.ID(), tax.ID(), term.ID())
 	if err != nil {
 		t.Fatalf("Failed to remove assignment: %v", err)
 	}
@@ -313,22 +400,54 @@ func TestEntityTaxonomyCount(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
-	term, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	term, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
+	if term == nil {
+		t.Fatal("Expected term to be created")
+	}
 
-	entity1, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", nil)
-	entity2, _ := store.EntityCreateWithTypeAndAttributes(ctx, "product", nil)
+	entity1, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", nil)
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	if entity1 == nil {
+		t.Fatal("Expected entity1 to be created")
+	}
 
-	store.EntityTaxonomyAssign(ctx, entity1.ID(), tax.ID(), term.ID())
-	store.EntityTaxonomyAssign(ctx, entity2.ID(), tax.ID(), term.ID())
+	entity2, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", nil)
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	if entity2 == nil {
+		t.Fatal("Expected entity2 to be created")
+	}
+
+	err = store.EntityTaxonomyAssign(ctx, entity1.ID(), tax.ID(), term.ID())
+	if err != nil {
+		t.Fatalf("Failed to assign taxonomy to entity1: %v", err)
+	}
+
+	err = store.EntityTaxonomyAssign(ctx, entity2.ID(), tax.ID(), term.ID())
+	if err != nil {
+		t.Fatalf("Failed to assign taxonomy to entity2: %v", err)
+	}
 
 	count, _ := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{
 		TaxonomyID: tax.ID(),
@@ -346,20 +465,32 @@ func TestTaxonomyUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
 	// Update
 	tax.SetDescription("Updated description")
-	err := store.TaxonomyUpdate(ctx, tax)
+	err = store.TaxonomyUpdate(ctx, tax)
 	if err != nil {
 		t.Fatalf("Failed to update taxonomy: %v", err)
 	}
 
 	// Verify
-	found, _ := store.TaxonomyFind(ctx, tax.ID())
+	found, err := store.TaxonomyFind(ctx, tax.ID())
+	if err != nil {
+		t.Fatalf("Failed to find taxonomy: %v", err)
+	}
+	if found == nil {
+		t.Fatal("Expected to find taxonomy")
+	}
 	if found.GetDescription() != "Updated description" {
 		t.Errorf("Expected description 'Updated description', got '%s'", found.GetDescription())
 	}
@@ -371,27 +502,45 @@ func TestTaxonomyTermUpdate(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
-	term, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	term, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 		SortOrder:  1,
 	})
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
+	if term == nil {
+		t.Fatal("Expected term to be created")
+	}
 
 	// Update
 	term.SetSortOrder(5)
-	err := store.TaxonomyTermUpdate(ctx, term)
+	err = store.TaxonomyTermUpdate(ctx, term)
 	if err != nil {
 		t.Fatalf("Failed to update term: %v", err)
 	}
 
 	// Verify
-	found, _ := store.TaxonomyTermFind(ctx, term.ID())
+	found, err := store.TaxonomyTermFind(ctx, term.ID())
+	if err != nil {
+		t.Fatalf("Failed to find term: %v", err)
+	}
+	if found == nil {
+		t.Fatal("Expected to find term")
+	}
 	if found.GetSortOrder() != 5 {
 		t.Errorf("Expected sort order 5, got %d", found.GetSortOrder())
 	}
@@ -403,10 +552,16 @@ func TestTaxonomyTrash(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
 	// Trash
 	deleted, err := store.TaxonomyTrash(ctx, tax.ID(), "test_user")
@@ -430,16 +585,28 @@ func TestTaxonomyTermTrash(t *testing.T) {
 
 	ctx := context.Background()
 
-	tax, _ := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
+	tax, err := store.TaxonomyCreateByOptions(ctx, entitystore.TaxonomyOptions{
 		Name: "Categories",
 		Slug: "categories",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	if tax == nil {
+		t.Fatal("Expected taxonomy to be created")
+	}
 
-	term, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
+	term, err := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOptions{
 		TaxonomyID: tax.ID(),
 		Name:       "Electronics",
 		Slug:       "electronics",
 	})
+	if err != nil {
+		t.Fatalf("Failed to create term: %v", err)
+	}
+	if term == nil {
+		t.Fatal("Expected term to be created")
+	}
 
 	// Trash
 	deleted, err := store.TaxonomyTermTrash(ctx, term.ID(), "test_user")
