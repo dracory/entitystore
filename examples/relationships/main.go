@@ -137,15 +137,7 @@ func main() {
 			log.Printf("Book not found for entity ID: %s", rel.GetEntityID())
 			continue
 		}
-		titleAttr, err := store.AttributeFind(ctx, book.ID(), "title")
-		if err != nil {
-			log.Printf("Failed to find title attribute: %v", err)
-			continue
-		}
-		title := "Unknown"
-		if titleAttr != nil {
-			title = titleAttr.GetValue()
-		}
+		title, _, _ := store.AttributeGetString(ctx, book.ID(), "title")
 		fmt.Printf("   - %s\n", title)
 	}
 

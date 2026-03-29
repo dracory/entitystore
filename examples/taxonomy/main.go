@@ -194,24 +194,8 @@ func main() {
 			log.Printf("Product not found for entity ID: %s", assignment.GetEntityID())
 			continue
 		}
-		nameAttr, err := store.AttributeFind(ctx, product.ID(), "name")
-		if err != nil {
-			log.Printf("Failed to find name attribute: %v", err)
-			continue
-		}
-		priceAttr, err := store.AttributeFind(ctx, product.ID(), "price")
-		if err != nil {
-			log.Printf("Failed to find price attribute: %v", err)
-			continue
-		}
-		name := "Unknown"
-		price := "N/A"
-		if nameAttr != nil {
-			name = nameAttr.GetValue()
-		}
-		if priceAttr != nil {
-			price = priceAttr.GetValue()
-		}
+		name, _, _ := store.AttributeGetString(ctx, product.ID(), "name")
+		price, _, _ := store.AttributeGetString(ctx, product.ID(), "price")
 		fmt.Printf("   - %s ($%s)\n", name, price)
 	}
 
