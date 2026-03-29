@@ -234,6 +234,47 @@ func (st *storeImplementation) AttributeSetFloat(ctx context.Context, entityID s
 	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }
 
+// AttributeGetString retrieves a string attribute value for an entity
+// Returns exists=false if the attribute doesn't exist
+func (st *storeImplementation) AttributeGetString(ctx context.Context, entityID string, attributeKey string) (value string, exists bool, err error) {
+	attr, err := st.AttributeFind(ctx, entityID, attributeKey)
+	if err != nil {
+		return "", false, err
+	}
+	if attr == nil {
+		return "", false, nil
+	}
+	return attr.GetValue(), true, nil
+}
+
+// AttributeGetInt retrieves an int64 attribute value for an entity
+// Returns exists=false if the attribute doesn't exist
+func (st *storeImplementation) AttributeGetInt(ctx context.Context, entityID string, attributeKey string) (value int64, exists bool, err error) {
+	valueStr, exists, err := st.AttributeGetString(ctx, entityID, attributeKey)
+	if err != nil || !exists {
+		return 0, exists, err
+	}
+	value, parseErr := strconv.ParseInt(valueStr, 10, 64)
+	if parseErr != nil {
+		return 0, false, parseErr
+	}
+	return value, true, nil
+}
+
+// AttributeGetFloat retrieves a float64 attribute value for an entity
+// Returns exists=false if the attribute doesn't exist
+func (st *storeImplementation) AttributeGetFloat(ctx context.Context, entityID string, attributeKey string) (value float64, exists bool, err error) {
+	valueStr, exists, err := st.AttributeGetString(ctx, entityID, attributeKey)
+	if err != nil || !exists {
+		return 0, exists, err
+	}
+	value, parseErr := strconv.ParseFloat(valueStr, 64)
+	if parseErr != nil {
+		return 0, false, parseErr
+	}
+	return value, true, nil
+}
+
 // AttributeCreateWithKeyAndValue creates a new attribute with the given key and value
 // Convenience method that creates and persists the attribute in one call
 func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error) {

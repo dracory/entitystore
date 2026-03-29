@@ -536,6 +536,12 @@ type StoreInterface interface {
 	AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attributeValue int64) error
 	// AttributeSetString stores a string value as an attribute
 	AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error
+	// AttributeGetFloat retrieves a float64 attribute value, returns exists=false if not found
+	AttributeGetFloat(ctx context.Context, entityID string, attributeKey string) (value float64, exists bool, err error)
+	// AttributeGetInt retrieves an int64 attribute value, returns exists=false if not found
+	AttributeGetInt(ctx context.Context, entityID string, attributeKey string) (value int64, exists bool, err error)
+	// AttributeGetString retrieves a string attribute value, returns exists=false if not found
+	AttributeGetString(ctx context.Context, entityID string, attributeKey string) (value string, exists bool, err error)
 	// AttributeUpdate updates an existing attribute record
 	AttributeUpdate(ctx context.Context, attr AttributeInterface) error
 
