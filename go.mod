@@ -8,7 +8,7 @@ require (
 	github.com/dracory/dataobject v1.7.0
 	github.com/dracory/sb v0.24.0
 	github.com/dromara/carbon/v2 v2.6.16
-	modernc.org/sqlite v1.50.0
+	modernc.org/sqlite v1.50.1
 )
 
 require (
