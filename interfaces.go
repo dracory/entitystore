@@ -500,8 +500,11 @@ type TaxonomyTermTrashInterface interface {
 // It provides CRUD operations for entities, attributes, relationships, and taxonomies.
 // All methods accept a context.Context for cancellation and timeout control.
 type StoreInterface interface {
-	// AutoMigrate creates or updates database tables to match the current schema
-	AutoMigrate(ctx context.Context) error
+	// MigrateDown drops the entity store tables
+	MigrateDown(ctx context.Context, tx ...*sql.Tx) error
+
+	// MigrateUp creates the entity store tables
+	MigrateUp(ctx context.Context, tx ...*sql.Tx) error
 
 	// GetAttributeTableName returns the configured attributes table name
 	GetAttributeTableName() string
