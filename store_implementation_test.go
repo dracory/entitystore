@@ -53,7 +53,7 @@ func TestStoreAutomigrate(t *testing.T) {
 		t.Fatal("Store could not be created:", err)
 	}
 
-	errAutomigrate := store.AutoMigrate(context.Background())
+	errAutomigrate := store.MigrateUp(context.Background())
 
 	if errAutomigrate != nil {
 		t.Fatal("Automigrate failed:", errAutomigrate)
