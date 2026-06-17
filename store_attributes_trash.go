@@ -2,15 +2,12 @@ package entitystore
 
 import (
 	"context"
-	"log"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
 )
 
 // AttributeTrash moves an attribute to trash
 func (st *storeImplementation) AttributeTrash(ctx context.Context, id string, deletedBy string) error {
-	// Move to trash directly without lookup
 	trash := NewAttributeTrash()
 	trash.SetID(id)
 	trash.SetEntityID("")
@@ -19,33 +16,20 @@ func (st *storeImplementation) AttributeTrash(ctx context.Context, id string, de
 	trash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	trash.SetDeletedBy(deletedBy)
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range trash.Data() {
-		record[k] = v
+		row[k] = v
 	}
 
-	q := goqu.Dialect(st.dbDriverName).Insert(st.attributeTrashTableName).Rows(record)
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	_, err := st.database.Exec(ctx, sqlStr, params...)
-	if err != nil {
+	if err := st.db.Query().Table(st.attributeTrashTableName).Create(row); err != nil {
 		return err
 	}
 
-	// Delete original
 	return st.AttributeDelete(ctx, id)
 }
 
 // AttributeRestore restores an attribute from trash
 func (st *storeImplementation) AttributeRestore(ctx context.Context, id string) error {
-	// Create from trash directly
 	trash := NewAttributeTrash()
 	trash.SetID(id)
 
@@ -56,12 +40,6 @@ func (st *storeImplementation) AttributeRestore(ctx context.Context, id string) 
 		return err
 	}
 
-	// Delete from trash
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.attributeTrashTableName).
-		Where(goqu.C(COLUMN_ID).Eq(id))
-
-	sqlStr, params, _ := q.Prepared(true).ToSQL()
-	_, err := st.database.Exec(ctx, sqlStr, params...)
+	_, err := st.db.Query().Table(st.attributeTrashTableName).Where(COLUMN_ID+" = ?", id).Delete()
 	return err
 }

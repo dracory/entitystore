@@ -4,11 +4,22 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strconv"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
-	"github.com/spf13/cast"
 )
+
+// relationshipRow is used for scanning relationship query results
+type relationshipRow struct {
+	ID               string `db:"id"`
+	EntityID         string `db:"entity_id"`
+	RelatedEntityID  string `db:"related_entity_id"`
+	RelationshipType string `db:"relationship_type"`
+	ParentID         string `db:"parent_id"`
+	Sequence         int    `db:"sequence"`
+	Metadata         string `db:"metadata"`
+	CreatedAt        string `db:"created_at"`
+}
 
 // RelationshipCreate persists a new relationship record
 func (st *storeImplementation) RelationshipCreate(ctx context.Context, relationship RelationshipInterface) error {
@@ -16,7 +27,6 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		return errors.New("relationship cannot be nil")
 	}
 
-	// Validate required fields
 	if relationship.GetEntityID() == "" {
 		return errors.New("entity_id is required")
 	}
@@ -27,7 +37,6 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		return errors.New("relationship_type is required")
 	}
 
-	// Prevent self-referencing relationships for belongs_to and has_many types
 	if relationship.GetEntityID() == relationship.GetRelatedEntityID() {
 		if relationship.GetRelationshipType() == RELATIONSHIP_TYPE_BELONGS_TO || relationship.GetRelationshipType() == RELATIONSHIP_TYPE_HAS_MANY {
 			return errors.New("self-referencing relationships not allowed for belongs_to and has_many types")
@@ -42,29 +51,20 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		relationship.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range relationship.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).Insert(st.relationshipTableName).Rows(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("RelationshipCreate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
-	return err
+	return st.db.Query().Table(st.relationshipTableName).Create(row)
 }
 
 // RelationshipCreateByOptions creates a relationship using the provided options
 func (st *storeImplementation) RelationshipCreateByOptions(ctx context.Context, opts RelationshipOptions) (RelationshipInterface, error) {
-	// Check for duplicate relationship
 	existing, err := st.RelationshipFindByEntities(ctx, opts.EntityID, opts.RelatedEntityID, opts.RelationshipType)
 	if err != nil {
 		return nil, err
@@ -90,64 +90,22 @@ func (st *storeImplementation) RelationshipCreateByOptions(ctx context.Context, 
 
 // RelationshipDelete removes a relationship record by ID
 func (st *storeImplementation) RelationshipDelete(ctx context.Context, relationshipID string) (bool, error) {
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.relationshipTableName).
-		Where(goqu.C(COLUMN_ID).Eq(relationshipID))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return false, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	result, err := st.database.Exec(ctx, sqlStr, params...)
+	result, err := st.db.Query().Table(st.relationshipTableName).Where(COLUMN_ID+" = ?", relationshipID).Delete()
 	if err != nil {
 		return false, err
 	}
 
-	affected, _ := result.RowsAffected()
-	return affected > 0, nil
+	return result.RowsAffected > 0, nil
 }
 
 // RelationshipDeleteAll removes all relationships for an entity (both as source and target)
 func (st *storeImplementation) RelationshipDeleteAll(ctx context.Context, entityID string) error {
-	// Delete where entity is the source
-	q1 := goqu.Dialect(st.dbDriverName).
-		Delete(st.relationshipTableName).
-		Where(goqu.C(COLUMN_ENTITY_ID).Eq(entityID))
-
-	sqlStr1, params1, errSql := q1.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr1)
-	}
-
-	_, err := st.database.Exec(ctx, sqlStr1, params1...)
+	_, err := st.db.Query().Table(st.relationshipTableName).Where(COLUMN_ENTITY_ID+" = ?", entityID).Delete()
 	if err != nil {
 		return err
 	}
 
-	// Delete where entity is the target
-	q2 := goqu.Dialect(st.dbDriverName).
-		Delete(st.relationshipTableName).
-		Where(goqu.C(COLUMN_RELATED_ENTITY_ID).Eq(entityID))
-
-	sqlStr2, params2, errSql := q2.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr2)
-	}
-
-	_, err = st.database.Exec(ctx, sqlStr2, params2...)
+	_, err = st.db.Query().Table(st.relationshipTableName).Where(COLUMN_RELATED_ENTITY_ID+" = ?", entityID).Delete()
 	return err
 }
 
@@ -197,51 +155,53 @@ func (st *storeImplementation) RelationshipFindByEntities(ctx context.Context, e
 	return nil, nil
 }
 
-// relationshipSelectQuery builds a SELECT query for relationships with all filter conditions applied.
-// This is used by both RelationshipList and RelationshipCount to ensure consistent filtering.
-func (st *storeImplementation) relationshipSelectQuery(options RelationshipQueryOptions) *goqu.SelectDataset {
-	q := goqu.Dialect(st.dbDriverName).From(st.relationshipTableName)
-
-	if len(options.IDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ID).In(options.IDs))
-	}
+// RelationshipList lists relationships matching the given query options
+func (st *storeImplementation) RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error) {
+	q := st.db.Query().Table(st.relationshipTableName)
 
 	if options.ID != "" {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID))
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	}
+
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
 	if options.EntityID != "" {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).Eq(options.EntityID))
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
 	}
 
 	if len(options.EntityIDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).In(options.EntityIDs))
+		ids := make([]any, len(options.EntityIDs))
+		for i, id := range options.EntityIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
 	}
 
 	if options.RelatedEntityID != "" {
-		q = q.Where(goqu.C(COLUMN_RELATED_ENTITY_ID).Eq(options.RelatedEntityID))
+		q = q.Where(COLUMN_RELATED_ENTITY_ID+" = ?", options.RelatedEntityID)
 	}
 
 	if len(options.RelatedEntityIDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_RELATED_ENTITY_ID).In(options.RelatedEntityIDs))
+		ids := make([]any, len(options.RelatedEntityIDs))
+		for i, id := range options.RelatedEntityIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_RELATED_ENTITY_ID, ids)
 	}
 
 	if options.RelationshipType != "" {
-		q = q.Where(goqu.C(COLUMN_RELATIONSHIP_TYPE).Eq(options.RelationshipType))
+		q = q.Where(COLUMN_RELATIONSHIP_TYPE+" = ?", options.RelationshipType)
 	}
 
 	if options.ParentID != "" {
-		q = q.Where(goqu.C(COLUMN_PARENT_ID).Eq(options.ParentID))
+		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
 	}
-
-	return q
-}
-
-// RelationshipList lists relationships matching the given query options.
-// Supports filtering by entity IDs, relationship type, parent ID, and pagination.
-// Default sort order is ascending by created_at.
-func (st *storeImplementation) RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error) {
-	q := st.relationshipSelectQuery(options)
 
 	sortByColumn := COLUMN_CREATED_AT
 	sortOrder := "asc"
@@ -254,44 +214,39 @@ func (st *storeImplementation) RelationshipList(ctx context.Context, options Rel
 		sortByColumn = options.SortBy
 	}
 
-	if sortOrder == "asc" {
-		q = q.Order(goqu.I(sortByColumn).Asc())
-	} else {
-		q = q.Order(goqu.I(sortByColumn).Desc())
-	}
+	q = q.OrderBy(sortByColumn, sortOrder)
 
 	if options.Offset > 0 {
-		q = q.Offset(uint(options.Offset))
+		q = q.Offset(int(options.Offset))
 	}
 
 	if options.Limit > 0 {
-		q = q.Limit(uint(options.Limit))
+		q = q.Limit(int(options.Limit))
 	}
 
-	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
-	if errSql != nil {
-		return nil, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	relationshipMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	var rows []relationshipRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
 	var list []RelationshipInterface
-	for _, m := range relationshipMaps {
-		list = append(list, NewRelationshipFromExistingData(m))
+	for _, r := range rows {
+		list = append(list, NewRelationshipFromExistingData(map[string]string{
+			COLUMN_ID:                r.ID,
+			COLUMN_ENTITY_ID:         r.EntityID,
+			COLUMN_RELATED_ENTITY_ID: r.RelatedEntityID,
+			COLUMN_RELATIONSHIP_TYPE: r.RelationshipType,
+			COLUMN_PARENT_ID:         r.ParentID,
+			COLUMN_SEQUENCE:          strconv.Itoa(r.Sequence),
+			COLUMN_METADATA:          r.Metadata,
+			COLUMN_CREATED_AT:        r.CreatedAt,
+		}))
 	}
 
 	return list, nil
 }
 
-// RelationshipListRelated lists all relationships where the given entity is the related (target) entity.
-// This is useful for finding all entities that reference the given entity.
+// RelationshipListRelated lists all relationships where the given entity is the related (target) entity
 func (st *storeImplementation) RelationshipListRelated(ctx context.Context, relatedEntityID string, relationshipType string) ([]RelationshipInterface, error) {
 	return st.RelationshipList(ctx, RelationshipQueryOptions{
 		RelatedEntityID:  relatedEntityID,
@@ -299,29 +254,58 @@ func (st *storeImplementation) RelationshipListRelated(ctx context.Context, rela
 	})
 }
 
-// RelationshipCount counts relationships matching the given options.
-// Returns the total number of relationships that match the query criteria.
+// RelationshipCount counts relationships matching the given options
 func (st *storeImplementation) RelationshipCount(ctx context.Context, options RelationshipQueryOptions) (int64, error) {
-	q := st.relationshipSelectQuery(options)
+	q := st.db.Query().Table(st.relationshipTableName)
 
-	sqlStr, params, errSql := q.Prepared(true).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
-	if errSql != nil {
-		return 0, errSql
+	if options.ID != "" {
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
 
-	if st.GetDebug() {
-		log.Println(sqlStr)
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	if options.EntityID != "" {
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
+	}
+
+	if len(options.EntityIDs) > 0 {
+		ids := make([]any, len(options.EntityIDs))
+		for i, id := range options.EntityIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
+	}
+
+	if options.RelatedEntityID != "" {
+		q = q.Where(COLUMN_RELATED_ENTITY_ID+" = ?", options.RelatedEntityID)
+	}
+
+	if len(options.RelatedEntityIDs) > 0 {
+		ids := make([]any, len(options.RelatedEntityIDs))
+		for i, id := range options.RelatedEntityIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_RELATED_ENTITY_ID, ids)
+	}
+
+	if options.RelationshipType != "" {
+		q = q.Where(COLUMN_RELATIONSHIP_TYPE+" = ?", options.RelationshipType)
+	}
+
+	if options.ParentID != "" {
+		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
+	}
+
+	var count int64
+	if err := q.Count(&count); err != nil {
 		return 0, err
 	}
 
-	if len(maps) == 0 {
-		return 0, nil
-	}
-
-	count := cast.ToInt64(maps[0]["count"])
 	return count, nil
 }

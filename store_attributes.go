@@ -6,12 +6,20 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
 )
 
+// attributeRow is used for scanning attribute query results
+type attributeRow struct {
+	ID             string `db:"id"`
+	EntityID       string `db:"entity_id"`
+	AttributeKey   string `db:"attribute_key"`
+	AttributeValue string `db:"attribute_value"`
+	CreatedAt      string `db:"created_at"`
+	UpdatedAt      string `db:"updated_at"`
+}
+
 // AttributeCreate persists a new attribute record to the database
-// Automatically generates an ID if not set and timestamps if empty
 func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute AttributeInterface) error {
 	if attribute == nil {
 		return errors.New("attribute cannot be nil")
@@ -29,94 +37,48 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 		attribute.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range attribute.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).Insert(st.attributeTableName).Rows(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("AttributeCreate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
-	return err
+	return st.db.Query().Table(st.attributeTableName).Create(row)
 }
 
 // AttributeUpdate persists changes to an existing attribute record
-// Automatically updates the updated_at timestamp
 func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute AttributeInterface) error {
 	attribute.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range attribute.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).
-		Update(st.attributeTableName).
-		Where(goqu.C(COLUMN_ID).Eq(attribute.ID())).
-		Set(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("AttributeUpdate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
+	_, err := st.db.Query().Table(st.attributeTableName).Where(COLUMN_ID+" = ?", attribute.ID()).Update(row)
 	return err
 }
 
 // AttributeDelete permanently removes an attribute record by ID
 func (st *storeImplementation) AttributeDelete(ctx context.Context, id string) error {
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.attributeTableName).
-		Where(goqu.C(COLUMN_ID).Eq(id))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	_, err := st.database.Exec(ctx, sqlStr, params...)
+	_, err := st.db.Query().Table(st.attributeTableName).Where(COLUMN_ID+" = ?", id).Delete()
 	return err
 }
 
 // AttributesDeleteByEntityID permanently removes all attributes for a given entity
 func (st *storeImplementation) AttributesDeleteByEntityID(ctx context.Context, entityID string) error {
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.attributeTableName).
-		Where(goqu.C(COLUMN_ENTITY_ID).Eq(entityID))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	_, err := st.database.Exec(ctx, sqlStr, params...)
+	_, err := st.db.Query().Table(st.attributeTableName).Where(COLUMN_ENTITY_ID+" = ?", entityID).Delete()
 	return err
 }
 
 // AttributeFind retrieves a single attribute by entity ID and attribute key
-// Returns nil if not found
 func (st *storeImplementation) AttributeFind(ctx context.Context, entityID string, attributeKey string) (AttributeInterface, error) {
 	if entityID == "" {
 		return nil, errors.New("entity id cannot be empty")
@@ -144,7 +106,6 @@ func (st *storeImplementation) AttributeFind(ctx context.Context, entityID strin
 }
 
 // AttributeFindByHandle retrieves an attribute by entity type, handle, and attribute key
-// Returns nil if not found
 func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
@@ -177,34 +138,71 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 }
 
 // AttributeList retrieves attributes matching the given query options
-// Supports filtering by entity ID, entity type, handle, and attribute key
 func (st *storeImplementation) AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error) {
-	q := st.AttributeQuery(options)
+	q := st.db.Query().Table(st.attributeTableName)
 
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return nil, errSql
+	if options.ID != "" {
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
 
-	if st.GetDebug() {
-		log.Println(sqlStr)
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	attributeMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	if options.EntityID != "" {
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
+	}
+
+	if options.AttributeKey != "" {
+		q = q.Where(COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
+	}
+
+	sortByColumn := COLUMN_ID
+	sortOrder := "asc"
+
+	if options.SortOrder != "" {
+		sortOrder = options.SortOrder
+	}
+
+	if options.SortBy != "" {
+		sortByColumn = options.SortBy
+	}
+
+	q = q.OrderBy(sortByColumn, sortOrder)
+
+	if options.Offset > 0 {
+		q = q.Offset(int(options.Offset))
+	}
+
+	if options.Limit > 0 {
+		q = q.Limit(int(options.Limit))
+	}
+
+	var rows []attributeRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
 	var list []AttributeInterface
-	for _, m := range attributeMaps {
-		list = append(list, NewAttributeFromExistingData(m))
+	for _, r := range rows {
+		list = append(list, NewAttributeFromExistingData(map[string]string{
+			COLUMN_ID:              r.ID,
+			COLUMN_ENTITY_ID:       r.EntityID,
+			COLUMN_ATTRIBUTE_KEY:   r.AttributeKey,
+			COLUMN_ATTRIBUTE_VALUE: r.AttributeValue,
+			COLUMN_CREATED_AT:      r.CreatedAt,
+			COLUMN_UPDATED_AT:      r.UpdatedAt,
+		}))
 	}
 
 	return list, nil
 }
 
 // AttributeSetString creates or updates a string attribute value for an entity
-// If the attribute doesn't exist, it will be created
 func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error {
 	attr, err := st.AttributeFind(ctx, entityID, attributeKey)
 	if err != nil {
@@ -221,21 +219,18 @@ func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID 
 }
 
 // AttributeSetInt creates or updates an integer attribute value for an entity
-// Converts the int64 to a string for storage
 func (st *storeImplementation) AttributeSetInt(ctx context.Context, entityID string, attributeKey string, attributeValue int64) error {
 	attributeValueAsString := strconv.FormatInt(attributeValue, 10)
 	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }
 
 // AttributeSetFloat creates or updates a float attribute value for an entity
-// Converts the float64 to a string for storage
 func (st *storeImplementation) AttributeSetFloat(ctx context.Context, entityID string, attributeKey string, attributeValue float64) error {
 	attributeValueAsString := strconv.FormatFloat(attributeValue, 'f', 30, 64)
 	return st.AttributeSetString(ctx, entityID, attributeKey, attributeValueAsString)
 }
 
 // AttributeGetString retrieves a string attribute value for an entity
-// Returns exists=false if the attribute doesn't exist
 func (st *storeImplementation) AttributeGetString(ctx context.Context, entityID string, attributeKey string) (value string, exists bool, err error) {
 	attr, err := st.AttributeFind(ctx, entityID, attributeKey)
 	if err != nil {
@@ -248,7 +243,6 @@ func (st *storeImplementation) AttributeGetString(ctx context.Context, entityID 
 }
 
 // AttributeGetInt retrieves an int64 attribute value for an entity
-// Returns exists=false if the attribute doesn't exist
 func (st *storeImplementation) AttributeGetInt(ctx context.Context, entityID string, attributeKey string) (value int64, exists bool, err error) {
 	valueStr, exists, err := st.AttributeGetString(ctx, entityID, attributeKey)
 	if err != nil || !exists {
@@ -262,7 +256,6 @@ func (st *storeImplementation) AttributeGetInt(ctx context.Context, entityID str
 }
 
 // AttributeGetFloat retrieves a float64 attribute value for an entity
-// Returns exists=false if the attribute doesn't exist
 func (st *storeImplementation) AttributeGetFloat(ctx context.Context, entityID string, attributeKey string) (value float64, exists bool, err error) {
 	valueStr, exists, err := st.AttributeGetString(ctx, entityID, attributeKey)
 	if err != nil || !exists {
@@ -275,30 +268,22 @@ func (st *storeImplementation) AttributeGetFloat(ctx context.Context, entityID s
 	return value, true, nil
 }
 
-// AttributeCreateWithKeyAndValue creates a new attribute with the given key and value
-// Convenience method that creates and persists the attribute in one call
+// AttributeCreateWithKeyAndValue creates an attribute with the given key and value for an entity
 func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error) {
 	attr := NewAttribute()
 	attr.SetEntityID(entityID)
 	attr.SetKey(attributeKey)
 	attr.SetValue(attributeValue)
-
 	if err := st.AttributeCreate(ctx, attr); err != nil {
-		return nil, err
+		return attr, err
 	}
-
 	return attr, nil
 }
 
-// AttributesSet creates or updates multiple entity attributes in a batch
-// If any attribute fails, the error is returned immediately
+// AttributesSet creates or updates multiple attributes for an entity at once
 func (st *storeImplementation) AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error {
-	for k, v := range attributes {
-		err := st.AttributeSetString(ctx, entityID, k, v)
-		if err != nil {
-			if st.GetDebug() {
-				log.Println(err)
-			}
+	for key, value := range attributes {
+		if err := st.AttributeSetString(ctx, entityID, key, value); err != nil {
 			return err
 		}
 	}

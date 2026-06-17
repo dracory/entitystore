@@ -3,8 +3,11 @@ package entitystore
 import (
 	"context"
 	"database/sql"
+	"log/slog"
+	"os"
 
-	"github.com/dracory/sb"
+	"github.com/dracory/neat"
+	contractsschema "github.com/dracory/neat/contracts/database/schema"
 )
 
 // storeImplementation implements StoreInterface
@@ -22,10 +25,10 @@ type storeImplementation struct {
 	taxonomyTermTrashTableName string
 	entityTaxonomyTableName    string
 	taxonomiesEnabled          bool
-	database                   sb.DatabaseInterface
-	dbDriverName               string
+	db                         *neat.Database
 	automigrateEnabled         bool
 	debugEnabled               bool
+	logger                     *slog.Logger
 }
 
 // StoreOption options for the vault store
@@ -33,53 +36,76 @@ type StoreOption func(*storeImplementation)
 
 // MigrateUp creates the entity store tables
 func (st *storeImplementation) MigrateUp(ctx context.Context, tx ...*sql.Tx) error {
-	sqlArray, err := st.SqlCreateTable()
-
-	if err != nil {
+	if err := st.entityTableCreate(); err != nil {
 		return err
 	}
-
-	for _, sql := range sqlArray {
-		var errExec error
-		if len(tx) > 0 && tx[0] != nil {
-			_, errExec = tx[0].ExecContext(ctx, sql)
-		} else {
-			_, errExec = st.database.Exec(ctx, sql)
+	if err := st.attributeTableCreate(); err != nil {
+		return err
+	}
+	if err := st.entityTrashTableCreate(); err != nil {
+		return err
+	}
+	if err := st.attributeTrashTableCreate(); err != nil {
+		return err
+	}
+	if st.relationshipsEnabled {
+		if err := st.relationshipTableCreate(); err != nil {
+			return err
 		}
-		if errExec != nil {
-			return errExec
+		if err := st.relationshipTrashTableCreate(); err != nil {
+			return err
 		}
 	}
-
+	if st.taxonomiesEnabled {
+		if err := st.taxonomyTableCreate(); err != nil {
+			return err
+		}
+		if err := st.taxonomyTermTableCreate(); err != nil {
+			return err
+		}
+		if err := st.entityTaxonomyTableCreate(); err != nil {
+			return err
+		}
+		if err := st.taxonomyTrashTableCreate(); err != nil {
+			return err
+		}
+		if err := st.taxonomyTermTrashTableCreate(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 // MigrateDown drops the entity store tables
 func (st *storeImplementation) MigrateDown(ctx context.Context, tx ...*sql.Tx) error {
-	sqlArray, err := st.SqlDropTable()
-
-	if err != nil {
-		return err
+	if st.taxonomiesEnabled {
+		_ = st.db.Schema().DropIfExists(st.entityTaxonomyTableName)
+		_ = st.db.Schema().DropIfExists(st.taxonomyTermTableName)
+		_ = st.db.Schema().DropIfExists(st.taxonomyTermTrashTableName)
+		_ = st.db.Schema().DropIfExists(st.taxonomyTableName)
+		_ = st.db.Schema().DropIfExists(st.taxonomyTrashTableName)
 	}
-
-	for _, sql := range sqlArray {
-		var errExec error
-		if len(tx) > 0 && tx[0] != nil {
-			_, errExec = tx[0].ExecContext(ctx, sql)
-		} else {
-			_, errExec = st.database.Exec(ctx, sql)
-		}
-		if errExec != nil {
-			return errExec
-		}
+	if st.relationshipsEnabled {
+		_ = st.db.Schema().DropIfExists(st.relationshipTableName)
+		_ = st.db.Schema().DropIfExists(st.relationshipTrashTableName)
 	}
-
+	_ = st.db.Schema().DropIfExists(st.attributeTrashTableName)
+	_ = st.db.Schema().DropIfExists(st.attributeTableName)
+	_ = st.db.Schema().DropIfExists(st.entityTrashTableName)
+	_ = st.db.Schema().DropIfExists(st.entityTableName)
 	return nil
 }
 
 // EnableDebug - enables the debug option
 func (st *storeImplementation) EnableDebug(debug bool) {
 	st.debugEnabled = debug
+	if debug {
+		st.db.EnableDebug()
+		st.logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	} else {
+		st.db.DisableDebug()
+		st.logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+	}
 }
 
 func (st *storeImplementation) GetAttributeTableName() string {
@@ -91,7 +117,8 @@ func (st *storeImplementation) GetAttributeTrashTableName() string {
 }
 
 func (st *storeImplementation) GetDB() *sql.DB {
-	return st.database.DB()
+	db, _ := st.db.DB()
+	return db
 }
 
 func (st *storeImplementation) GetDebug() bool {
@@ -134,211 +161,206 @@ func (st *storeImplementation) GetEntityTaxonomyTableName() string {
 	return st.entityTaxonomyTableName
 }
 
-func (st *storeImplementation) SqlCreateTable() ([]string, error) {
-	sqls := []string{}
-
-	// Create entities table
-	sql1, err := st.entityTableCreateSql()
-	if err != nil {
-		return nil, err
+func (st *storeImplementation) entityTableCreate() error {
+	if st.db.Schema().HasTable(st.entityTableName) {
+		return nil
 	}
-	sqls = append(sqls, sql1)
-
-	// Create attributes table
-	sql2, err := st.attributeTableCreateSql()
-	if err != nil {
-		return nil, err
-	}
-	sqls = append(sqls, sql2)
-
-	// Create entities_trash table
-	sql3, err := st.entityTrashTableCreateSql()
-	if err != nil {
-		return nil, err
-	}
-	sqls = append(sqls, sql3)
-
-	// Create attributes_trash table
-	sql4, err := st.attributeTrashTableCreateSql()
-	if err != nil {
-		return nil, err
-	}
-	sqls = append(sqls, sql4)
-
-	// Create relationship tables if enabled
-	if st.relationshipsEnabled {
-		// Create relationships table
-		sql5, err := st.relationshipTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql5)
-
-		// Create relationships_trash table
-		sql6, err := st.relationshipTrashTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql6)
-
-		// Create indexes for relationships table
-		sql7, err := st.relationshipIndexesCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql7...)
-
-		// Create indexes for relationships_trash table
-		sql8, err := st.relationshipTrashIndexesCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql8...)
-	}
-
-	// Create taxonomy tables if enabled
-	if st.taxonomiesEnabled {
-		// Create taxonomies table
-		sql9, err := st.taxonomyTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql9)
-
-		// Create taxonomy_terms table
-		sql10, err := st.taxonomyTermTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql10)
-
-		// Create entity_taxonomies table
-		sql11, err := st.entityTaxonomyTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql11)
-
-		// Create taxonomies_trash table
-		sql12, err := st.taxonomyTrashTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql12)
-
-		// Create taxonomy_terms_trash table
-		sql13, err := st.taxonomyTermTrashTableCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql13)
-
-		// Create indexes for taxonomy_terms table
-		sql14, err := st.taxonomyTermIndexesCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql14...)
-
-		// Create indexes for entity_taxonomies table
-		sql15, err := st.entityTaxonomyIndexesCreateSql()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql15...)
-	}
-
-	return sqls, nil
+	return st.db.Schema().Create(st.entityTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_TYPE, 40)
+		table.String(COLUMN_ENTITY_HANDLE, 60)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+	})
 }
 
-// SqlDropTable returns SQL statements for dropping all entity store tables
-func (st *storeImplementation) SqlDropTable() ([]string, error) {
-	sqls := []string{}
-
-	// Drop in reverse order of creation
-
-	// Drop taxonomy tables if enabled
-	if st.taxonomiesEnabled {
-		// Drop entity_taxonomies table
-		sql15, err := sb.NewBuilder(st.dbDriverName).Table(st.entityTaxonomyTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql15)
-
-		// Drop taxonomy_terms table
-		sql13, err := sb.NewBuilder(st.dbDriverName).Table(st.taxonomyTermTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql13)
-
-		// Drop taxonomies table
-		sql12, err := sb.NewBuilder(st.dbDriverName).Table(st.taxonomyTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql12)
-
-		// Drop taxonomy_terms_trash table
-		sql202, err := sb.NewBuilder(st.dbDriverName).Table(st.taxonomyTermTrashTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql202)
-
-		// Drop taxonomies_trash table
-		sql195, err := sb.NewBuilder(st.dbDriverName).Table(st.taxonomyTrashTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql195)
+func (st *storeImplementation) attributeTableCreate() error {
+	if st.db.Schema().HasTable(st.attributeTableName) {
+		return nil
 	}
+	return st.db.Schema().Create(st.attributeTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_ATTRIBUTE_KEY, 255)
+		table.Text(COLUMN_ATTRIBUTE_VALUE)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+	})
+}
 
-	// Drop relationship tables if enabled
-	if st.relationshipsEnabled {
-		// Drop relationships table
-		sql5, err := sb.NewBuilder(st.dbDriverName).Table(st.relationshipTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql5)
-
-		// Drop relationships_trash table
-		sql6, err := sb.NewBuilder(st.dbDriverName).Table(st.relationshipTrashTableName).Drop()
-		if err != nil {
-			return nil, err
-		}
-		sqls = append(sqls, sql6)
+func (st *storeImplementation) entityTrashTableCreate() error {
+	if st.db.Schema().HasTable(st.entityTrashTableName) {
+		return nil
 	}
+	return st.db.Schema().Create(st.entityTrashTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_TYPE, 40)
+		table.String(COLUMN_ENTITY_HANDLE, 60)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+		table.DateTime(COLUMN_DELETED_AT)
+		table.String(COLUMN_DELETED_BY, 9)
+	})
+}
 
-	// Drop attributes_trash table
-	sql4, err := sb.NewBuilder(st.dbDriverName).Table(st.attributeTrashTableName).Drop()
-	if err != nil {
-		return nil, err
+func (st *storeImplementation) attributeTrashTableCreate() error {
+	if st.db.Schema().HasTable(st.attributeTrashTableName) {
+		return nil
 	}
-	sqls = append(sqls, sql4)
+	return st.db.Schema().Create(st.attributeTrashTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_ATTRIBUTE_KEY, 255)
+		table.Text(COLUMN_ATTRIBUTE_VALUE)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+		table.DateTime(COLUMN_DELETED_AT)
+		table.String(COLUMN_DELETED_BY, 9)
+	})
+}
 
-	// Drop entities_trash table
-	sql3, err := sb.NewBuilder(st.dbDriverName).Table(st.entityTrashTableName).Drop()
-	if err != nil {
-		return nil, err
+func (st *storeImplementation) relationshipTableCreate() error {
+	if st.db.Schema().HasTable(st.relationshipTableName) {
+		return nil
 	}
-	sqls = append(sqls, sql3)
+	return st.db.Schema().Create(st.relationshipTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_RELATED_ENTITY_ID, 9)
+		table.String(COLUMN_RELATIONSHIP_TYPE, 50)
+		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.Integer(COLUMN_SEQUENCE)
+		table.Text(COLUMN_METADATA).Nullable()
+		table.DateTime(COLUMN_CREATED_AT)
+		table.Index(COLUMN_ENTITY_ID)
+		table.Index(COLUMN_RELATED_ENTITY_ID)
+		table.Index(COLUMN_RELATIONSHIP_TYPE)
+		table.Unique(COLUMN_ENTITY_ID, COLUMN_RELATED_ENTITY_ID, COLUMN_RELATIONSHIP_TYPE)
+	})
+}
 
-	// Drop attributes table
-	sql2, err := sb.NewBuilder(st.dbDriverName).Table(st.attributeTableName).Drop()
-	if err != nil {
-		return nil, err
+func (st *storeImplementation) relationshipTrashTableCreate() error {
+	if st.db.Schema().HasTable(st.relationshipTrashTableName) {
+		return nil
 	}
-	sqls = append(sqls, sql2)
+	return st.db.Schema().Create(st.relationshipTrashTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_RELATED_ENTITY_ID, 9)
+		table.String(COLUMN_RELATIONSHIP_TYPE, 50)
+		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.Integer(COLUMN_SEQUENCE)
+		table.Text(COLUMN_METADATA).Nullable()
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_DELETED_AT)
+		table.String(COLUMN_DELETED_BY, 9)
+		table.Index(COLUMN_ENTITY_ID)
+		table.Index(COLUMN_RELATED_ENTITY_ID)
+		table.Index(COLUMN_RELATIONSHIP_TYPE)
+		table.Unique(COLUMN_ENTITY_ID, COLUMN_RELATED_ENTITY_ID, COLUMN_RELATIONSHIP_TYPE)
+	})
+}
 
-	// Drop entities table
-	sql1, err := sb.NewBuilder(st.dbDriverName).Table(st.entityTableName).Drop()
-	if err != nil {
-		return nil, err
+func (st *storeImplementation) taxonomyTableCreate() error {
+	if st.db.Schema().HasTable(st.taxonomyTableName) {
+		return nil
 	}
-	sqls = append(sqls, sql1)
+	return st.db.Schema().Create(st.taxonomyTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_NAME, 255)
+		table.String(COLUMN_SLUG, 255)
+		table.Unique(COLUMN_SLUG)
+		table.Text(COLUMN_DESCRIPTION).Nullable()
+		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.Text(COLUMN_ENTITY_TYPES).Nullable()
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+	})
+}
 
-	return sqls, nil
+func (st *storeImplementation) taxonomyTrashTableCreate() error {
+	if st.db.Schema().HasTable(st.taxonomyTrashTableName) {
+		return nil
+	}
+	return st.db.Schema().Create(st.taxonomyTrashTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_NAME, 255)
+		table.String(COLUMN_SLUG, 255)
+		table.Unique(COLUMN_SLUG)
+		table.Text(COLUMN_DESCRIPTION).Nullable()
+		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.Text(COLUMN_ENTITY_TYPES).Nullable()
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+		table.DateTime(COLUMN_DELETED_AT)
+		table.String(COLUMN_DELETED_BY, 9)
+	})
+}
+
+func (st *storeImplementation) taxonomyTermTableCreate() error {
+	if st.db.Schema().HasTable(st.taxonomyTermTableName) {
+		return nil
+	}
+	return st.db.Schema().Create(st.taxonomyTermTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_TAXONOMY_ID, 9)
+		table.String(COLUMN_NAME, 255)
+		table.String(COLUMN_SLUG, 255)
+		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.Integer(COLUMN_SORT_ORDER)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+		table.Index(COLUMN_TAXONOMY_ID)
+		table.Index(COLUMN_PARENT_ID)
+		table.Unique(COLUMN_TAXONOMY_ID, COLUMN_SLUG)
+	})
+}
+
+func (st *storeImplementation) taxonomyTermTrashTableCreate() error {
+	if st.db.Schema().HasTable(st.taxonomyTermTrashTableName) {
+		return nil
+	}
+	return st.db.Schema().Create(st.taxonomyTermTrashTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_TAXONOMY_ID, 9)
+		table.String(COLUMN_NAME, 255)
+		table.String(COLUMN_SLUG, 255)
+		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.Integer(COLUMN_SORT_ORDER)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.DateTime(COLUMN_UPDATED_AT)
+		table.DateTime(COLUMN_DELETED_AT)
+		table.String(COLUMN_DELETED_BY, 9)
+		table.Index(COLUMN_TAXONOMY_ID)
+		table.Index(COLUMN_PARENT_ID)
+		table.Unique(COLUMN_TAXONOMY_ID, COLUMN_SLUG)
+	})
+}
+
+func (st *storeImplementation) entityTaxonomyTableCreate() error {
+	if st.db.Schema().HasTable(st.entityTaxonomyTableName) {
+		return nil
+	}
+	return st.db.Schema().Create(st.entityTaxonomyTableName, func(table contractsschema.Blueprint) {
+		table.String(COLUMN_ID, 9)
+		table.Primary(COLUMN_ID)
+		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_TAXONOMY_ID, 9)
+		table.String(COLUMN_TERM_ID, 9)
+		table.DateTime(COLUMN_CREATED_AT)
+		table.Index(COLUMN_ENTITY_ID)
+		table.Index(COLUMN_TAXONOMY_ID)
+		table.Index(COLUMN_TERM_ID)
+		table.Unique(COLUMN_ENTITY_ID, COLUMN_TAXONOMY_ID, COLUMN_TERM_ID)
+	})
 }

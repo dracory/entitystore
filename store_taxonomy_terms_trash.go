@@ -4,14 +4,24 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strconv"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
 )
 
-// ==========================================
-// TaxonomyTerm Trash/Restore
-// ==========================================
+// taxonomyTermTrashRow is used for scanning taxonomy term trash query results
+type taxonomyTermTrashRow struct {
+	ID         string `db:"id"`
+	TaxonomyID string `db:"taxonomy_id"`
+	Name       string `db:"name"`
+	Slug       string `db:"slug"`
+	ParentID   string `db:"parent_id"`
+	SortOrder  int    `db:"sort_order"`
+	CreatedAt  string `db:"created_at"`
+	UpdatedAt  string `db:"updated_at"`
+	DeletedAt  string `db:"deleted_at"`
+	DeletedBy  string `db:"deleted_by"`
+}
 
 // TaxonomyTermTrash soft-deletes a taxonomy term by moving it to trash
 func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID string, deletedBy string) (bool, error) {
@@ -19,7 +29,6 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 		return false, errors.New("taxonomies are not enabled")
 	}
 
-	// Find the term
 	term, err := st.TaxonomyTermFind(ctx, termID)
 	if err != nil {
 		return false, err
@@ -28,7 +37,6 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 		return false, errors.New("taxonomy term not found")
 	}
 
-	// Check for entity assignments
 	assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQueryOptions{
 		TermID: termID,
 	})
@@ -39,7 +47,6 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 		return false, errors.New("cannot trash taxonomy term: it has associated entity assignments")
 	}
 
-	// Create trash record
 	trash := NewTaxonomyTermTrash()
 	trash.SetID(term.ID())
 	trash.SetTaxonomyID(term.GetTaxonomyID())
@@ -52,28 +59,19 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 	trash.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	trash.SetDeletedBy(deletedBy)
 
-	// Insert into trash
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range trash.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).Insert(st.taxonomyTermTrashTableName).Rows(record)
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return false, errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("TaxonomyTermTrash insert:", row)
 	}
 
-	_, err = st.database.Exec(ctx, sqlStr, params...)
-	if err != nil {
+	if err := st.db.Query().Table(st.taxonomyTermTrashTableName).Create(row); err != nil {
 		return false, err
 	}
 
-	// Delete from main table
 	return st.TaxonomyTermDelete(ctx, termID)
 }
 
@@ -83,7 +81,6 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 		return false, errors.New("taxonomies are not enabled")
 	}
 
-	// Find in trash
 	list, err := st.TaxonomyTermTrashList(ctx, TaxonomyTermQueryOptions{
 		ID:    termID,
 		Limit: 1,
@@ -97,7 +94,6 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 
 	trash := list[0]
 
-	// Recreate term
 	term := NewTaxonomyTerm()
 	term.SetID(trash.ID())
 	term.SetTaxonomyID(trash.GetTaxonomyID())
@@ -112,27 +108,12 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 		return false, err
 	}
 
-	// Delete from trash
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.taxonomyTermTrashTableName).
-		Where(goqu.C(COLUMN_ID).Eq(termID))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return false, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	result, err := st.database.Exec(ctx, sqlStr, params...)
+	result, err := st.db.Query().Table(st.taxonomyTermTrashTableName).Where(COLUMN_ID+" = ?", termID).Delete()
 	if err != nil {
 		return false, err
 	}
 
-	affected, _ := result.RowsAffected()
-	return affected > 0, nil
+	return result.RowsAffected > 0, nil
 }
 
 // TaxonomyTermTrashList lists trashed taxonomy terms
@@ -141,22 +122,26 @@ func (st *storeImplementation) TaxonomyTermTrashList(ctx context.Context, option
 		return nil, errors.New("taxonomies are not enabled")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).From(st.taxonomyTermTrashTableName)
-
-	if len(options.IDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ID).In(options.IDs))
-	}
+	q := st.db.Query().Table(st.taxonomyTermTrashTableName)
 
 	if options.ID != "" {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID))
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	}
+
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
 	if options.TaxonomyID != "" {
-		q = q.Where(goqu.C(COLUMN_TAXONOMY_ID).Eq(options.TaxonomyID))
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
 	}
 
 	if options.Slug != "" {
-		q = q.Where(goqu.C(COLUMN_SLUG).Eq(options.Slug))
+		q = q.Where(COLUMN_SLUG+" = ?", options.Slug)
 	}
 
 	sortByColumn := COLUMN_DELETED_AT
@@ -170,37 +155,35 @@ func (st *storeImplementation) TaxonomyTermTrashList(ctx context.Context, option
 		sortByColumn = options.SortBy
 	}
 
-	if sortOrder == "asc" {
-		q = q.Order(goqu.I(sortByColumn).Asc())
-	} else {
-		q = q.Order(goqu.I(sortByColumn).Desc())
-	}
+	q = q.OrderBy(sortByColumn, sortOrder)
 
 	if options.Offset > 0 {
-		q = q.Offset(uint(options.Offset))
+		q = q.Offset(int(options.Offset))
 	}
 
 	if options.Limit > 0 {
-		q = q.Limit(uint(options.Limit))
+		q = q.Limit(int(options.Limit))
 	}
 
-	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
-	if errSql != nil {
-		return nil, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	trashMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	var rows []taxonomyTermTrashRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
 	var list []TaxonomyTermTrashInterface
-	for _, m := range trashMaps {
-		list = append(list, NewTaxonomyTermTrashFromExistingData(m))
+	for _, r := range rows {
+		list = append(list, NewTaxonomyTermTrashFromExistingData(map[string]string{
+			COLUMN_ID:          r.ID,
+			COLUMN_TAXONOMY_ID: r.TaxonomyID,
+			COLUMN_NAME:        r.Name,
+			COLUMN_SLUG:        r.Slug,
+			COLUMN_PARENT_ID:   r.ParentID,
+			COLUMN_SORT_ORDER:  strconv.Itoa(r.SortOrder),
+			COLUMN_CREATED_AT:  r.CreatedAt,
+			COLUMN_UPDATED_AT:  r.UpdatedAt,
+			COLUMN_DELETED_AT:  r.DeletedAt,
+			COLUMN_DELETED_BY:  r.DeletedBy,
+		}))
 	}
 
 	return list, nil

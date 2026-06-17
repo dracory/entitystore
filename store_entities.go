@@ -4,14 +4,20 @@ import (
 	"context"
 	"errors"
 	"log"
-	"strconv"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
 )
 
+// entityRow is used for scanning entity query results
+type entityRow struct {
+	ID           string `db:"id"`
+	EntityType   string `db:"entity_type"`
+	EntityHandle string `db:"entity_handle"`
+	CreatedAt    string `db:"created_at"`
+	UpdatedAt    string `db:"updated_at"`
+}
+
 // EntityCreate persists a new entity record to the database
-// Automatically generates an ID if not set and timestamps if empty
 func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityInterface) error {
 	if entity == nil {
 		return errors.New("entity cannot be nil")
@@ -29,85 +35,46 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 		entity.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range entity.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTableName).Rows(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("EntityCreate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
-	return err
+	return st.db.Query().Table(st.entityTableName).Create(row)
 }
 
 // EntityUpdate persists changes to an existing entity record
-// Automatically updates the updated_at timestamp
 func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityInterface) error {
 	entity.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range entity.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).
-		Update(st.entityTableName).
-		Where(goqu.C(COLUMN_ID).Eq(entity.ID())).
-		Set(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("EntityUpdate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
-	if err != nil && st.GetDebug() {
-		log.Println(err)
-	}
-
+	_, err := st.db.Query().Table(st.entityTableName).Where(COLUMN_ID+" = ?", entity.ID()).Update(row)
 	return err
 }
 
 // EntityDelete permanently removes an entity record by ID
-// Returns true if a record was deleted, false otherwise
 func (st *storeImplementation) EntityDelete(ctx context.Context, id string) (bool, error) {
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.entityTableName).
-		Where(goqu.C(COLUMN_ID).Eq(id))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return false, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	result, err := st.database.Exec(ctx, sqlStr, params...)
+	result, err := st.db.Query().Table(st.entityTableName).Where(COLUMN_ID+" = ?", id).Delete()
 	if err != nil {
 		return false, err
 	}
 
-	affected, _ := result.RowsAffected()
-	return affected > 0, nil
+	return result.RowsAffected > 0, nil
 }
 
 // EntityFindByID finds an entity by its unique ID
-// Returns nil if not found
 func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID string) (EntityInterface, error) {
 	if entityID == "" {
 		return nil, errors.New("entity ID cannot be empty")
@@ -130,7 +97,6 @@ func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID stri
 }
 
 // EntityFindByHandle finds an entity by its type and handle
-// Returns nil if not found
 func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (EntityInterface, error) {
 	if entityType == "" {
 		return nil, errors.New("entity type cannot be empty")
@@ -158,91 +124,120 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 }
 
 // EntityList retrieves entities matching the given query options
-// Supports filtering by ID, entity type, handle, and pagination
 func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error) {
-	q := st.EntityQuery(options)
+	q := st.db.Query().Table(st.entityTableName)
 
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return nil, errSql
+	if options.ID != "" {
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
 
-	if st.GetDebug() {
-		log.Println(sqlStr)
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	entityMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
-		log.Println("EntityList error:", err)
+	if options.EntityType != "" {
+		q = q.Where(COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
+	}
+
+	if options.EntityHandle != "" {
+		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
+	}
+
+	sortByColumn := COLUMN_ID
+	sortOrder := "asc"
+
+	if options.SortOrder != "" {
+		sortOrder = options.SortOrder
+	}
+
+	if options.SortBy != "" {
+		sortByColumn = options.SortBy
+	}
+
+	q = q.OrderBy(sortByColumn, sortOrder)
+
+	if options.Offset > 0 {
+		q = q.Offset(int(options.Offset))
+	}
+
+	if options.Limit > 0 {
+		q = q.Limit(int(options.Limit))
+	}
+
+	var rows []entityRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
 	var list []EntityInterface
-	for _, m := range entityMaps {
-		list = append(list, NewEntityFromExistingData(m))
+	for _, r := range rows {
+		list = append(list, NewEntityFromExistingData(map[string]string{
+			COLUMN_ID:            r.ID,
+			COLUMN_ENTITY_TYPE:   r.EntityType,
+			COLUMN_ENTITY_HANDLE: r.EntityHandle,
+			COLUMN_CREATED_AT:    r.CreatedAt,
+			COLUMN_UPDATED_AT:    r.UpdatedAt,
+		}))
 	}
 
 	return list, nil
 }
 
 // EntityCount counts entities matching the given query options
-// Useful for pagination calculations
 func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
-	q := st.EntityQuery(options)
-	q = q.Limit(1).Select(goqu.COUNT(goqu.Star()).As("count"))
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return 0, errSql
+	q := st.db.Query().Table(st.entityTableName)
+
+	if options.ID != "" {
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
 
-	if st.GetDebug() {
-		log.Println(sqlStr)
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	if options.EntityType != "" {
+		q = q.Where(COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
+	}
+
+	if options.EntityHandle != "" {
+		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
+	}
+
+	var count int64
+	if err := q.Count(&count); err != nil {
 		return 0, err
 	}
 
-	if len(maps) == 0 {
-		return 0, nil
-	}
-
-	count, _ := strconv.ParseInt(maps[0]["count"], 10, 64)
 	return count, nil
 }
 
 // EntityAttributeList retrieves all attributes for a given entity
-// Convenience method that wraps AttributeList
 func (st *storeImplementation) EntityAttributeList(ctx context.Context, entityID string) ([]AttributeInterface, error) {
 	return st.AttributeList(ctx, AttributeQueryOptions{EntityID: entityID})
 }
 
 // EntityFindByAttribute finds an entity by type and attribute key/value
-// Returns nil if not found
 func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (EntityInterface, error) {
-	// Find by attribute first
-	attrs, err := st.AttributeList(ctx, AttributeQueryOptions{
-		AttributeKey: attributeKey,
-		EntityType:   entityType,
-	})
+	results, err := st.EntityListByAttribute(ctx, entityType, attributeKey, attributeValue)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, attr := range attrs {
-		if attr.GetValue() == attributeValue {
-			return st.EntityFindByID(ctx, attr.GetEntityID())
-		}
+	if len(results) > 0 {
+		return results[0], nil
 	}
-
 	return nil, nil
 }
 
 // EntityListByAttribute finds all entities of a type with a specific attribute value
-// Returns an empty slice if none found
 func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error) {
-	// Get all entities of this type
 	entities, err := st.EntityList(ctx, EntityQueryOptions{EntityType: entityType})
 	if err != nil {
 		return nil, err
@@ -260,7 +255,6 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 }
 
 // EntityCreateWithType creates a new entity with only the type specified
-// Generates a new ID and timestamps automatically
 func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityType string) (EntityInterface, error) {
 	entity := NewEntity()
 	entity.SetType(entityType)
@@ -271,7 +265,6 @@ func (st *storeImplementation) EntityCreateWithType(ctx context.Context, entityT
 }
 
 // EntityCreateWithTypeAndAttributes creates a new entity with type and attributes
-// Generates a new ID and timestamps automatically
 func (st *storeImplementation) EntityCreateWithTypeAndAttributes(ctx context.Context, entityType string, attributes map[string]string) (EntityInterface, error) {
 	entity, err := st.EntityCreateWithType(ctx, entityType)
 	if err != nil {

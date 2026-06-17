@@ -5,14 +5,17 @@ import (
 	"errors"
 	"log"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
-	"github.com/spf13/cast"
 )
 
-// ==========================================
-// EntityTaxonomy CRUD (Entity-Term Assignments)
-// ==========================================
+// entityTaxonomyRow is used for scanning entity taxonomy query results
+type entityTaxonomyRow struct {
+	ID         string `db:"id"`
+	EntityID   string `db:"entity_id"`
+	TaxonomyID string `db:"taxonomy_id"`
+	TermID     string `db:"term_id"`
+	CreatedAt  string `db:"created_at"`
+}
 
 // EntityTaxonomyAssign assigns an entity to a taxonomy term
 func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityID string, taxonomyID string, termID string) error {
@@ -24,7 +27,6 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("entity ID, taxonomy ID, and term ID are all required")
 	}
 
-	// Validate entity exists
 	entity, err := st.EntityFindByID(ctx, entityID)
 	if err != nil {
 		return err
@@ -33,7 +35,6 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("entity not found")
 	}
 
-	// Validate taxonomy exists
 	taxonomy, err := st.TaxonomyFind(ctx, taxonomyID)
 	if err != nil {
 		return err
@@ -42,7 +43,6 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("taxonomy not found")
 	}
 
-	// Validate term exists and belongs to the taxonomy
 	term, err := st.TaxonomyTermFind(ctx, termID)
 	if err != nil {
 		return err
@@ -54,7 +54,6 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("taxonomy term does not belong to the specified taxonomy")
 	}
 
-	// Check if assignment already exists
 	existing, err := st.EntityTaxonomyList(ctx, EntityTaxonomyQueryOptions{
 		EntityID:   entityID,
 		TaxonomyID: taxonomyID,
@@ -68,31 +67,22 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("entity is already assigned to this taxonomy term")
 	}
 
-	// Create new assignment
 	assignment := NewEntityTaxonomy()
 	assignment.SetEntityID(entityID)
 	assignment.SetTaxonomyID(taxonomyID)
 	assignment.SetTermID(termID)
 	assignment.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range assignment.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).Insert(st.entityTaxonomyTableName).Rows(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("EntityTaxonomyAssign:", row)
 	}
 
-	_, err = st.database.Exec(ctx, sqlStr, params...)
-	return err
+	return st.db.Query().Table(st.entityTaxonomyTableName).Create(row)
 }
 
 // EntityTaxonomyRemove removes an entity from a taxonomy term
@@ -105,24 +95,7 @@ func (st *storeImplementation) EntityTaxonomyRemove(ctx context.Context, entityI
 		return errors.New("entity ID, taxonomy ID, and term ID are all required")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.entityTaxonomyTableName).
-		Where(
-			goqu.C(COLUMN_ENTITY_ID).Eq(entityID),
-			goqu.C(COLUMN_TAXONOMY_ID).Eq(taxonomyID),
-			goqu.C(COLUMN_TERM_ID).Eq(termID),
-		)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	_, err := st.database.Exec(ctx, sqlStr, params...)
+	_, err := st.db.Query().Table(st.entityTaxonomyTableName).Where(COLUMN_ENTITY_ID+" = ? AND "+COLUMN_TAXONOMY_ID+" = ? AND "+COLUMN_TERM_ID+" = ?", entityID, taxonomyID, termID).Delete()
 	return err
 }
 
@@ -132,30 +105,38 @@ func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, options E
 		return nil, errors.New("taxonomies are not enabled")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).From(st.entityTaxonomyTableName)
+	q := st.db.Query().Table(st.entityTaxonomyTableName)
 
 	if options.ID != "" {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID))
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
 
 	if options.EntityID != "" {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).Eq(options.EntityID))
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
 	}
 
 	if len(options.EntityIDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).In(options.EntityIDs))
+		ids := make([]any, len(options.EntityIDs))
+		for i, id := range options.EntityIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
 	}
 
 	if options.TaxonomyID != "" {
-		q = q.Where(goqu.C(COLUMN_TAXONOMY_ID).Eq(options.TaxonomyID))
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
 	}
 
 	if options.TermID != "" {
-		q = q.Where(goqu.C(COLUMN_TERM_ID).Eq(options.TermID))
+		q = q.Where(COLUMN_TERM_ID+" = ?", options.TermID)
 	}
 
 	if len(options.TermIDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_TERM_ID).In(options.TermIDs))
+		ids := make([]any, len(options.TermIDs))
+		for i, id := range options.TermIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_TERM_ID, ids)
 	}
 
 	sortByColumn := COLUMN_CREATED_AT
@@ -169,37 +150,30 @@ func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, options E
 		sortByColumn = options.SortBy
 	}
 
-	if sortOrder == "asc" {
-		q = q.Order(goqu.I(sortByColumn).Asc())
-	} else {
-		q = q.Order(goqu.I(sortByColumn).Desc())
-	}
+	q = q.OrderBy(sortByColumn, sortOrder)
 
 	if options.Offset > 0 {
-		q = q.Offset(uint(options.Offset))
+		q = q.Offset(int(options.Offset))
 	}
 
 	if options.Limit > 0 {
-		q = q.Limit(uint(options.Limit))
+		q = q.Limit(int(options.Limit))
 	}
 
-	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
-	if errSql != nil {
-		return nil, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	assignmentMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	var rows []entityTaxonomyRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
 	var list []EntityTaxonomyInterface
-	for _, m := range assignmentMaps {
-		list = append(list, NewEntityTaxonomyFromExistingData(m))
+	for _, r := range rows {
+		list = append(list, NewEntityTaxonomyFromExistingData(map[string]string{
+			COLUMN_ID:          r.ID,
+			COLUMN_ENTITY_ID:   r.EntityID,
+			COLUMN_TAXONOMY_ID: r.TaxonomyID,
+			COLUMN_TERM_ID:     r.TermID,
+			COLUMN_CREATED_AT:  r.CreatedAt,
+		}))
 	}
 
 	return list, nil
@@ -211,50 +185,44 @@ func (st *storeImplementation) EntityTaxonomyCount(ctx context.Context, options 
 		return 0, errors.New("taxonomies are not enabled")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).From(st.entityTaxonomyTableName)
+	q := st.db.Query().Table(st.entityTaxonomyTableName)
 
 	if options.ID != "" {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID))
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
 
 	if options.EntityID != "" {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).Eq(options.EntityID))
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
 	}
 
 	if len(options.EntityIDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ENTITY_ID).In(options.EntityIDs))
+		ids := make([]any, len(options.EntityIDs))
+		for i, id := range options.EntityIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
 	}
 
 	if options.TaxonomyID != "" {
-		q = q.Where(goqu.C(COLUMN_TAXONOMY_ID).Eq(options.TaxonomyID))
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
 	}
 
 	if options.TermID != "" {
-		q = q.Where(goqu.C(COLUMN_TERM_ID).Eq(options.TermID))
+		q = q.Where(COLUMN_TERM_ID+" = ?", options.TermID)
 	}
 
 	if len(options.TermIDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_TERM_ID).In(options.TermIDs))
+		ids := make([]any, len(options.TermIDs))
+		for i, id := range options.TermIDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_TERM_ID, ids)
 	}
 
-	sqlStr, params, errSql := q.Prepared(true).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
-	if errSql != nil {
-		return 0, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	var count int64
+	if err := q.Count(&count); err != nil {
 		return 0, err
 	}
 
-	if len(maps) == 0 {
-		return 0, nil
-	}
-
-	count := cast.ToInt64(maps[0]["count"])
 	return count, nil
 }

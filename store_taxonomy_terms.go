@@ -4,15 +4,22 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strconv"
 
-	"github.com/doug-martin/goqu/v9"
 	"github.com/dromara/carbon/v2"
-	"github.com/spf13/cast"
 )
 
-// ==========================================
-// TaxonomyTerm CRUD
-// ==========================================
+// taxonomyTermRow is used for scanning taxonomy term query results
+type taxonomyTermRow struct {
+	ID         string `db:"id"`
+	TaxonomyID string `db:"taxonomy_id"`
+	Name       string `db:"name"`
+	Slug       string `db:"slug"`
+	ParentID   string `db:"parent_id"`
+	SortOrder  int    `db:"sort_order"`
+	CreatedAt  string `db:"created_at"`
+	UpdatedAt  string `db:"updated_at"`
+}
 
 // TaxonomyTermCreate persists a new taxonomy term record
 func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term TaxonomyTermInterface) error {
@@ -24,7 +31,6 @@ func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term Taxo
 		return errors.New("taxonomies are not enabled")
 	}
 
-	// Validate required fields
 	if term.GetName() == "" {
 		return errors.New("taxonomy term name is required")
 	}
@@ -46,29 +52,20 @@ func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term Taxo
 		term.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range term.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).Insert(st.taxonomyTermTableName).Rows(record)
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("TaxonomyTermCreate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
-	return err
+	return st.db.Query().Table(st.taxonomyTermTableName).Create(row)
 }
 
 // TaxonomyTermCreateByOptions creates a taxonomy term using the provided options
 func (st *storeImplementation) TaxonomyTermCreateByOptions(ctx context.Context, opts TaxonomyTermOptions) (TaxonomyTermInterface, error) {
-	// Check for duplicate slug within taxonomy
 	existing, err := st.TaxonomyTermFindBySlug(ctx, opts.TaxonomyID, opts.Slug)
 	if err != nil {
 		return nil, err
@@ -97,7 +94,6 @@ func (st *storeImplementation) TaxonomyTermDelete(ctx context.Context, termID st
 		return false, errors.New("taxonomies are not enabled")
 	}
 
-	// Check for entity assignments
 	assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQueryOptions{
 		TermID: termID,
 	})
@@ -108,26 +104,12 @@ func (st *storeImplementation) TaxonomyTermDelete(ctx context.Context, termID st
 		return false, errors.New("cannot delete taxonomy term: it has associated entity assignments")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).
-		Delete(st.taxonomyTermTableName).
-		Where(goqu.C(COLUMN_ID).Eq(termID))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return false, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	result, err := st.database.Exec(ctx, sqlStr, params...)
+	result, err := st.db.Query().Table(st.taxonomyTermTableName).Where(COLUMN_ID+" = ?", termID).Delete()
 	if err != nil {
 		return false, err
 	}
 
-	affected, _ := result.RowsAffected()
-	return affected > 0, nil
+	return result.RowsAffected > 0, nil
 }
 
 // TaxonomyTermFind finds a taxonomy term by its ID
@@ -189,26 +171,30 @@ func (st *storeImplementation) TaxonomyTermList(ctx context.Context, options Tax
 		return nil, errors.New("taxonomies are not enabled")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).From(st.taxonomyTermTableName)
-
-	if len(options.IDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ID).In(options.IDs))
-	}
+	q := st.db.Query().Table(st.taxonomyTermTableName)
 
 	if options.ID != "" {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID))
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	}
+
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
 	if options.TaxonomyID != "" {
-		q = q.Where(goqu.C(COLUMN_TAXONOMY_ID).Eq(options.TaxonomyID))
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
 	}
 
 	if options.Slug != "" {
-		q = q.Where(goqu.C(COLUMN_SLUG).Eq(options.Slug))
+		q = q.Where(COLUMN_SLUG+" = ?", options.Slug)
 	}
 
 	if options.ParentID != "" {
-		q = q.Where(goqu.C(COLUMN_PARENT_ID).Eq(options.ParentID))
+		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
 	}
 
 	sortByColumn := COLUMN_SORT_ORDER
@@ -222,37 +208,33 @@ func (st *storeImplementation) TaxonomyTermList(ctx context.Context, options Tax
 		sortByColumn = options.SortBy
 	}
 
-	if sortOrder == "asc" {
-		q = q.Order(goqu.I(sortByColumn).Asc())
-	} else {
-		q = q.Order(goqu.I(sortByColumn).Desc())
-	}
+	q = q.OrderBy(sortByColumn, sortOrder)
 
 	if options.Offset > 0 {
-		q = q.Offset(uint(options.Offset))
+		q = q.Offset(int(options.Offset))
 	}
 
 	if options.Limit > 0 {
-		q = q.Limit(uint(options.Limit))
+		q = q.Limit(int(options.Limit))
 	}
 
-	sqlStr, params, errSql := q.Prepared(true).Select().ToSQL()
-	if errSql != nil {
-		return nil, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	termMaps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	var rows []taxonomyTermRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
 	var list []TaxonomyTermInterface
-	for _, m := range termMaps {
-		list = append(list, NewTaxonomyTermFromExistingData(m))
+	for _, r := range rows {
+		list = append(list, NewTaxonomyTermFromExistingData(map[string]string{
+			COLUMN_ID:          r.ID,
+			COLUMN_TAXONOMY_ID: r.TaxonomyID,
+			COLUMN_NAME:        r.Name,
+			COLUMN_SLUG:        r.Slug,
+			COLUMN_PARENT_ID:   r.ParentID,
+			COLUMN_SORT_ORDER:  strconv.Itoa(r.SortOrder),
+			COLUMN_CREATED_AT:  r.CreatedAt,
+			COLUMN_UPDATED_AT:  r.UpdatedAt,
+		}))
 	}
 
 	return list, nil
@@ -264,47 +246,37 @@ func (st *storeImplementation) TaxonomyTermCount(ctx context.Context, options Ta
 		return 0, errors.New("taxonomies are not enabled")
 	}
 
-	q := goqu.Dialect(st.dbDriverName).From(st.taxonomyTermTableName)
-
-	if len(options.IDs) > 0 {
-		q = q.Where(goqu.C(COLUMN_ID).In(options.IDs))
-	}
+	q := st.db.Query().Table(st.taxonomyTermTableName)
 
 	if options.ID != "" {
-		q = q.Where(goqu.C(COLUMN_ID).Eq(options.ID))
+		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	}
+
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
 	if options.TaxonomyID != "" {
-		q = q.Where(goqu.C(COLUMN_TAXONOMY_ID).Eq(options.TaxonomyID))
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
 	}
 
 	if options.Slug != "" {
-		q = q.Where(goqu.C(COLUMN_SLUG).Eq(options.Slug))
+		q = q.Where(COLUMN_SLUG+" = ?", options.Slug)
 	}
 
 	if options.ParentID != "" {
-		q = q.Where(goqu.C(COLUMN_PARENT_ID).Eq(options.ParentID))
+		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
 	}
 
-	sqlStr, params, errSql := q.Prepared(true).Select(goqu.COUNT(goqu.Star()).As("count")).ToSQL()
-	if errSql != nil {
-		return 0, errSql
-	}
-
-	if st.GetDebug() {
-		log.Println(sqlStr)
-	}
-
-	maps, err := st.database.SelectToMapString(ctx, sqlStr, params...)
-	if err != nil {
+	var count int64
+	if err := q.Count(&count); err != nil {
 		return 0, err
 	}
 
-	if len(maps) == 0 {
-		return 0, nil
-	}
-
-	count := cast.ToInt64(maps[0]["count"])
 	return count, nil
 }
 
@@ -322,7 +294,6 @@ func (st *storeImplementation) TaxonomyTermUpdate(ctx context.Context, term Taxo
 		return errors.New("taxonomy term ID is required")
 	}
 
-	// Check for slug conflicts within the same taxonomy
 	if term.GetSlug() != "" && term.GetTaxonomyID() != "" {
 		existing, err := st.TaxonomyTermFindBySlug(ctx, term.GetTaxonomyID(), term.GetSlug())
 		if err != nil {
@@ -335,25 +306,15 @@ func (st *storeImplementation) TaxonomyTermUpdate(ctx context.Context, term Taxo
 
 	term.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
-	record := goqu.Record{}
+	row := map[string]any{}
 	for k, v := range term.Data() {
-		record[k] = v
-	}
-
-	q := goqu.Dialect(st.dbDriverName).
-		Update(st.taxonomyTermTableName).
-		Set(record).
-		Where(goqu.C(COLUMN_ID).Eq(term.ID()))
-
-	sqlStr, params, errSql := q.Prepared(true).ToSQL()
-	if errSql != nil {
-		return errSql
+		row[k] = v
 	}
 
 	if st.GetDebug() {
-		log.Println(sqlStr)
+		log.Println("TaxonomyTermUpdate:", row)
 	}
 
-	_, err := st.database.Exec(ctx, sqlStr, params...)
+	_, err := st.db.Query().Table(st.taxonomyTermTableName).Where(COLUMN_ID+" = ?", term.ID()).Update(row)
 	return err
 }
