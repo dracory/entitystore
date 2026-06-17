@@ -1,6 +1,6 @@
 module github.com/dracory/entitystore
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/dracory/dataobject v1.7.0
