@@ -166,7 +166,7 @@ func (st *storeImplementation) entityTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.entityTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
 		table.String(COLUMN_ENTITY_TYPE, 40)
 		table.String(COLUMN_ENTITY_HANDLE, 60)
@@ -180,9 +180,9 @@ func (st *storeImplementation) attributeTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.attributeTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_ENTITY_ID, ID_COLUMN_LENGTH)
 		table.String(COLUMN_ATTRIBUTE_KEY, 255)
 		table.Text(COLUMN_ATTRIBUTE_VALUE)
 		table.DateTime(COLUMN_CREATED_AT)
@@ -195,14 +195,14 @@ func (st *storeImplementation) entityTrashTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.entityTrashTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
 		table.String(COLUMN_ENTITY_TYPE, 40)
 		table.String(COLUMN_ENTITY_HANDLE, 60)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
-		table.String(COLUMN_DELETED_BY, 9)
+		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
 	})
 }
 
@@ -211,15 +211,15 @@ func (st *storeImplementation) attributeTrashTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.attributeTrashTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_ENTITY_ID, 9)
+		table.String(COLUMN_ENTITY_ID, ID_COLUMN_LENGTH)
 		table.String(COLUMN_ATTRIBUTE_KEY, 255)
 		table.Text(COLUMN_ATTRIBUTE_VALUE)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
-		table.String(COLUMN_DELETED_BY, 9)
+		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
 	})
 }
 
@@ -228,12 +228,12 @@ func (st *storeImplementation) relationshipTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.relationshipTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_ENTITY_ID, 9)
-		table.String(COLUMN_RELATED_ENTITY_ID, 9)
+		table.String(COLUMN_ENTITY_ID, ID_COLUMN_LENGTH)
+		table.String(COLUMN_RELATED_ENTITY_ID, ID_COLUMN_LENGTH)
 		table.String(COLUMN_RELATIONSHIP_TYPE, 50)
-		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.String(COLUMN_PARENT_ID, ID_COLUMN_LENGTH).Nullable()
 		table.Integer(COLUMN_SEQUENCE)
 		table.Text(COLUMN_METADATA).Nullable()
 		table.DateTime(COLUMN_CREATED_AT)
@@ -249,17 +249,17 @@ func (st *storeImplementation) relationshipTrashTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.relationshipTrashTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_ENTITY_ID, 9)
-		table.String(COLUMN_RELATED_ENTITY_ID, 9)
+		table.String(COLUMN_ENTITY_ID, ID_COLUMN_LENGTH)
+		table.String(COLUMN_RELATED_ENTITY_ID, ID_COLUMN_LENGTH)
 		table.String(COLUMN_RELATIONSHIP_TYPE, 50)
-		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.String(COLUMN_PARENT_ID, ID_COLUMN_LENGTH).Nullable()
 		table.Integer(COLUMN_SEQUENCE)
 		table.Text(COLUMN_METADATA).Nullable()
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
-		table.String(COLUMN_DELETED_BY, 9)
+		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
 		table.Index(COLUMN_ENTITY_ID)
 		table.Index(COLUMN_RELATED_ENTITY_ID)
 		table.Index(COLUMN_RELATIONSHIP_TYPE)
@@ -272,13 +272,13 @@ func (st *storeImplementation) taxonomyTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.taxonomyTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
 		table.String(COLUMN_NAME, 255)
 		table.String(COLUMN_SLUG, 255)
 		table.Unique(COLUMN_SLUG)
 		table.Text(COLUMN_DESCRIPTION).Nullable()
-		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.String(COLUMN_PARENT_ID, ID_COLUMN_LENGTH).Nullable()
 		table.Text(COLUMN_ENTITY_TYPES).Nullable()
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
@@ -290,18 +290,18 @@ func (st *storeImplementation) taxonomyTrashTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.taxonomyTrashTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
 		table.String(COLUMN_NAME, 255)
 		table.String(COLUMN_SLUG, 255)
 		table.Unique(COLUMN_SLUG)
 		table.Text(COLUMN_DESCRIPTION).Nullable()
-		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.String(COLUMN_PARENT_ID, ID_COLUMN_LENGTH).Nullable()
 		table.Text(COLUMN_ENTITY_TYPES).Nullable()
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
-		table.String(COLUMN_DELETED_BY, 9)
+		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
 	})
 }
 
@@ -310,12 +310,12 @@ func (st *storeImplementation) taxonomyTermTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.taxonomyTermTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_TAXONOMY_ID, 9)
+		table.String(COLUMN_TAXONOMY_ID, ID_COLUMN_LENGTH)
 		table.String(COLUMN_NAME, 255)
 		table.String(COLUMN_SLUG, 255)
-		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.String(COLUMN_PARENT_ID, ID_COLUMN_LENGTH).Nullable()
 		table.Integer(COLUMN_SORT_ORDER)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
@@ -330,17 +330,17 @@ func (st *storeImplementation) taxonomyTermTrashTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.taxonomyTermTrashTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_TAXONOMY_ID, 9)
+		table.String(COLUMN_TAXONOMY_ID, ID_COLUMN_LENGTH)
 		table.String(COLUMN_NAME, 255)
 		table.String(COLUMN_SLUG, 255)
-		table.String(COLUMN_PARENT_ID, 9).Nullable()
+		table.String(COLUMN_PARENT_ID, ID_COLUMN_LENGTH).Nullable()
 		table.Integer(COLUMN_SORT_ORDER)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
-		table.String(COLUMN_DELETED_BY, 9)
+		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
 		table.Index(COLUMN_TAXONOMY_ID)
 		table.Index(COLUMN_PARENT_ID)
 		table.Unique(COLUMN_TAXONOMY_ID, COLUMN_SLUG)
@@ -352,11 +352,11 @@ func (st *storeImplementation) entityTaxonomyTableCreate() error {
 		return nil
 	}
 	return st.db.Schema().Create(st.entityTaxonomyTableName, func(table contractsschema.Blueprint) {
-		table.String(COLUMN_ID, 9)
+		table.String(COLUMN_ID, ID_COLUMN_LENGTH)
 		table.Primary(COLUMN_ID)
-		table.String(COLUMN_ENTITY_ID, 9)
-		table.String(COLUMN_TAXONOMY_ID, 9)
-		table.String(COLUMN_TERM_ID, 9)
+		table.String(COLUMN_ENTITY_ID, ID_COLUMN_LENGTH)
+		table.String(COLUMN_TAXONOMY_ID, ID_COLUMN_LENGTH)
+		table.String(COLUMN_TERM_ID, ID_COLUMN_LENGTH)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.Index(COLUMN_ENTITY_ID)
 		table.Index(COLUMN_TAXONOMY_ID)
