@@ -47,16 +47,16 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		relationship.SetID(GenerateShortID())
 	}
 
-	if err := validateIDLength(relationship.ID(), "relationship"); err != nil {
+	if err := validateIDLength(relationship.ID(), COLUMN_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(relationship.GetEntityID(), "relationship entity_id"); err != nil {
+	if err := validateIDLength(relationship.GetEntityID(), COLUMN_ENTITY_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(relationship.GetRelatedEntityID(), "relationship related_entity_id"); err != nil {
+	if err := validateIDLength(relationship.GetRelatedEntityID(), COLUMN_RELATED_ENTITY_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(relationship.GetParentID(), "relationship parent_id"); err != nil {
+	if err := validateIDLength(relationship.GetParentID(), COLUMN_PARENT_ID); err != nil {
 		return err
 	}
 

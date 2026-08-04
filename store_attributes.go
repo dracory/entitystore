@@ -29,10 +29,10 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 		attribute.SetID(GenerateShortID())
 	}
 
-	if err := validateIDLength(attribute.ID(), "attribute"); err != nil {
+	if err := validateIDLength(attribute.ID(), COLUMN_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(attribute.GetEntityID(), "attribute entity_id"); err != nil {
+	if err := validateIDLength(attribute.GetEntityID(), COLUMN_ENTITY_ID); err != nil {
 		return err
 	}
 
@@ -58,10 +58,17 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 
 // AttributeUpdate persists changes to an existing attribute record
 func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute AttributeInterface) error {
-	if err := validateIDLength(attribute.ID(), "attribute"); err != nil {
+	if attribute == nil {
+		return errors.New("attribute cannot be nil")
+	}
+
+	if err := validateIDRequired(attribute.ID(), COLUMN_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(attribute.GetEntityID(), "attribute entity_id"); err != nil {
+	if err := validateIDLength(attribute.ID(), COLUMN_ID); err != nil {
+		return err
+	}
+	if err := validateIDLength(attribute.GetEntityID(), COLUMN_ENTITY_ID); err != nil {
 		return err
 	}
 

@@ -41,10 +41,10 @@ func (st *storeImplementation) TaxonomyCreate(ctx context.Context, taxonomy Taxo
 		taxonomy.SetID(GenerateShortID())
 	}
 
-	if err := validateIDLength(taxonomy.ID(), "taxonomy"); err != nil {
+	if err := validateIDLength(taxonomy.ID(), COLUMN_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(taxonomy.GetParentID(), "taxonomy parent_id"); err != nil {
+	if err := validateIDLength(taxonomy.GetParentID(), COLUMN_PARENT_ID); err != nil {
 		return err
 	}
 
@@ -294,14 +294,13 @@ func (st *storeImplementation) TaxonomyUpdate(ctx context.Context, taxonomy Taxo
 		return errors.New("taxonomy cannot be nil")
 	}
 
-	if taxonomy.ID() == "" {
-		return errors.New("taxonomy ID is required")
-	}
-
-	if err := validateIDLength(taxonomy.ID(), "taxonomy"); err != nil {
+	if err := validateIDRequired(taxonomy.ID(), COLUMN_ID); err != nil {
 		return err
 	}
-	if err := validateIDLength(taxonomy.GetParentID(), "taxonomy parent_id"); err != nil {
+	if err := validateIDLength(taxonomy.ID(), COLUMN_ID); err != nil {
+		return err
+	}
+	if err := validateIDLength(taxonomy.GetParentID(), COLUMN_PARENT_ID); err != nil {
 		return err
 	}
 

@@ -2,6 +2,7 @@ package entitystore
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,7 +35,7 @@ func GenerateShortID() string {
 		idSequence = 0
 	}
 
-	timestampID := uid.TimestampNano()
+	timestampID := strconv.FormatInt(now, 10)
 	shortened, _ := uid.ShortenCrockford(timestampID)
 	return strings.ToLower(shortened)
 }
@@ -101,9 +102,18 @@ func UnshortenID(id string) string {
 // validateIDLength checks that an ID does not exceed ID_COLUMN_LENGTH.
 // Returns an error if the ID is too long, nil otherwise.
 // len() in Go is O(1) — the length is stored in the string header.
-func validateIDLength(id, context string) error {
+func validateIDLength(id, columnName string) error {
 	if len(id) > ID_COLUMN_LENGTH {
-		return fmt.Errorf("%s ID %q exceeds maximum length %d (got %d)", context, id, ID_COLUMN_LENGTH, len(id))
+		return fmt.Errorf("column %q value %q exceeds maximum length %d (got %d)", columnName, id, ID_COLUMN_LENGTH, len(id))
+	}
+	return nil
+}
+
+// validateIDRequired checks that a primary key ID is not empty.
+// Use for COLUMN_ID fields that must always have a value.
+func validateIDRequired(id, columnName string) error {
+	if id == "" {
+		return fmt.Errorf("column %q is required and cannot be empty", columnName)
 	}
 	return nil
 }

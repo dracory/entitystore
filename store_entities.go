@@ -27,7 +27,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 		entity.SetID(GenerateShortID())
 	}
 
-	if err := validateIDLength(entity.ID(), "entity"); err != nil {
+	if err := validateIDLength(entity.ID(), COLUMN_ID); err != nil {
 		return err
 	}
 
@@ -53,7 +53,14 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 
 // EntityUpdate persists changes to an existing entity record
 func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityInterface) error {
-	if err := validateIDLength(entity.ID(), "entity"); err != nil {
+	if entity == nil {
+		return errors.New("entity cannot be nil")
+	}
+
+	if err := validateIDRequired(entity.ID(), COLUMN_ID); err != nil {
+		return err
+	}
+	if err := validateIDLength(entity.ID(), COLUMN_ID); err != nil {
 		return err
 	}
 
