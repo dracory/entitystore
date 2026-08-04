@@ -27,6 +27,16 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("entity ID, taxonomy ID, and term ID are all required")
 	}
 
+	if err := validateIDLength(entityID, "entity taxonomy entity_id"); err != nil {
+		return err
+	}
+	if err := validateIDLength(taxonomyID, "entity taxonomy taxonomy_id"); err != nil {
+		return err
+	}
+	if err := validateIDLength(termID, "entity taxonomy term_id"); err != nil {
+		return err
+	}
+
 	entity, err := st.EntityFindByID(ctx, entityID)
 	if err != nil {
 		return err

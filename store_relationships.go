@@ -47,6 +47,19 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 		relationship.SetID(GenerateShortID())
 	}
 
+	if err := validateIDLength(relationship.ID(), "relationship"); err != nil {
+		return err
+	}
+	if err := validateIDLength(relationship.GetEntityID(), "relationship entity_id"); err != nil {
+		return err
+	}
+	if err := validateIDLength(relationship.GetRelatedEntityID(), "relationship related_entity_id"); err != nil {
+		return err
+	}
+	if err := validateIDLength(relationship.GetParentID(), "relationship parent_id"); err != nil {
+		return err
+	}
+
 	if relationship.GetCreatedAt() == "" {
 		relationship.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}

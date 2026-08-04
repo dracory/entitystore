@@ -29,6 +29,13 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 		attribute.SetID(GenerateShortID())
 	}
 
+	if err := validateIDLength(attribute.ID(), "attribute"); err != nil {
+		return err
+	}
+	if err := validateIDLength(attribute.GetEntityID(), "attribute entity_id"); err != nil {
+		return err
+	}
+
 	if attribute.GetCreatedAt() == "" {
 		attribute.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
@@ -51,6 +58,13 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 
 // AttributeUpdate persists changes to an existing attribute record
 func (st *storeImplementation) AttributeUpdate(ctx context.Context, attribute AttributeInterface) error {
+	if err := validateIDLength(attribute.ID(), "attribute"); err != nil {
+		return err
+	}
+	if err := validateIDLength(attribute.GetEntityID(), "attribute entity_id"); err != nil {
+		return err
+	}
+
 	attribute.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
 	row := map[string]any{}

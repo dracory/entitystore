@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -95,4 +96,14 @@ func UnshortenID(id string) string {
 
 	// If unshortening fails, return original
 	return id
+}
+
+// validateIDLength checks that an ID does not exceed ID_COLUMN_LENGTH.
+// Returns an error if the ID is too long, nil otherwise.
+// len() in Go is O(1) — the length is stored in the string header.
+func validateIDLength(id, context string) error {
+	if len(id) > ID_COLUMN_LENGTH {
+		return fmt.Errorf("%s ID %q exceeds maximum length %d (got %d)", context, id, ID_COLUMN_LENGTH, len(id))
+	}
+	return nil
 }

@@ -45,6 +45,16 @@ func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term Taxo
 		term.SetID(GenerateShortID())
 	}
 
+	if err := validateIDLength(term.ID(), "taxonomy term"); err != nil {
+		return err
+	}
+	if err := validateIDLength(term.GetTaxonomyID(), "taxonomy term taxonomy_id"); err != nil {
+		return err
+	}
+	if err := validateIDLength(term.GetParentID(), "taxonomy term parent_id"); err != nil {
+		return err
+	}
+
 	if term.GetCreatedAt() == "" {
 		term.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
@@ -292,6 +302,16 @@ func (st *storeImplementation) TaxonomyTermUpdate(ctx context.Context, term Taxo
 
 	if term.ID() == "" {
 		return errors.New("taxonomy term ID is required")
+	}
+
+	if err := validateIDLength(term.ID(), "taxonomy term"); err != nil {
+		return err
+	}
+	if err := validateIDLength(term.GetTaxonomyID(), "taxonomy term taxonomy_id"); err != nil {
+		return err
+	}
+	if err := validateIDLength(term.GetParentID(), "taxonomy term parent_id"); err != nil {
+		return err
 	}
 
 	if term.GetSlug() != "" && term.GetTaxonomyID() != "" {

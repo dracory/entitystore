@@ -1,6 +1,7 @@
 package entitystore
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
@@ -41,4 +42,96 @@ func TestStoreSchema_UsesIDColumnLength(t *testing.T) {
 	if count == 0 {
 		t.Error("store.go does not use ID_COLUMN_LENGTH — id-type columns are not linked to the constant")
 	}
+}
+
+// TestEntityCreate_RejectsOversizedID verifies that EntityCreate returns an error
+// when the entity ID exceeds ID_COLUMN_LENGTH.
+func TestEntityCreate_RejectsOversizedID(t *testing.T) {
+	db := InitDB("test_oversized_id.db")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "test_entity",
+		AttributeTableName: "test_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("Store could not be created:", err)
+	}
+
+	entity := NewEntity()
+	entity.SetType("test_type")
+	entity.SetID(strings.Repeat("a", ID_COLUMN_LENGTH+1))
+
+	err = store.EntityCreate(context.Background(), entity)
+	if err == nil {
+		t.Fatal("EntityCreate should have returned an error for oversized ID")
+	}
+
+	t.Logf("EntityCreate correctly rejected oversized ID: %v", err)
+}
+
+// TestEntityUpdate_RejectsOversizedID verifies that EntityUpdate returns an error
+// when the entity ID exceeds ID_COLUMN_LENGTH.
+func TestEntityUpdate_RejectsOversizedID(t *testing.T) {
+	db := InitDB("test_oversized_id_update.db")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "test_entity",
+		AttributeTableName: "test_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("Store could not be created:", err)
+	}
+
+	entity := NewEntity()
+	entity.SetType("test_type")
+	entity.SetID(strings.Repeat("a", ID_COLUMN_LENGTH+1))
+
+	err = store.EntityUpdate(context.Background(), entity)
+	if err == nil {
+		t.Fatal("EntityUpdate should have returned an error for oversized ID")
+	}
+
+	t.Logf("EntityUpdate correctly rejected oversized ID: %v", err)
+}
+
+// TestAttributeCreate_RejectsOversizedID verifies that AttributeCreate returns an error
+// when the attribute ID or entity_id exceeds ID_COLUMN_LENGTH.
+func TestAttributeCreate_RejectsOversizedID(t *testing.T) {
+	db := InitDB("test_oversized_attr_id.db")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "test_entity",
+		AttributeTableName: "test_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("Store could not be created:", err)
+	}
+
+	// Test oversized attribute ID
+	attr := NewAttribute()
+	attr.SetID(strings.Repeat("a", ID_COLUMN_LENGTH+1))
+	attr.SetEntityID("valid_id")
+
+	err = store.AttributeCreate(context.Background(), attr)
+	if err == nil {
+		t.Fatal("AttributeCreate should have returned an error for oversized attribute ID")
+	}
+	t.Logf("AttributeCreate correctly rejected oversized attribute ID: %v", err)
+
+	// Test oversized entity_id
+	attr2 := NewAttribute()
+	attr2.SetID("valid_id")
+	attr2.SetEntityID(strings.Repeat("b", ID_COLUMN_LENGTH+1))
+
+	err = store.AttributeCreate(context.Background(), attr2)
+	if err == nil {
+		t.Fatal("AttributeCreate should have returned an error for oversized entity_id")
+	}
+	t.Logf("AttributeCreate correctly rejected oversized entity_id: %v", err)
 }

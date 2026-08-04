@@ -27,6 +27,10 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 		entity.SetID(GenerateShortID())
 	}
 
+	if err := validateIDLength(entity.ID(), "entity"); err != nil {
+		return err
+	}
+
 	if entity.GetCreatedAt() == "" {
 		entity.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	}
@@ -49,6 +53,10 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 
 // EntityUpdate persists changes to an existing entity record
 func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityInterface) error {
+	if err := validateIDLength(entity.ID(), "entity"); err != nil {
+		return err
+	}
+
 	entity.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 
 	row := map[string]any{}
