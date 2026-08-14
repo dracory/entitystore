@@ -158,12 +158,37 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 	return nil, nil
 }
 
-// AttributeList retrieves attributes matching the given query options
+// AttributeList retrieves attributes matching the given query options.
+// When EntityType or EntityHandle is set, the query joins the entities table
+// (WP posts/postmeta pattern) to filter attributes by the parent entity's
+// type or handle. This avoids N+1 query patterns when loading attributes for
+// a specific entity type.
 func (st *storeImplementation) AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error) {
 	q := st.db.Query().Table(st.attributeTableName)
 
+	// Join entities table when filtering by EntityType or EntityHandle
+	// (WP wp_postmeta JOIN wp_posts ON post_id = id pattern)
+	hasJoin := options.EntityType != "" || options.EntityHandle != ""
+
+	if hasJoin {
+		q = q.Join(st.entityTableName + " ON " + st.attributeTableName + "." + COLUMN_ENTITY_ID + " = " + st.entityTableName + "." + COLUMN_ID)
+
+		// Explicit column selection to avoid ambiguous column names (id, created_at,
+		// updated_at exist in both tables). Without this, SELECT * on a JOIN fails
+		// on MySQL/PostgreSQL with "ambiguous column name" — SQLite silently picks
+		// the first table's columns, masking the bug in tests.
+		q = q.Select(
+			st.attributeTableName + "." + COLUMN_ID + ", " +
+				st.attributeTableName + "." + COLUMN_ENTITY_ID + ", " +
+				st.attributeTableName + "." + COLUMN_ATTRIBUTE_KEY + ", " +
+				st.attributeTableName + "." + COLUMN_ATTRIBUTE_VALUE + ", " +
+				st.attributeTableName + "." + COLUMN_CREATED_AT + ", " +
+				st.attributeTableName + "." + COLUMN_UPDATED_AT,
+		)
+	}
+
 	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+		q = q.Where(st.attributeTableName+"."+COLUMN_ID+" = ?", options.ID)
 	}
 
 	if len(options.IDs) > 0 {
@@ -171,15 +196,23 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 		for i, id := range options.IDs {
 			ids[i] = id
 		}
-		q = q.WhereIn(COLUMN_ID, ids)
+		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ID, ids)
 	}
 
 	if options.EntityID != "" {
-		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
+		q = q.Where(st.attributeTableName+"."+COLUMN_ENTITY_ID+" = ?", options.EntityID)
 	}
 
 	if options.AttributeKey != "" {
-		q = q.Where(COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
+		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
+	}
+
+	if options.EntityType != "" {
+		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
+	}
+
+	if options.EntityHandle != "" {
+		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
 	}
 
 	sortByColumn := COLUMN_ID
@@ -193,7 +226,15 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 		sortByColumn = options.SortBy
 	}
 
-	q = q.OrderBy(sortByColumn, sortOrder)
+	// Use Order (not OrderBy) when JOIN is active to allow table-qualified column
+	// names. OrderBy rejects dotted identifiers via isSimpleIdentifier, which
+	// would silently drop the ORDER BY clause. Order uses isValidColumnReference
+	// which accepts "table.column" format.
+	if hasJoin {
+		q = q.Order(st.attributeTableName + "." + sortByColumn + " " + sortOrder)
+	} else {
+		q = q.OrderBy(sortByColumn, sortOrder)
+	}
 
 	if options.Offset > 0 {
 		q = q.Offset(int(options.Offset))

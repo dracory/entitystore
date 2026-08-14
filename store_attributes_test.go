@@ -250,3 +250,140 @@ func TestStoreAttributeGetFloat(t *testing.T) {
 		t.Fatalf("Expected -273.15, got %f", value)
 	}
 }
+
+// TestStoreAttributeListWithEntityTypeJoin tests the JOIN-based filtering
+// by entity type (WP posts/postmeta pattern). Attributes from entities of
+// the requested type should be returned; attributes from other entity types
+// should be excluded.
+func TestStoreAttributeListWithEntityTypeJoin(t *testing.T) {
+	db := InitDB("store_attr_join_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "attr_join_entity",
+		AttributeTableName: "attr_join_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	// Create entities of two types
+	entity1, err := store.EntityCreateWithType(ctx, "page_view")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+	entity2, err := store.EntityCreateWithType(ctx, "page_view")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+	entity3, err := store.EntityCreateWithType(ctx, "order")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+
+	// Set utm_source on all three entities
+	if err := store.AttributeSetString(ctx, entity1.GetID(), "utm_source", "reddit"); err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+	if err := store.AttributeSetString(ctx, entity2.GetID(), "utm_source", "linkedin"); err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+	if err := store.AttributeSetString(ctx, entity3.GetID(), "utm_source", "direct"); err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+
+	// Query: all utm_source attributes for page_view entities only
+	list, err := store.AttributeList(ctx, AttributeQueryOptions{
+		EntityType:   "page_view",
+		AttributeKey: "utm_source",
+		Limit:        100,
+	})
+	if err != nil {
+		t.Fatal("AttributeList with EntityType join failed:", err)
+	}
+
+	if len(list) != 2 {
+		t.Fatalf("Expected 2 attributes for page_view entities, got %d", len(list))
+	}
+
+	// Verify both page_view attributes are present (reddit + linkedin), order entity excluded
+	values := map[string]bool{}
+	for _, attr := range list {
+		values[attr.GetValue()] = true
+	}
+	if !values["reddit"] {
+		t.Error("Expected 'reddit' in results")
+	}
+	if !values["linkedin"] {
+		t.Error("Expected 'linkedin' in results")
+	}
+	if values["direct"] {
+		t.Error("'direct' (order entity) should be excluded by EntityType filter")
+	}
+}
+
+// TestStoreAttributeFindByHandleWithJoin tests AttributeFindByHandle which
+// relies on the EntityType + EntityHandle join path in AttributeList.
+func TestStoreAttributeFindByHandleWithJoin(t *testing.T) {
+	db := InitDB("store_attr_handle_join_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "attr_handle_join_entity",
+		AttributeTableName: "attr_handle_join_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	// Create entity with handle
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+	entity.SetHandle("my-product")
+	if err := store.EntityUpdate(ctx, entity); err != nil {
+		t.Fatal("EntityUpdate failed:", err)
+	}
+
+	// Set attribute
+	if err := store.AttributeSetString(ctx, entity.GetID(), "price", "29.99"); err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+
+	// Find by handle — uses EntityType + EntityHandle join
+	attr, err := store.AttributeFindByHandle(ctx, "product", "my-product", "price")
+	if err != nil {
+		t.Fatal("AttributeFindByHandle failed:", err)
+	}
+	if attr == nil {
+		t.Fatal("Expected attribute to be found by handle")
+	}
+	if attr.GetValue() != "29.99" {
+		t.Fatalf("Expected '29.99', got '%s'", attr.GetValue())
+	}
+
+	// Wrong handle should return nil
+	attrWrong, err := store.AttributeFindByHandle(ctx, "product", "wrong-handle", "price")
+	if err != nil {
+		t.Fatal("AttributeFindByHandle failed:", err)
+	}
+	if attrWrong != nil {
+		t.Error("Expected nil for wrong handle")
+	}
+
+	// Wrong type should return nil
+	attrWrongType, err := store.AttributeFindByHandle(ctx, "order", "my-product", "price")
+	if err != nil {
+		t.Fatal("AttributeFindByHandle failed:", err)
+	}
+	if attrWrongType != nil {
+		t.Error("Expected nil for wrong entity type")
+	}
+}
