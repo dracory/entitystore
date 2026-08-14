@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -138,10 +139,9 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 	return nil, nil
 }
 
-// EntityList retrieves entities matching the given query options
-func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error) {
-	q := st.db.Query().Table(st.entityTableName)
-
+// applyEntityFilters applies the common filter clauses from EntityQueryOptions
+// to a query. Shared by EntityList and EntityCount to prevent filter drift.
+func (st *storeImplementation) applyEntityFilters(q orm.Query, options EntityQueryOptions) orm.Query {
 	if options.ID != "" {
 		q = q.Where(COLUMN_ID+" = ?", options.ID)
 	}
@@ -161,6 +161,13 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 	if options.EntityHandle != "" {
 		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
 	}
+
+	return q
+}
+
+// EntityList retrieves entities matching the given query options
+func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error) {
+	q := st.applyEntityFilters(st.db.Query().Table(st.entityTableName), options)
 
 	sortByColumn := COLUMN_ID
 	sortOrder := "asc"
@@ -204,27 +211,7 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 
 // EntityCount counts entities matching the given query options
 func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
-	q := st.db.Query().Table(st.entityTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
-	}
-
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ID, ids)
-	}
-
-	if options.EntityType != "" {
-		q = q.Where(COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
-	}
-
-	if options.EntityHandle != "" {
-		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
-	}
+	q := st.applyEntityFilters(st.db.Query().Table(st.entityTableName), options)
 
 	var count int64
 	if err := q.Count(&count); err != nil {
@@ -251,25 +238,42 @@ func (st *storeImplementation) EntityFindByAttribute(ctx context.Context, entity
 	return nil, nil
 }
 
-// EntityListByAttribute finds all entities of a type with a specific attribute value
+// EntityListByAttribute finds all entities of a type with a specific attribute value.
+// Uses a single JOIN query to avoid the N+1 pattern of loading all entities then
+// calling AttributeFind for each one.
 func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error) {
-	entities, err := st.EntityList(ctx, EntityQueryOptions{EntityType: entityType})
-	if err != nil {
+	q := st.db.Query().Table(st.entityTableName).
+		Join(st.attributeTableName+" ON "+st.attributeTableName+"."+COLUMN_ENTITY_ID+" = "+st.entityTableName+"."+COLUMN_ID).
+		Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", entityType).
+		Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", attributeKey).
+		Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_VALUE+" = ?", attributeValue).
+		Select(
+			st.entityTableName + "." + COLUMN_ID + ", " +
+				st.entityTableName + "." + COLUMN_ENTITY_TYPE + ", " +
+				st.entityTableName + "." + COLUMN_ENTITY_HANDLE + ", " +
+				st.entityTableName + "." + COLUMN_CREATED_AT + ", " +
+				st.entityTableName + "." + COLUMN_UPDATED_AT,
+		).
+		Group(st.entityTableName + "." + COLUMN_ID).
+		Order(st.entityTableName + "." + COLUMN_ID + " asc")
+
+	var rows []entityRow
+	if err := q.Get(&rows); err != nil {
 		return nil, err
 	}
 
-	var results []EntityInterface
-	for _, entity := range entities {
-		attr, err := st.AttributeFind(ctx, entity.ID(), attributeKey)
-		if err != nil {
-			return nil, err
-		}
-		if attr != nil && attr.GetValue() == attributeValue {
-			results = append(results, entity)
-		}
+	var list []EntityInterface
+	for _, r := range rows {
+		list = append(list, NewEntityFromExistingData(map[string]string{
+			COLUMN_ID:            r.ID,
+			COLUMN_ENTITY_TYPE:   r.EntityType,
+			COLUMN_ENTITY_HANDLE: r.EntityHandle,
+			COLUMN_CREATED_AT:    r.CreatedAt,
+			COLUMN_UPDATED_AT:    r.UpdatedAt,
+		}))
 	}
 
-	return results, nil
+	return list, nil
 }
 
 // EntityCreateWithType creates a new entity with only the type specified

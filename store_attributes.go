@@ -159,6 +159,41 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 	return nil, nil
 }
 
+// applyAttributeFilters applies the common filter clauses from AttributeQueryOptions
+// to a query. Shared by AttributeList and AttributeCount to prevent filter drift.
+// When hasJoin is true, column references are table-qualified to avoid ambiguity.
+func (st *storeImplementation) applyAttributeFilters(q orm.Query, options AttributeQueryOptions, hasJoin bool) orm.Query {
+	if options.ID != "" {
+		q = q.Where(st.attributeTableName+"."+COLUMN_ID+" = ?", options.ID)
+	}
+
+	if len(options.IDs) > 0 {
+		ids := make([]any, len(options.IDs))
+		for i, id := range options.IDs {
+			ids[i] = id
+		}
+		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ID, ids)
+	}
+
+	if options.EntityID != "" {
+		q = q.Where(st.attributeTableName+"."+COLUMN_ENTITY_ID+" = ?", options.EntityID)
+	}
+
+	if options.AttributeKey != "" {
+		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
+	}
+
+	if options.EntityType != "" {
+		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
+	}
+
+	if options.EntityHandle != "" {
+		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
+	}
+
+	return q
+}
+
 // AttributeList retrieves attributes matching the given query options.
 // When EntityType or EntityHandle is set, the query joins the entities table
 // (WP posts/postmeta pattern) to filter attributes by the parent entity's
@@ -188,33 +223,7 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 		)
 	}
 
-	if options.ID != "" {
-		q = q.Where(st.attributeTableName+"."+COLUMN_ID+" = ?", options.ID)
-	}
-
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ID, ids)
-	}
-
-	if options.EntityID != "" {
-		q = q.Where(st.attributeTableName+"."+COLUMN_ENTITY_ID+" = ?", options.EntityID)
-	}
-
-	if options.AttributeKey != "" {
-		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
-	}
-
-	if options.EntityType != "" {
-		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
-	}
-
-	if options.EntityHandle != "" {
-		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
-	}
+	q = st.applyAttributeFilters(q, options, hasJoin)
 
 	sortByColumn := COLUMN_ID
 	sortOrder := "asc"
@@ -263,6 +272,27 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 	}
 
 	return list, nil
+}
+
+// AttributeCount counts attributes matching the given query options.
+// Applies the same filters as AttributeList but returns a count instead of rows.
+func (st *storeImplementation) AttributeCount(ctx context.Context, options AttributeQueryOptions) (int64, error) {
+	q := st.db.Query().Table(st.attributeTableName)
+
+	hasJoin := options.EntityType != "" || options.EntityHandle != ""
+
+	if hasJoin {
+		q = q.Join(st.entityTableName + " ON " + st.attributeTableName + "." + COLUMN_ENTITY_ID + " = " + st.entityTableName + "." + COLUMN_ID)
+	}
+
+	q = st.applyAttributeFilters(q, options, hasJoin)
+
+	var count int64
+	if err := q.Count(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 // AttributeSetString creates or updates a string attribute value for an entity

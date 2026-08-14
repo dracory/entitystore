@@ -439,3 +439,89 @@ func TestStoreAttributesSetAtomicity(t *testing.T) {
 			"was committed before the empty-key error and was not rolled back.")
 	}
 }
+
+func TestStoreAttributeCount(t *testing.T) {
+	db := InitDB("attr_count_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "count_entity",
+		AttributeTableName: "count_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("NewStore failed:", err)
+	}
+
+	ctx := context.Background()
+
+	// Create 3 entities with attributes
+	for i := 0; i < 3; i++ {
+		entity, err := store.EntityCreateWithType(ctx, "product")
+		if err != nil {
+			t.Fatal("EntityCreateWithType failed:", err)
+		}
+		err = store.AttributeSetString(ctx, entity.ID(), "color", "red")
+		if err != nil {
+			t.Fatal("AttributeSetString failed:", err)
+		}
+		err = store.AttributeSetString(ctx, entity.ID(), "size", "large")
+		if err != nil {
+			t.Fatal("AttributeSetString failed:", err)
+		}
+	}
+
+	// Count all attributes (6 total: 3 entities × 2 attrs)
+	count, err := store.AttributeCount(ctx, AttributeQueryOptions{})
+	if err != nil {
+		t.Fatal("AttributeCount failed:", err)
+	}
+	if count != 6 {
+		t.Fatalf("Expected count 6, got %d", count)
+	}
+
+	// Count by AttributeKey
+	count, err = store.AttributeCount(ctx, AttributeQueryOptions{AttributeKey: "color"})
+	if err != nil {
+		t.Fatal("AttributeCount failed:", err)
+	}
+	if count != 3 {
+		t.Fatalf("Expected count 3 for key=color, got %d", count)
+	}
+
+	// Count with JOIN path (EntityType filter)
+	count, err = store.AttributeCount(ctx, AttributeQueryOptions{EntityType: "product"})
+	if err != nil {
+		t.Fatal("AttributeCount with JOIN failed:", err)
+	}
+	if count != 6 {
+		t.Fatalf("Expected count 6 for EntityType=product, got %d", count)
+	}
+
+	// Verify count matches list length for the JOIN path
+	list, err := store.AttributeList(ctx, AttributeQueryOptions{EntityType: "product"})
+	if err != nil {
+		t.Fatal("AttributeList failed:", err)
+	}
+	if int64(len(list)) != count {
+		t.Fatalf("Count (%d) does not match list length (%d) for EntityType=product", count, len(list))
+	}
+
+	// Count by EntityID
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+	err = store.AttributeSetString(ctx, entity.ID(), "weight", "100")
+	if err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+
+	count, err = store.AttributeCount(ctx, AttributeQueryOptions{EntityID: entity.ID()})
+	if err != nil {
+		t.Fatal("AttributeCount failed:", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count 1 for single entity, got %d", count)
+	}
+}
