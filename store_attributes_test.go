@@ -387,3 +387,55 @@ func TestStoreAttributeFindByHandleWithJoin(t *testing.T) {
 		t.Error("Expected nil for wrong entity type")
 	}
 }
+
+func TestStoreAttributesSetAtomicity(t *testing.T) {
+	db := InitDB("attr_set_atomicity_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "atomic_entity",
+		AttributeTableName: "atomic_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("NewStore failed:", err)
+	}
+
+	ctx := context.Background()
+
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+
+	// Call AttributesSet with one valid attribute and one with an empty key.
+	// The empty key causes AttributeFind to return "attribute key cannot be empty".
+	// Map iteration order is non-deterministic, so:
+	// - If empty key is iterated first: error returns immediately, nothing committed.
+	// - If valid key is iterated first: "color" commits, then empty key fails.
+	//   In this case, "color" should be rolled back if the operation is atomic.
+	//
+	// We run the test with -count=10 to hit both orderings with high probability.
+	// The test FAILS when the valid key commits first and is not rolled back.
+	attrs := map[string]string{
+		"color": "red",
+		"":      "should-fail",
+	}
+
+	err = store.AttributesSet(ctx, entity.ID(), attrs)
+	if err == nil {
+		t.Fatal("Expected error from AttributesSet with empty key, got nil")
+	}
+
+	// If atomic, "color" should NOT exist after the error.
+	// If not atomic, "color" may exist if it was iterated before the empty key.
+	_, exists, err := store.AttributeGetString(ctx, entity.ID(), "color")
+	if err != nil {
+		t.Fatal("AttributeGetString failed:", err)
+	}
+	if exists {
+		t.Fatal("Expected color attribute to NOT exist after AttributesSet failure. " +
+			"Partial write detected — AttributesSet is not atomic: the valid attribute " +
+			"was committed before the empty-key error and was not rolled back.")
+	}
+}

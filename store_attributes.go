@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -342,12 +343,52 @@ func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Contex
 	return attr, nil
 }
 
-// AttributesSet creates or updates multiple attributes for an entity at once
+// AttributesSet creates or updates multiple attributes for an entity atomically.
+// All writes are wrapped in a single database transaction — if any attribute
+// fails, the entire operation is rolled back and no partial writes persist.
 func (st *storeImplementation) AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error {
-	for key, value := range attributes {
-		if err := st.AttributeSetString(ctx, entityID, key, value); err != nil {
-			return err
+	return st.db.Transaction(func(tx orm.Query) error {
+		for key, value := range attributes {
+			if key == "" {
+				return errors.New("attribute key cannot be empty")
+			}
+
+			var rows []attributeRow
+			err := tx.Table(st.attributeTableName).
+				Where(COLUMN_ENTITY_ID+" = ?", entityID).
+				Where(COLUMN_ATTRIBUTE_KEY+" = ?", key).
+				Limit(1).
+				Get(&rows)
+			if err != nil {
+				return err
+			}
+
+			now := carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC)
+
+			if len(rows) > 0 {
+				_, err := tx.Table(st.attributeTableName).
+					Where(COLUMN_ID+" = ?", rows[0].ID).
+					Update(map[string]any{
+						COLUMN_ATTRIBUTE_VALUE: value,
+						COLUMN_UPDATED_AT:      now,
+					})
+				if err != nil {
+					return err
+				}
+			} else {
+				err := tx.Table(st.attributeTableName).Create(map[string]any{
+					COLUMN_ID:              GenerateShortID(),
+					COLUMN_ENTITY_ID:       entityID,
+					COLUMN_ATTRIBUTE_KEY:   key,
+					COLUMN_ATTRIBUTE_VALUE: value,
+					COLUMN_CREATED_AT:      now,
+					COLUMN_UPDATED_AT:      now,
+				})
+				if err != nil {
+					return err
+				}
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
