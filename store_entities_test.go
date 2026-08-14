@@ -88,3 +88,43 @@ func TestStoreEntityList(t *testing.T) {
 		t.Fatal("Expected 3 entities, got:", len(list))
 	}
 }
+
+func TestStoreEntityListByAttributeErrorPropagation(t *testing.T) {
+	db := InitDB("entity_list_by_attr_error_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "err_prop_entity",
+		AttributeTableName: "err_prop_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("NewStore failed:", err)
+	}
+
+	ctx := context.Background()
+
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+
+	err = store.AttributeSetString(ctx, entity.ID(), "color", "red")
+	if err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+
+	_, err = db.Exec("DROP TABLE err_prop_attribute")
+	if err != nil {
+		t.Fatal("DROP TABLE failed:", err)
+	}
+
+	results, err := store.EntityListByAttribute(ctx, "product", "color", "red")
+	if err == nil {
+		t.Fatal("Expected error when attributes table is missing, got nil. " +
+			"EntityListByAttribute silently swallows database errors from AttributeFind.")
+	}
+	if results != nil {
+		t.Fatalf("Expected nil results when error occurs, got %d entities", len(results))
+	}
+}

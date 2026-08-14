@@ -261,7 +261,10 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 	var results []EntityInterface
 	for _, entity := range entities {
 		attr, err := st.AttributeFind(ctx, entity.ID(), attributeKey)
-		if err == nil && attr != nil && attr.GetValue() == attributeValue {
+		if err != nil {
+			return nil, err
+		}
+		if attr != nil && attr.GetValue() == attributeValue {
 			results = append(results, entity)
 		}
 	}
