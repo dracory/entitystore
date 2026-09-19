@@ -58,7 +58,7 @@ type ActiveEntityInterface interface {
 	// Taxonomies (requires TaxonomiesEnabled)
 	AssignTerm(taxonomyID, termID string) error
 	RemoveTerm(taxonomyID, termID string) error
-	Terms(taxonomyID string) ([]entitystore.EntityTaxonomyInterface, error)
+	Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
 }
 
 // activeEntityImplementation is the concrete wrapper.
@@ -92,6 +92,8 @@ For discoverability and a single entry point, the package can also wrap the stor
 ```go
 // ActiveStoreInterface is a store-aware facade that returns ActiveEntityInterface results.
 type ActiveStoreInterface interface {
+	GetStore() entitystore.StoreInterface
+
 	EntityCreate(entityType string) ActiveEntityInterface
 	EntityFindByID(entityID string) (ActiveEntityInterface, error)
 	EntityList(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error)
@@ -99,16 +101,38 @@ type ActiveStoreInterface interface {
 	EntityTrash(entityID string) (bool, error)
 	EntityDelete(entityID string) (bool, error)
 	EntityWrap(entity entitystore.EntityInterface) (ActiveEntityInterface, error)
-	GetStore() entitystore.StoreInterface
 
 	// Relationships (requires RelationshipsEnabled)
-	Relationships(query entitystore.RelationshipQueryInterface) ([]entitystore.RelationshipInterface, error)
+	RelationshipCreate(options entitystore.RelationshipOptions) (ActiveRelationshipInterface, error)
+	RelationshipFindByID(relationshipID string) (ActiveRelationshipInterface, error)
+	RelationshipList(query entitystore.RelationshipQueryInterface) ([]ActiveRelationshipInterface, error)
+	RelationshipCount(query entitystore.RelationshipQueryInterface) (int64, error)
+	RelationshipTrash(relationshipID, deletedBy string) (bool, error)
+	RelationshipRestore(relationshipID string) (bool, error)
+	RelationshipDelete(relationshipID string) (bool, error)
+	RelationshipDeleteAll(entityID string) error
 
 	// Taxonomies (requires TaxonomiesEnabled)
-	TaxonomyCreate(options entitystore.TaxonomyOptions) (entitystore.TaxonomyInterface, error)
-	TaxonomyFindBySlug(slug string) (entitystore.TaxonomyInterface, error)
-	TermCreate(options entitystore.TaxonomyTermOptions) (entitystore.TaxonomyTermInterface, error)
-	TermFindBySlug(taxonomyID, slug string) (entitystore.TaxonomyTermInterface, error)
+	TaxonomyCreate(options entitystore.TaxonomyOptions) (ActiveTaxonomyInterface, error)
+	TaxonomyFindByID(taxonomyID string) (ActiveTaxonomyInterface, error)
+	TaxonomyFindBySlug(slug string) (ActiveTaxonomyInterface, error)
+	TaxonomyList(query entitystore.TaxonomyQueryInterface) ([]ActiveTaxonomyInterface, error)
+	TaxonomyCount(query entitystore.TaxonomyQueryInterface) (int64, error)
+	TaxonomyUpdate(taxonomy entitystore.TaxonomyInterface) error
+	TaxonomyTrash(taxonomyID, deletedBy string) (bool, error)
+	TaxonomyRestore(taxonomyID string) (bool, error)
+	TaxonomyDelete(taxonomyID string) (bool, error)
+
+	// Taxonomy terms (requires TaxonomiesEnabled)
+	TermCreate(options entitystore.TaxonomyTermOptions) (ActiveTaxonomyTermInterface, error)
+	TermFindByID(termID string) (ActiveTaxonomyTermInterface, error)
+	TermFindBySlug(taxonomyID, slug string) (ActiveTaxonomyTermInterface, error)
+	TermList(query entitystore.TaxonomyTermQueryInterface) ([]ActiveTaxonomyTermInterface, error)
+	TermCount(query entitystore.TaxonomyTermQueryInterface) (int64, error)
+	TermUpdate(term entitystore.TaxonomyTermInterface) error
+	TermTrash(termID, deletedBy string) (bool, error)
+	TermRestore(termID string) (bool, error)
+	TermDelete(termID string) (bool, error)
 }
 
 // activeStoreImplementation is the concrete store wrapper.
@@ -269,10 +293,32 @@ Related(relationshipType string) ([]ActiveEntityInterface, error)
 
 `Related(type)` is the main win — one call performs `RelationshipList` + `EntityFindByID` per row + wraps each result into `ActiveEntityInterface`.
 
+Relationships themselves also get a wrapper so the developer never falls back to raw objects mid-flow:
+
 ```go
-// On ActiveStoreInterface — raw relationship access when needed:
-Relationships(query entitystore.RelationshipQueryInterface) ([]entitystore.RelationshipInterface, error)
+// ActiveRelationshipInterface wraps a RelationshipInterface with
+// navigation and lifecycle helpers.
+type ActiveRelationshipInterface interface {
+	GetRelationship() entitystore.RelationshipInterface
+	GetEntity() (ActiveEntityInterface, error)        // source entity, hydrated
+	GetRelatedEntity() (ActiveEntityInterface, error) // target entity, hydrated
+	Trash(deletedBy string) (bool, error)
+	Restore() (bool, error)
+	Delete() (bool, error)
+}
+
+// On ActiveStoreInterface — the full CRUD set mirrors core names:
+RelationshipCreate(options entitystore.RelationshipOptions) (ActiveRelationshipInterface, error)
+RelationshipFindByID(relationshipID string) (ActiveRelationshipInterface, error)
+RelationshipList(query entitystore.RelationshipQueryInterface) ([]ActiveRelationshipInterface, error)
+RelationshipCount(query entitystore.RelationshipQueryInterface) (int64, error)
+RelationshipTrash(relationshipID, deletedBy string) (bool, error)
+RelationshipRestore(relationshipID string) (bool, error)
+RelationshipDelete(relationshipID string) (bool, error)
+RelationshipDeleteAll(entityID string) error
 ```
+
+`RelationshipCreate` takes `RelationshipOptions` and delegates to `RelationshipCreateByOptions` — callers should not have to build a `RelationshipInterface` first.
 
 ```go
 post.RelateTo(authorID, "written_by")
@@ -287,26 +333,67 @@ post.Unrelate(tagID, "has_tag")
 
 Taxonomies juggle three objects (taxonomy, term, assignment) and three IDs. Assignment/removal becomes entity-centric; vocabulary creation stays options-struct based:
 
+Taxonomies and terms get their own wrappers, so navigation (terms of a taxonomy, entities under a term, parent/children) becomes method calls instead of query construction:
+
 ```go
-// On ActiveStoreInterface — vocabulary management:
-TaxonomyCreate(options entitystore.TaxonomyOptions) (entitystore.TaxonomyInterface, error)
-TaxonomyFindBySlug(slug string) (entitystore.TaxonomyInterface, error)
-TermCreate(options entitystore.TaxonomyTermOptions) (entitystore.TaxonomyTermInterface, error)
-TermFindBySlug(taxonomyID, slug string) (entitystore.TaxonomyTermInterface, error)
+// ActiveTaxonomyInterface wraps a TaxonomyInterface.
+type ActiveTaxonomyInterface interface {
+	GetTaxonomy() entitystore.TaxonomyInterface
+	Terms() ([]ActiveTaxonomyTermInterface, error)  // terms in this taxonomy
+	Entities() ([]ActiveEntityInterface, error)     // assigned entities
+	Trash(deletedBy string) (bool, error)
+	Restore() (bool, error)
+	Delete() (bool, error)
+}
+
+// ActiveTaxonomyTermInterface wraps a TaxonomyTermInterface.
+type ActiveTaxonomyTermInterface interface {
+	GetTerm() entitystore.TaxonomyTermInterface
+	GetTaxonomy() (ActiveTaxonomyInterface, error)
+	Parent() (ActiveTaxonomyTermInterface, error)   // hierarchical nav
+	Children() ([]ActiveTaxonomyTermInterface, error)
+	Entities() ([]ActiveEntityInterface, error)     // entities tagged with this term
+	Trash(deletedBy string) (bool, error)
+	Restore() (bool, error)
+	Delete() (bool, error)
+}
+
+// On ActiveStoreInterface — vocabulary management, full CRUD mirrors
+// core names. Create/Find return the active wrappers:
+TaxonomyCreate(options entitystore.TaxonomyOptions) (ActiveTaxonomyInterface, error)
+TaxonomyFindByID(taxonomyID string) (ActiveTaxonomyInterface, error)
+TaxonomyFindBySlug(slug string) (ActiveTaxonomyInterface, error)
+TaxonomyList(query entitystore.TaxonomyQueryInterface) ([]ActiveTaxonomyInterface, error)
+TaxonomyCount(query entitystore.TaxonomyQueryInterface) (int64, error)
+TaxonomyUpdate(taxonomy entitystore.TaxonomyInterface) error
+TaxonomyTrash(taxonomyID, deletedBy string) (bool, error)
+TaxonomyRestore(taxonomyID string) (bool, error)
+TaxonomyDelete(taxonomyID string) (bool, error)
+
+TermCreate(options entitystore.TaxonomyTermOptions) (ActiveTaxonomyTermInterface, error)
+TermFindByID(termID string) (ActiveTaxonomyTermInterface, error)
+TermFindBySlug(taxonomyID, slug string) (ActiveTaxonomyTermInterface, error)
+TermList(query entitystore.TaxonomyTermQueryInterface) ([]ActiveTaxonomyTermInterface, error)
+TermCount(query entitystore.TaxonomyTermQueryInterface) (int64, error)
+TermUpdate(term entitystore.TaxonomyTermInterface) error
+TermTrash(termID, deletedBy string) (bool, error)
+TermRestore(termID string) (bool, error)
+TermDelete(termID string) (bool, error)
 
 // On ActiveEntityInterface — the entity's ID is implicit:
 AssignTerm(taxonomyID, termID string) error
 RemoveTerm(taxonomyID, termID string) error
-Terms(taxonomyID string) ([]entitystore.EntityTaxonomyInterface, error)
+Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
 ```
 
 ```go
 cat, _ := products.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
-term, _ := products.TermCreate(entitystore.TaxonomyTermOptions{TaxonomyID: cat.ID(), Name: "Laptops", Slug: "laptops"})
+term, _ := products.TermCreate(entitystore.TaxonomyTermOptions{TaxonomyID: cat.GetTaxonomy().ID(), Name: "Laptops", Slug: "laptops"})
 
-product.AssignTerm(cat.ID(), term.ID())
-terms, _ := product.Terms(cat.ID())
-product.RemoveTerm(cat.ID(), term.ID())
+product.AssignTerm(cat.GetTaxonomy().ID(), term.GetTerm().ID())
+terms, _ := product.Terms(cat.GetTaxonomy().ID())
+laptops, _ := term.Entities()                    // entities tagged "laptops"
+product.RemoveTerm(cat.GetTaxonomy().ID(), term.GetTerm().ID())
 ```
 
 Both features are opt-in at the core store level (`RelationshipsEnabled`, `TaxonomiesEnabled`); the wrappers delegate, so a disabled feature surfaces the store's own error naturally.

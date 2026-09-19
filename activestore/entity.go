@@ -23,6 +23,17 @@ type ActiveEntityInterface interface {
 	Delete() (bool, error)
 	Err() error
 	GetEntity() entitystore.EntityInterface
+
+	// Relationships (requires RelationshipsEnabled)
+	RelateTo(relatedEntityID, relationshipType string) error
+	RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error
+	Unrelate(relatedEntityID, relationshipType string) error
+	Related(relationshipType string) ([]ActiveEntityInterface, error)
+
+	// Taxonomies (requires TaxonomiesEnabled)
+	AssignTerm(taxonomyID, termID string) error
+	RemoveTerm(taxonomyID, termID string) error
+	Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
 }
 
 // pendingOp is a deferred store write applied when Save() persists the
@@ -178,4 +189,105 @@ func (e *activeEntityImplementation) Delete() (bool, error) {
 // needs to pass it to a core method that expects EntityInterface.
 func (e *activeEntityImplementation) GetEntity() entitystore.EntityInterface {
 	return e.entity
+}
+
+// ---------------------------------------------------------------------------
+// Relationships (requires RelationshipsEnabled)
+// ---------------------------------------------------------------------------
+
+// RelateTo creates a relationship from this entity to the related entity.
+func (e *activeEntityImplementation) RelateTo(relatedEntityID, relationshipType string) error {
+	_, err := e.store.RelationshipCreateByOptions(e.ctx, entitystore.RelationshipOptions{
+		EntityID:         e.entity.ID(),
+		RelatedEntityID:  relatedEntityID,
+		RelationshipType: relationshipType,
+	})
+	return err
+}
+
+// RelateToOrdered creates a relationship with an explicit sort order.
+func (e *activeEntityImplementation) RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error {
+	_, err := e.store.RelationshipCreateByOptions(e.ctx, entitystore.RelationshipOptions{
+		EntityID:         e.entity.ID(),
+		RelatedEntityID:  relatedEntityID,
+		RelationshipType: relationshipType,
+		Sequence:         sequence,
+	})
+	return err
+}
+
+// Unrelate deletes the relationship between this entity and the related
+// entity of the given type, if it exists.
+func (e *activeEntityImplementation) Unrelate(relatedEntityID, relationshipType string) error {
+	rel, err := e.store.RelationshipFindByEntities(e.ctx, e.entity.ID(), relatedEntityID, relationshipType)
+	if err != nil {
+		return err
+	}
+	if rel == nil {
+		return nil
+	}
+	_, err = e.store.RelationshipDelete(e.ctx, rel.ID())
+	return err
+}
+
+// Related returns the entities related to this entity via the given
+// relationship type — hydrated and wrapped as ActiveEntityInterface.
+func (e *activeEntityImplementation) Related(relationshipType string) ([]ActiveEntityInterface, error) {
+	rels, err := e.store.RelationshipList(e.ctx, entitystore.RelationshipQuery().
+		WithEntityID(e.entity.ID()).
+		WithRelationshipType(relationshipType))
+	if err != nil {
+		return nil, err
+	}
+	active := make([]ActiveEntityInterface, 0, len(rels))
+	for _, rel := range rels {
+		ent, err := e.store.EntityFindByID(e.ctx, rel.GetRelatedEntityID())
+		if err != nil {
+			return nil, err
+		}
+		wrapped, err := newActiveEntity(e.ctx, e.store, ent)
+		if err != nil {
+			return nil, err
+		}
+		active = append(active, wrapped)
+	}
+	return active, nil
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomies (requires TaxonomiesEnabled)
+// ---------------------------------------------------------------------------
+
+// AssignTerm assigns this entity to a taxonomy term.
+func (e *activeEntityImplementation) AssignTerm(taxonomyID, termID string) error {
+	return e.store.EntityTaxonomyAssign(e.ctx, e.entity.ID(), taxonomyID, termID)
+}
+
+// RemoveTerm removes this entity from a taxonomy term.
+func (e *activeEntityImplementation) RemoveTerm(taxonomyID, termID string) error {
+	return e.store.EntityTaxonomyRemove(e.ctx, e.entity.ID(), taxonomyID, termID)
+}
+
+// Terms returns the taxonomy terms this entity is assigned to within the
+// given taxonomy — resolved and wrapped as ActiveTaxonomyTermInterface.
+func (e *activeEntityImplementation) Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error) {
+	assignments, err := e.store.EntityTaxonomyList(e.ctx, entitystore.EntityTaxonomyQuery().
+		WithEntityID(e.entity.ID()).
+		WithTaxonomyID(taxonomyID))
+	if err != nil {
+		return nil, err
+	}
+	active := make([]ActiveTaxonomyTermInterface, 0, len(assignments))
+	for _, assignment := range assignments {
+		term, err := e.store.TaxonomyTermFind(e.ctx, assignment.GetTermID())
+		if err != nil {
+			return nil, err
+		}
+		wrapped, err := newActiveTerm(e.ctx, e.store, term)
+		if err != nil {
+			return nil, err
+		}
+		active = append(active, wrapped)
+	}
+	return active, nil
 }
