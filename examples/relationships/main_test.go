@@ -169,10 +169,9 @@ func TestRelationshipList(t *testing.T) {
 	})
 
 	// List relationships where author is the related entity
-	rels, err := store.RelationshipList(ctx, entitystore.RelationshipQueryOptions{
-		RelatedEntityID:  author.ID(),
-		RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
-	})
+	rels, err := store.RelationshipList(ctx, entitystore.RelationshipQuery().
+		WithRelatedEntityID(author.ID()).
+		WithRelationshipType(entitystore.RELATIONSHIP_TYPE_BELONGS_TO))
 	if err != nil {
 		t.Fatalf("Failed to list relationships: %v", err)
 	}
@@ -228,15 +227,14 @@ func TestRelationshipCount(t *testing.T) {
 	})
 
 	// Count all
-	total, _ := store.RelationshipCount(ctx, entitystore.RelationshipQueryOptions{})
+	total, _ := store.RelationshipCount(ctx, entitystore.RelationshipQuery())
 	if total != 2 {
 		t.Errorf("Expected count 2, got %d", total)
 	}
 
 	// Count by type
-	belongsCount, _ := store.RelationshipCount(ctx, entitystore.RelationshipQueryOptions{
-		RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
-	})
+	belongsCount, _ := store.RelationshipCount(ctx, entitystore.RelationshipQuery().
+		WithRelationshipType(entitystore.RELATIONSHIP_TYPE_BELONGS_TO))
 	if belongsCount != 2 {
 		t.Errorf("Expected belongs_to count 2, got %d", belongsCount)
 	}
@@ -332,7 +330,7 @@ func TestRelationshipTrash(t *testing.T) {
 	}
 
 	// Count should be 0
-	count, _ := store.RelationshipCount(ctx, entitystore.RelationshipQueryOptions{})
+	count, _ := store.RelationshipCount(ctx, entitystore.RelationshipQuery())
 	if count != 0 {
 		t.Errorf("Expected count 0 after trash, got %d", count)
 	}
@@ -393,7 +391,7 @@ func TestRelationshipDeleteAll(t *testing.T) {
 	}
 
 	// Verify
-	count, _ := store.RelationshipCount(ctx, entitystore.RelationshipQueryOptions{})
+	count, _ := store.RelationshipCount(ctx, entitystore.RelationshipQuery())
 	if count != 0 {
 		t.Errorf("Expected count 0 after delete all, got %d", count)
 	}

@@ -341,11 +341,10 @@ func TestRelationshipList(t *testing.T) {
 	}
 
 	// List with pagination
-	paginated, err := store.RelationshipList(ctx, RelationshipQueryOptions{
-		RelatedEntityID:  author.ID(),
-		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
-		Limit:            2,
-	})
+	paginated, err := store.RelationshipList(ctx, RelationshipQuery().
+		WithRelatedEntityID(author.ID()).
+		WithRelationshipType(RELATIONSHIP_TYPE_BELONGS_TO).
+		WithLimit(2))
 	if err != nil {
 		t.Fatalf("Failed to list paginated: %v", err)
 	}
@@ -505,7 +504,7 @@ func TestRelationshipDeleteAll(t *testing.T) {
 	}
 
 	// Count before delete
-	before, err := store.RelationshipList(ctx, RelationshipQueryOptions{EntityID: child1.ID()})
+	before, err := store.RelationshipList(ctx, RelationshipQuery().WithEntityID(child1.ID()))
 	if err != nil {
 		t.Fatalf("Failed to list relationships: %v", err)
 	}
@@ -597,10 +596,9 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 
 	// Verify it's in trash
-	trashItems, err := store.RelationshipTrashList(ctx, RelationshipQueryOptions{
-		ID:    rel.ID(),
-		Limit: 1,
-	})
+	trashItems, err := store.RelationshipTrashList(ctx, RelationshipQuery().
+		WithID(rel.ID()).
+		WithLimit(1))
 	if err != nil {
 		t.Fatalf("Failed to list trash: %v", err)
 	}
@@ -643,10 +641,9 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 
 	// Verify it's gone from trash
-	trashItems2, err := store.RelationshipTrashList(ctx, RelationshipQueryOptions{
-		ID:    rel.ID(),
-		Limit: 1,
-	})
+	trashItems2, err := store.RelationshipTrashList(ctx, RelationshipQuery().
+		WithID(rel.ID()).
+		WithLimit(1))
 	if err != nil {
 		t.Fatalf("Failed to list trash: %v", err)
 	}
@@ -724,11 +721,10 @@ func TestRelationshipDuplicatePrevention(t *testing.T) {
 	}
 
 	// Verify only one relationship exists
-	count, _ := store.RelationshipCount(ctx, RelationshipQueryOptions{
-		EntityID:         entity1.ID(),
-		RelatedEntityID:  entity2.ID(),
-		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
-	})
+	count, _ := store.RelationshipCount(ctx, RelationshipQuery().
+		WithEntityID(entity1.ID()).
+		WithRelatedEntityID(entity2.ID()).
+		WithRelationshipType(RELATIONSHIP_TYPE_BELONGS_TO))
 
 	if count != 1 {
 		t.Errorf("Expected 1 relationship, got %d", count)

@@ -120,10 +120,9 @@ func main() {
 
 	// Query relationships
 	fmt.Println("\n6. Querying relationships for author (finding their books)...")
-	relationships, err := store.RelationshipList(ctx, entitystore.RelationshipQueryOptions{
-		RelatedEntityID:  author.ID(),
-		RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
-	})
+	relationships, err := store.RelationshipList(ctx, entitystore.RelationshipQuery().
+		WithRelatedEntityID(author.ID()).
+		WithRelationshipType(entitystore.RELATIONSHIP_TYPE_BELONGS_TO))
 	if err != nil {
 		log.Fatalf("Failed to list relationships: %v", err)
 	}
@@ -143,10 +142,9 @@ func main() {
 
 	// Query reverse relationships
 	fmt.Println("\n7. Querying books and their categories...")
-	book1Categories, err := store.RelationshipList(ctx, entitystore.RelationshipQueryOptions{
-		EntityID:         book1.ID(),
-		RelationshipType: entitystore.RELATIONSHIP_TYPE_MANY_MANY,
-	})
+	book1Categories, err := store.RelationshipList(ctx, entitystore.RelationshipQuery().
+		WithEntityID(book1.ID()).
+		WithRelationshipType(entitystore.RELATIONSHIP_TYPE_MANY_MANY))
 	if err != nil {
 		log.Fatalf("Failed to list relationships: %v", err)
 	}
@@ -155,9 +153,8 @@ func main() {
 
 	// Count relationships
 	fmt.Println("\n8. Counting relationships...")
-	count, err := store.RelationshipCount(ctx, entitystore.RelationshipQueryOptions{
-		RelationshipType: entitystore.RELATIONSHIP_TYPE_BELONGS_TO,
-	})
+	count, err := store.RelationshipCount(ctx, entitystore.RelationshipQuery().
+		WithRelationshipType(entitystore.RELATIONSHIP_TYPE_BELONGS_TO))
 	if err != nil {
 		log.Fatalf("Failed to count relationships: %v", err)
 	}
@@ -186,7 +183,7 @@ func main() {
 	fmt.Printf("   Deleted: %v\n", trashed)
 
 	// Count after delete
-	count, err = store.RelationshipCount(ctx, entitystore.RelationshipQueryOptions{})
+	count, err = store.RelationshipCount(ctx, entitystore.RelationshipQuery())
 	if err != nil {
 		log.Fatalf("Failed to count relationships: %v", err)
 	}

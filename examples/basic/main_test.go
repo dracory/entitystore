@@ -136,7 +136,7 @@ func TestEntityList(t *testing.T) {
 	}
 
 	// List all
-	all, err := store.EntityList(ctx, entitystore.EntityQueryOptions{})
+	all, err := store.EntityList(ctx, entitystore.EntityQuery())
 	if err != nil {
 		t.Fatalf("Failed to list entities: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestEntityList(t *testing.T) {
 	}
 
 	// List by type
-	typeA, _ := store.EntityList(ctx, entitystore.EntityQueryOptions{EntityType: "type_a"})
+	typeA, _ := store.EntityList(ctx, entitystore.EntityQuery().WithEntityType("type_a"))
 	if len(typeA) != 2 {
 		t.Errorf("Expected 2 type_a entities, got %d", len(typeA))
 	}
@@ -175,13 +175,13 @@ func TestEntityCount(t *testing.T) {
 	}
 
 	// Count all
-	total, _ := store.EntityCount(ctx, entitystore.EntityQueryOptions{})
+	total, _ := store.EntityCount(ctx, entitystore.EntityQuery())
 	if total != 3 {
 		t.Errorf("Expected count 3, got %d", total)
 	}
 
 	// Count by type
-	personCount, _ := store.EntityCount(ctx, entitystore.EntityQueryOptions{EntityType: "person"})
+	personCount, _ := store.EntityCount(ctx, entitystore.EntityQuery().WithEntityType("person"))
 	if personCount != 2 {
 		t.Errorf("Expected person count 2, got %d", personCount)
 	}
@@ -249,7 +249,7 @@ func TestEntityTrash(t *testing.T) {
 	}
 
 	// Verify count decreased
-	count, _ := store.EntityCount(ctx, entitystore.EntityQueryOptions{})
+	count, _ := store.EntityCount(ctx, entitystore.EntityQuery())
 	if count != 0 {
 		t.Errorf("Expected count 0 after trash, got %d", count)
 	}

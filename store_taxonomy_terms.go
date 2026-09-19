@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -104,9 +105,8 @@ func (st *storeImplementation) TaxonomyTermDelete(ctx context.Context, termID st
 		return false, errors.New("taxonomies are not enabled")
 	}
 
-	assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQueryOptions{
-		TermID: termID,
-	})
+	assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQuery().
+		WithTermID(termID))
 	if err != nil {
 		return false, err
 	}
@@ -132,10 +132,9 @@ func (st *storeImplementation) TaxonomyTermFind(ctx context.Context, termID stri
 		return nil, errors.New("taxonomy term ID cannot be empty")
 	}
 
-	list, err := st.TaxonomyTermList(ctx, TaxonomyTermQueryOptions{
-		ID:    termID,
-		Limit: 1,
-	})
+	list, err := st.TaxonomyTermList(ctx, TaxonomyTermQuery().
+		WithID(termID).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -158,11 +157,10 @@ func (st *storeImplementation) TaxonomyTermFindBySlug(ctx context.Context, taxon
 		return nil, errors.New("taxonomy ID and slug are required")
 	}
 
-	list, err := st.TaxonomyTermList(ctx, TaxonomyTermQueryOptions{
-		TaxonomyID: taxonomyID,
-		Slug:       slug,
-		Limit:      1,
-	})
+	list, err := st.TaxonomyTermList(ctx, TaxonomyTermQuery().
+		WithTaxonomyID(taxonomyID).
+		WithSlug(slug).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -175,57 +173,72 @@ func (st *storeImplementation) TaxonomyTermFindBySlug(ctx context.Context, taxon
 	return nil, nil
 }
 
-// TaxonomyTermList lists taxonomy terms matching the given query options
-func (st *storeImplementation) TaxonomyTermList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermInterface, error) {
-	if !st.taxonomiesEnabled {
-		return nil, errors.New("taxonomies are not enabled")
+// applyTaxonomyTermFilters applies the common filter clauses from a
+// validated taxonomy term query to a query. Shared by TaxonomyTermList,
+// TaxonomyTermCount and TaxonomyTermTrashList to prevent filter drift.
+func (st *storeImplementation) applyTaxonomyTermFilters(q orm.Query, query TaxonomyTermQueryInterface) orm.Query {
+	if query.GetID() != "" {
+		q = q.Where(COLUMN_ID+" = ?", query.GetID())
 	}
 
-	q := st.db.Query().Table(st.taxonomyTermTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
-	}
-
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
+	if len(query.GetIDs()) > 0 {
+		ids := make([]any, len(query.GetIDs()))
+		for i, id := range query.GetIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	if options.TaxonomyID != "" {
-		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
+	if query.GetTaxonomyID() != "" {
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", query.GetTaxonomyID())
 	}
 
-	if options.Slug != "" {
-		q = q.Where(COLUMN_SLUG+" = ?", options.Slug)
+	if query.GetSlug() != "" {
+		q = q.Where(COLUMN_SLUG+" = ?", query.GetSlug())
 	}
 
-	if options.ParentID != "" {
-		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
+	if query.GetParentID() != "" {
+		q = q.Where(COLUMN_PARENT_ID+" = ?", query.GetParentID())
 	}
+
+	return q
+}
+
+// TaxonomyTermList lists taxonomy terms matching the given fluent query
+func (st *storeImplementation) TaxonomyTermList(ctx context.Context, query TaxonomyTermQueryInterface) ([]TaxonomyTermInterface, error) {
+	if !st.taxonomiesEnabled {
+		return nil, errors.New("taxonomies are not enabled")
+	}
+
+	if query == nil {
+		return nil, errors.New("taxonomy term query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
+
+	q := st.applyTaxonomyTermFilters(st.db.Query().Table(st.taxonomyTermTableName), query)
 
 	sortByColumn := COLUMN_SORT_ORDER
 	sortOrder := "asc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	q = q.OrderBy(sortByColumn, sortOrder)
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []taxonomyTermRow
@@ -250,37 +263,21 @@ func (st *storeImplementation) TaxonomyTermList(ctx context.Context, options Tax
 	return list, nil
 }
 
-// TaxonomyTermCount counts taxonomy terms matching the given options
-func (st *storeImplementation) TaxonomyTermCount(ctx context.Context, options TaxonomyTermQueryOptions) (int64, error) {
+// TaxonomyTermCount counts taxonomy terms matching the given fluent query
+func (st *storeImplementation) TaxonomyTermCount(ctx context.Context, query TaxonomyTermQueryInterface) (int64, error) {
 	if !st.taxonomiesEnabled {
 		return 0, errors.New("taxonomies are not enabled")
 	}
 
-	q := st.db.Query().Table(st.taxonomyTermTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	if query == nil {
+		return 0, errors.New("taxonomy term query cannot be nil")
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ID, ids)
+	if err := query.Validate(); err != nil {
+		return 0, err
 	}
 
-	if options.TaxonomyID != "" {
-		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
-	}
-
-	if options.Slug != "" {
-		q = q.Where(COLUMN_SLUG+" = ?", options.Slug)
-	}
-
-	if options.ParentID != "" {
-		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
-	}
+	q := st.applyTaxonomyTermFilters(st.db.Query().Table(st.taxonomyTermTableName), query)
 
 	var count int64
 	if err := q.Count(&count); err != nil {

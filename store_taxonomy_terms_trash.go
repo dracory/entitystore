@@ -37,9 +37,8 @@ func (st *storeImplementation) TaxonomyTermTrash(ctx context.Context, termID str
 		return false, errors.New("taxonomy term not found")
 	}
 
-	assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQueryOptions{
-		TermID: termID,
-	})
+	assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQuery().
+		WithTermID(termID))
 	if err != nil {
 		return false, err
 	}
@@ -81,10 +80,9 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 		return false, errors.New("taxonomies are not enabled")
 	}
 
-	list, err := st.TaxonomyTermTrashList(ctx, TaxonomyTermQueryOptions{
-		ID:    termID,
-		Limit: 1,
-	})
+	list, err := st.TaxonomyTermTrashList(ctx, TaxonomyTermQuery().
+		WithID(termID).
+		WithLimit(1))
 	if err != nil {
 		return false, err
 	}
@@ -116,53 +114,41 @@ func (st *storeImplementation) TaxonomyTermRestore(ctx context.Context, termID s
 	return result.RowsAffected > 0, nil
 }
 
-// TaxonomyTermTrashList lists trashed taxonomy terms
-func (st *storeImplementation) TaxonomyTermTrashList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermTrashInterface, error) {
+// TaxonomyTermTrashList lists trashed taxonomy terms matching the given fluent query
+func (st *storeImplementation) TaxonomyTermTrashList(ctx context.Context, query TaxonomyTermQueryInterface) ([]TaxonomyTermTrashInterface, error) {
 	if !st.taxonomiesEnabled {
 		return nil, errors.New("taxonomies are not enabled")
 	}
 
-	q := st.db.Query().Table(st.taxonomyTermTrashTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	if query == nil {
+		return nil, errors.New("taxonomy term query cannot be nil")
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ID, ids)
+	if err := query.Validate(); err != nil {
+		return nil, err
 	}
 
-	if options.TaxonomyID != "" {
-		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
-	}
-
-	if options.Slug != "" {
-		q = q.Where(COLUMN_SLUG+" = ?", options.Slug)
-	}
+	q := st.applyTaxonomyTermFilters(st.db.Query().Table(st.taxonomyTermTrashTableName), query)
 
 	sortByColumn := COLUMN_DELETED_AT
 	sortOrder := "desc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	q = q.OrderBy(sortByColumn, sortOrder)
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []taxonomyTermTrashRow

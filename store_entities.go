@@ -96,10 +96,9 @@ func (st *storeImplementation) EntityFindByID(ctx context.Context, entityID stri
 		return nil, errors.New("entity ID cannot be empty")
 	}
 
-	list, err := st.EntityList(ctx, EntityQueryOptions{
-		ID:    entityID,
-		Limit: 1,
-	})
+	list, err := st.EntityList(ctx, EntityQuery().
+		WithID(entityID).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -122,11 +121,10 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 		return nil, errors.New("entity handle cannot be empty")
 	}
 
-	list, err := st.EntityList(ctx, EntityQueryOptions{
-		EntityType:   entityType,
-		EntityHandle: entityHandle,
-		Limit:        1,
-	})
+	list, err := st.EntityList(ctx, EntityQuery().
+		WithEntityType(entityType).
+		WithEntityHandle(entityHandle).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -139,55 +137,64 @@ func (st *storeImplementation) EntityFindByHandle(ctx context.Context, entityTyp
 	return nil, nil
 }
 
-// applyEntityFilters applies the common filter clauses from EntityQueryOptions
-// to a query. Shared by EntityList and EntityCount to prevent filter drift.
-func (st *storeImplementation) applyEntityFilters(q orm.Query, options EntityQueryOptions) orm.Query {
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+// applyEntityFilters applies the common filter clauses from a validated
+// entity query to a query. Shared by EntityList and EntityCount to prevent
+// filter drift.
+func (st *storeImplementation) applyEntityFilters(q orm.Query, query EntityQueryInterface) orm.Query {
+	if query.GetID() != "" {
+		q = q.Where(COLUMN_ID+" = ?", query.GetID())
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
+	if len(query.GetIDs()) > 0 {
+		ids := make([]any, len(query.GetIDs()))
+		for i, id := range query.GetIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	if options.EntityType != "" {
-		q = q.Where(COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
+	if query.GetEntityType() != "" {
+		q = q.Where(COLUMN_ENTITY_TYPE+" = ?", query.GetEntityType())
 	}
 
-	if options.EntityHandle != "" {
-		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
+	if query.GetEntityHandle() != "" {
+		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", query.GetEntityHandle())
 	}
 
 	return q
 }
 
-// EntityList retrieves entities matching the given query options
-func (st *storeImplementation) EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error) {
-	q := st.applyEntityFilters(st.db.Query().Table(st.entityTableName), options)
+// EntityList retrieves entities matching the given fluent query
+func (st *storeImplementation) EntityList(ctx context.Context, query EntityQueryInterface) ([]EntityInterface, error) {
+	if query == nil {
+		return nil, errors.New("entity query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
+
+	q := st.applyEntityFilters(st.db.Query().Table(st.entityTableName), query)
 
 	sortByColumn := COLUMN_ID
 	sortOrder := "asc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	q = q.OrderBy(sortByColumn, sortOrder)
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []entityRow
@@ -209,9 +216,17 @@ func (st *storeImplementation) EntityList(ctx context.Context, options EntityQue
 	return list, nil
 }
 
-// EntityCount counts entities matching the given query options
-func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error) {
-	q := st.applyEntityFilters(st.db.Query().Table(st.entityTableName), options)
+// EntityCount counts entities matching the given fluent query
+func (st *storeImplementation) EntityCount(ctx context.Context, query EntityQueryInterface) (int64, error) {
+	if query == nil {
+		return 0, errors.New("entity query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return 0, err
+	}
+
+	q := st.applyEntityFilters(st.db.Query().Table(st.entityTableName), query)
 
 	var count int64
 	if err := q.Count(&count); err != nil {
@@ -223,7 +238,7 @@ func (st *storeImplementation) EntityCount(ctx context.Context, options EntityQu
 
 // EntityAttributeList retrieves all attributes for a given entity
 func (st *storeImplementation) EntityAttributeList(ctx context.Context, entityID string) ([]AttributeInterface, error) {
-	return st.AttributeList(ctx, AttributeQueryOptions{EntityID: entityID})
+	return st.AttributeList(ctx, AttributeQuery().WithEntityID(entityID))
 }
 
 // EntityFindByAttribute finds an entity by type and attribute key/value
