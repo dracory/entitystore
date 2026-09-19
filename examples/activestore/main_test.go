@@ -31,7 +31,7 @@ func setupTestActiveStore(t *testing.T) (activestore.ActiveStoreInterface, func(
 		t.Fatalf("Failed to create active store: %v", err)
 	}
 
-	return active, func() { db.Close() } //nolint:errcheck
+	return active, func() { _ = db.Close() }
 }
 
 func TestFluentCreate(t *testing.T) {

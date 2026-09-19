@@ -15,7 +15,7 @@ func TestRelateAndUnrelate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
 		DB:                   db,

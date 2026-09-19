@@ -9,7 +9,7 @@ import (
 
 func TestRelationshipCreate(t *testing.T) {
 	db := InitDB("relationship_create")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -59,7 +59,7 @@ func TestRelationshipCreate(t *testing.T) {
 
 func TestRelationshipCreateByOptions(t *testing.T) {
 	db := InitDB("relationship_options")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -116,7 +116,7 @@ func TestRelationshipCreateByOptions(t *testing.T) {
 
 func TestRelationshipFind(t *testing.T) {
 	db := InitDB("relationship_find")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -188,7 +188,7 @@ func TestRelationshipFind(t *testing.T) {
 
 func TestRelationshipFindByEntities(t *testing.T) {
 	db := InitDB("relationship_find_by_entities")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -251,7 +251,7 @@ func TestRelationshipFindByEntities(t *testing.T) {
 
 func TestRelationshipList(t *testing.T) {
 	db := InitDB("relationship_list")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -356,7 +356,7 @@ func TestRelationshipList(t *testing.T) {
 
 func TestRelationshipDelete(t *testing.T) {
 	db := InitDB("relationship_delete")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -428,7 +428,7 @@ func TestRelationshipDelete(t *testing.T) {
 
 func TestRelationshipDeleteAll(t *testing.T) {
 	db := InitDB("relationship_delete_all")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -530,7 +530,7 @@ func TestRelationshipDeleteAll(t *testing.T) {
 
 func TestRelationshipTrashAndRestore(t *testing.T) {
 	db := InitDB("relationship_trash_restore")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -655,7 +655,7 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 
 func TestRelationshipDuplicatePrevention(t *testing.T) {
 	db := InitDB("relationship_duplicate_prevention")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{
@@ -733,7 +733,7 @@ func TestRelationshipDuplicatePrevention(t *testing.T) {
 
 func TestRelationshipValidation(t *testing.T) {
 	db := InitDB("relationship_validation")
-	defer db.Close() //nolint:errcheck
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	store, err := NewStore(NewStoreOptions{

@@ -25,7 +25,7 @@ func setupTestStore(t *testing.T) (entitystore.StoreInterface, func()) {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
-	return store, func() { db.Close() } //nolint:errcheck
+	return store, func() { _ = db.Close() }
 }
 
 func seedPosts(t *testing.T, store entitystore.StoreInterface) {
