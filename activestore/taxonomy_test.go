@@ -69,11 +69,11 @@ func TestAssignTermAndEntities(t *testing.T) {
 	if _, err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
-	if err := product.AssignTerm(cat.GetTaxonomy().GetID(), laptops.GetTerm().GetID()); err != nil {
+	if err := product.AssignTerm(cat, laptops); err != nil {
 		t.Fatal(err)
 	}
 
-	terms, err := product.Terms(cat.GetTaxonomy().GetID())
+	terms, err := product.Terms(cat)
 	if err != nil || len(terms) != 1 {
 		t.Fatalf("expected 1 term, got %v err=%v", len(terms), err)
 	}
@@ -86,10 +86,10 @@ func TestAssignTermAndEntities(t *testing.T) {
 		t.Fatal("expected the product entity")
 	}
 
-	if err := product.RemoveTerm(cat.GetTaxonomy().GetID(), laptops.GetTerm().GetID()); err != nil {
+	if err := product.RemoveTerm(cat, laptops); err != nil {
 		t.Fatal(err)
 	}
-	terms, _ = product.Terms(cat.GetTaxonomy().GetID())
+	terms, _ = product.Terms(cat)
 	if len(terms) != 0 {
 		t.Fatalf("expected 0 terms after remove, got %v", len(terms))
 	}

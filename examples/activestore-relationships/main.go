@@ -48,7 +48,7 @@ func main() {
 		}
 	}
 
-	if err := post.RelateTo(author.GetEntity().ID(), "written_by"); err != nil {
+	if err := post.RelateTo(author, "written_by"); err != nil {
 		log.Fatalf("Failed to relate: %v", err)
 	}
 	fmt.Println("   Linked post --written_by--> author")
@@ -67,7 +67,7 @@ func main() {
 
 	// Remove the link
 	fmt.Println("\n3. Unrelating...")
-	if err := post.Unrelate(author.GetEntity().ID(), "written_by"); err != nil {
+	if err := post.Unrelate(author, "written_by"); err != nil {
 		log.Fatalf("Failed to unrelate: %v", err)
 	}
 	authors, _ = post.Related("written_by")

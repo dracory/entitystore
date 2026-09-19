@@ -25,15 +25,25 @@ type ActiveEntityInterface interface {
 	GetEntity() entitystore.EntityInterface
 
 	// Relationships (requires RelationshipsEnabled)
-	RelateTo(relatedEntityID, relationshipType string) error
-	RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error
-	Unrelate(relatedEntityID, relationshipType string) error
+	RelateTo(related ActiveEntityInterface, relationshipType string) error
+	RelateToOrdered(related ActiveEntityInterface, relationshipType string, sequence int) error
+	Unrelate(related ActiveEntityInterface, relationshipType string) error
 	Related(relationshipType string) ([]ActiveEntityInterface, error)
 
+	// ID-based variants for when only raw IDs are available
+	RelateToID(relatedEntityID, relationshipType string) error
+	RelateToOrderedID(relatedEntityID, relationshipType string, sequence int) error
+	UnrelateID(relatedEntityID, relationshipType string) error
+
 	// Taxonomies (requires TaxonomiesEnabled)
-	AssignTerm(taxonomyID, termID string) error
-	RemoveTerm(taxonomyID, termID string) error
-	Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
+	AssignTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error
+	RemoveTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error
+	Terms(taxonomy ActiveTaxonomyInterface) ([]ActiveTaxonomyTermInterface, error)
+
+	// ID-based variants for when only raw IDs are available
+	AssignTermByID(taxonomyID, termID string) error
+	RemoveTermByID(taxonomyID, termID string) error
+	TermsByID(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
 }
 
 // pendingOp is a deferred store write applied when Save() persists the
@@ -198,7 +208,13 @@ func (e *activeEntityImplementation) GetEntity() entitystore.EntityInterface {
 // ---------------------------------------------------------------------------
 
 // RelateTo creates a relationship from this entity to the related entity.
-func (e *activeEntityImplementation) RelateTo(relatedEntityID, relationshipType string) error {
+func (e *activeEntityImplementation) RelateTo(related ActiveEntityInterface, relationshipType string) error {
+	return e.RelateToID(related.GetEntity().ID(), relationshipType)
+}
+
+// RelateToID creates a relationship by raw entity ID — for when only
+// the ID is available rather than an ActiveEntityInterface.
+func (e *activeEntityImplementation) RelateToID(relatedEntityID, relationshipType string) error {
 	_, err := e.store.RelationshipCreateByOptions(e.ctx, entitystore.RelationshipOptions{
 		EntityID:         e.entity.ID(),
 		RelatedEntityID:  relatedEntityID,
@@ -208,7 +224,13 @@ func (e *activeEntityImplementation) RelateTo(relatedEntityID, relationshipType 
 }
 
 // RelateToOrdered creates a relationship with an explicit sort order.
-func (e *activeEntityImplementation) RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error {
+func (e *activeEntityImplementation) RelateToOrdered(related ActiveEntityInterface, relationshipType string, sequence int) error {
+	return e.RelateToOrderedID(related.GetEntity().ID(), relationshipType, sequence)
+}
+
+// RelateToOrderedID creates a relationship with an explicit sort order
+// by raw entity ID.
+func (e *activeEntityImplementation) RelateToOrderedID(relatedEntityID, relationshipType string, sequence int) error {
 	_, err := e.store.RelationshipCreateByOptions(e.ctx, entitystore.RelationshipOptions{
 		EntityID:         e.entity.ID(),
 		RelatedEntityID:  relatedEntityID,
@@ -220,7 +242,12 @@ func (e *activeEntityImplementation) RelateToOrdered(relatedEntityID, relationsh
 
 // Unrelate deletes the relationship between this entity and the related
 // entity of the given type, if it exists.
-func (e *activeEntityImplementation) Unrelate(relatedEntityID, relationshipType string) error {
+func (e *activeEntityImplementation) Unrelate(related ActiveEntityInterface, relationshipType string) error {
+	return e.UnrelateID(related.GetEntity().ID(), relationshipType)
+}
+
+// UnrelateID deletes the relationship by raw entity ID.
+func (e *activeEntityImplementation) UnrelateID(relatedEntityID, relationshipType string) error {
 	rel, err := e.store.RelationshipFindByEntities(e.ctx, e.entity.ID(), relatedEntityID, relationshipType)
 	if err != nil {
 		return err
@@ -261,18 +288,34 @@ func (e *activeEntityImplementation) Related(relationshipType string) ([]ActiveE
 // ---------------------------------------------------------------------------
 
 // AssignTerm assigns this entity to a taxonomy term.
-func (e *activeEntityImplementation) AssignTerm(taxonomyID, termID string) error {
+func (e *activeEntityImplementation) AssignTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error {
+	return e.AssignTermByID(taxonomy.GetTaxonomy().GetID(), term.GetTerm().GetID())
+}
+
+// AssignTermByID assigns this entity to a taxonomy term by raw IDs —
+// for when only the IDs are available rather than the active wrappers.
+func (e *activeEntityImplementation) AssignTermByID(taxonomyID, termID string) error {
 	return e.store.EntityTaxonomyAssign(e.ctx, e.entity.ID(), taxonomyID, termID)
 }
 
 // RemoveTerm removes this entity from a taxonomy term.
-func (e *activeEntityImplementation) RemoveTerm(taxonomyID, termID string) error {
+func (e *activeEntityImplementation) RemoveTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error {
+	return e.RemoveTermByID(taxonomy.GetTaxonomy().GetID(), term.GetTerm().GetID())
+}
+
+// RemoveTermByID removes this entity from a taxonomy term by raw IDs.
+func (e *activeEntityImplementation) RemoveTermByID(taxonomyID, termID string) error {
 	return e.store.EntityTaxonomyRemove(e.ctx, e.entity.ID(), taxonomyID, termID)
 }
 
 // Terms returns the taxonomy terms this entity is assigned to within the
 // given taxonomy — resolved and wrapped as ActiveTaxonomyTermInterface.
-func (e *activeEntityImplementation) Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error) {
+func (e *activeEntityImplementation) Terms(taxonomy ActiveTaxonomyInterface) ([]ActiveTaxonomyTermInterface, error) {
+	return e.TermsByID(taxonomy.GetTaxonomy().GetID())
+}
+
+// TermsByID lists the entity's terms in a taxonomy by raw taxonomy ID.
+func (e *activeEntityImplementation) TermsByID(taxonomyID string) ([]ActiveTaxonomyTermInterface, error) {
 	assignments, err := e.store.EntityTaxonomyList(e.ctx, entitystore.EntityTaxonomyQuery().
 		WithEntityID(e.entity.ID()).
 		WithTaxonomyID(taxonomyID))

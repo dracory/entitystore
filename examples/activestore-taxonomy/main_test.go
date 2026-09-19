@@ -48,11 +48,11 @@ func TestAssignAndNavigate(t *testing.T) {
 	if _, err := post.Save(); err != nil {
 		t.Fatalf("Failed to save: %v", err)
 	}
-	if err := post.AssignTerm(cat.GetTaxonomy().GetID(), term.GetTerm().GetID()); err != nil {
+	if err := post.AssignTerm(cat, term); err != nil {
 		t.Fatalf("Failed to assign term: %v", err)
 	}
 
-	terms, err := post.Terms(cat.GetTaxonomy().GetID())
+	terms, err := post.Terms(cat)
 	if err != nil || len(terms) != 1 {
 		t.Fatalf("Expected 1 term, got %d err=%v", len(terms), err)
 	}

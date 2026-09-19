@@ -63,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to save product: %v", err)
 	}
-	if err := product.AssignTerm(cat.GetTaxonomy().GetID(), laptops.GetTerm().GetID()); err != nil {
+	if err := product.AssignTerm(cat, laptops); err != nil {
 		log.Fatalf("Failed to assign term: %v", err)
 	}
 	fmt.Println("   Assigned")
@@ -71,7 +71,7 @@ func main() {
 	// Navigate both directions without writing queries:
 	// entity -> its terms, term -> its entities
 	fmt.Println("\n3. Navigating...")
-	terms, err := product.Terms(cat.GetTaxonomy().GetID())
+	terms, err := product.Terms(cat)
 	if err != nil {
 		log.Fatalf("Failed to list terms: %v", err)
 	}

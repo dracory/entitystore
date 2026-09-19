@@ -19,9 +19,9 @@ term, _ := active.TermCreate(entitystore.TaxonomyTermOptions{
     TaxonomyID: cat.GetTaxonomy().GetID(), Slug: "go",
 })
 
-_ = post.AssignTerm(cat.GetTaxonomy().GetID(), term.GetTerm().GetID())
+_ = post.AssignTerm(cat, term)
 
 // Navigate both directions without writing queries
-terms, _ := post.Terms(cat.GetTaxonomy().GetID())
+terms, _ := post.Terms(cat)
 posts, _ := term.Entities()
 ```

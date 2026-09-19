@@ -14,11 +14,11 @@ go test ./examples/activestore-relationships/... -v
 ## Code Highlights
 
 ```go
-_ = post.RelateTo(author.GetEntity().ID(), "written_by")
+_ = post.RelateTo(author, "written_by")
 
 // Hydrates linked entities in one call — no RelationshipList +
 // EntityFindByID loop
 authors, _ := post.Related("written_by")
 
-_ = post.Unrelate(author.GetEntity().ID(), "written_by")
+_ = post.Unrelate(author, "written_by")
 ```

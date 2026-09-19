@@ -41,7 +41,7 @@ func TestRelateAndUnrelate(t *testing.T) {
 		}
 	}
 
-	if err := post.RelateTo(author.GetEntity().ID(), "written_by"); err != nil {
+	if err := post.RelateTo(author, "written_by"); err != nil {
 		t.Fatalf("Failed to relate: %v", err)
 	}
 
@@ -50,7 +50,7 @@ func TestRelateAndUnrelate(t *testing.T) {
 		t.Fatalf("Expected 1 author, got %d err=%v", len(authors), err)
 	}
 
-	if err := post.Unrelate(author.GetEntity().ID(), "written_by"); err != nil {
+	if err := post.Unrelate(author, "written_by"); err != nil {
 		t.Fatalf("Failed to unrelate: %v", err)
 	}
 

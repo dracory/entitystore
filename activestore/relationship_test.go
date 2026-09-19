@@ -45,10 +45,10 @@ func TestRelateToAndRelated(t *testing.T) {
 		}
 	}
 
-	if err := post.RelateTo(author.GetEntity().ID(), "written_by"); err != nil {
+	if err := post.RelateTo(author, "written_by"); err != nil {
 		t.Fatal(err)
 	}
-	if err := post.RelateToOrdered(tag.GetEntity().ID(), "has_tag", 3); err != nil {
+	if err := post.RelateToOrdered(tag, "has_tag", 3); err != nil {
 		t.Fatal(err)
 	}
 
@@ -60,7 +60,7 @@ func TestRelateToAndRelated(t *testing.T) {
 		t.Fatal("related entity ID mismatch")
 	}
 
-	if err := post.Unrelate(author.GetEntity().ID(), "written_by"); err != nil {
+	if err := post.Unrelate(author, "written_by"); err != nil {
 		t.Fatal(err)
 	}
 	authors, _ = post.Related("written_by")

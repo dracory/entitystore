@@ -50,15 +50,25 @@ type ActiveEntityInterface interface {
 	GetEntity() entitystore.EntityInterface
 
 	// Relationships (requires RelationshipsEnabled)
-	RelateTo(relatedEntityID, relationshipType string) error
-	RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error
-	Unrelate(relatedEntityID, relationshipType string) error
+	RelateTo(related ActiveEntityInterface, relationshipType string) error
+	RelateToOrdered(related ActiveEntityInterface, relationshipType string, sequence int) error
+	Unrelate(related ActiveEntityInterface, relationshipType string) error
 	Related(relationshipType string) ([]ActiveEntityInterface, error)
 
+	// ID-based variants for when only raw IDs are available
+	RelateToID(relatedEntityID, relationshipType string) error
+	RelateToOrderedID(relatedEntityID, relationshipType string, sequence int) error
+	UnrelateID(relatedEntityID, relationshipType string) error
+
 	// Taxonomies (requires TaxonomiesEnabled)
-	AssignTerm(taxonomyID, termID string) error
-	RemoveTerm(taxonomyID, termID string) error
-	Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
+	AssignTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error
+	RemoveTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error
+	Terms(taxonomy ActiveTaxonomyInterface) ([]ActiveTaxonomyTermInterface, error)
+
+	// ID-based variants for when only raw IDs are available
+	AssignTermByID(taxonomyID, termID string) error
+	RemoveTermByID(taxonomyID, termID string) error
+	TermsByID(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
 }
 
 // activeEntityImplementation is the concrete wrapper.
@@ -286,10 +296,15 @@ The core API forces a three-step dance: build `RelationshipOptions` with two raw
 
 ```go
 // On ActiveEntityInterface — the entity's own ID is implicit:
-RelateTo(relatedEntityID, relationshipType string) error
-RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error
-Unrelate(relatedEntityID, relationshipType string) error
+RelateTo(related ActiveEntityInterface, relationshipType string) error
+RelateToOrdered(related ActiveEntityInterface, relationshipType string, sequence int) error
+Unrelate(related ActiveEntityInterface, relationshipType string) error
 Related(relationshipType string) ([]ActiveEntityInterface, error)
+
+// ID-based variants for when only raw IDs are available:
+RelateToID(relatedEntityID, relationshipType string) error
+RelateToOrderedID(relatedEntityID, relationshipType string, sequence int) error
+UnrelateID(relatedEntityID, relationshipType string) error
 ```
 
 `Related(type)` is the main win — one call performs `RelationshipList` + `EntityFindByID` per row + wraps each result into `ActiveEntityInterface`.
@@ -322,12 +337,12 @@ RelationshipDeleteAll(entityID string) error
 `RelationshipCreate` takes `RelationshipOptions` and delegates to `RelationshipCreateByOptions` — callers should not have to build a `RelationshipInterface` first.
 
 ```go
-post.RelateTo(authorID, "written_by")
-post.RelateToOrdered(tagID, "has_tag", 3)
+post.RelateTo(author, "written_by")
+post.RelateToOrdered(tag, "has_tag", 3)
 
 authors, _ := post.Related("written_by")   // hydrated, wrapped entities
 tags, _ := post.Related("has_tag")
-post.Unrelate(tagID, "has_tag")
+post.Unrelate(tag, "has_tag")
 ```
 
 ### Taxonomy Sugar
@@ -382,19 +397,24 @@ TermRestore(termID string) (bool, error)
 TermDelete(termID string) (bool, error)
 
 // On ActiveEntityInterface — the entity's ID is implicit:
-AssignTerm(taxonomyID, termID string) error
-RemoveTerm(taxonomyID, termID string) error
-Terms(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
+AssignTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error
+RemoveTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error
+Terms(taxonomy ActiveTaxonomyInterface) ([]ActiveTaxonomyTermInterface, error)
+
+// ID-based variants for when only raw IDs are available:
+AssignTermByID(taxonomyID, termID string) error
+RemoveTermByID(taxonomyID, termID string) error
+TermsByID(taxonomyID string) ([]ActiveTaxonomyTermInterface, error)
 ```
 
 ```go
 cat, _ := products.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
 term, _ := products.TermCreate(entitystore.TaxonomyTermOptions{TaxonomyID: cat.GetTaxonomy().ID(), Name: "Laptops", Slug: "laptops"})
 
-product.AssignTerm(cat.GetTaxonomy().ID(), term.GetTerm().ID())
-terms, _ := product.Terms(cat.GetTaxonomy().ID())
+product.AssignTerm(cat, term)
+terms, _ := product.Terms(cat)
 laptops, _ := term.Entities()                    // entities tagged "laptops"
-product.RemoveTerm(cat.GetTaxonomy().ID(), term.GetTerm().ID())
+product.RemoveTerm(cat, term)
 ```
 
 Both features are opt-in at the core store level (`RelationshipsEnabled`, `TaxonomiesEnabled`); the wrappers delegate, so a disabled feature surfaces the store's own error naturally.
