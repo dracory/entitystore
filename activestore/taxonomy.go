@@ -111,7 +111,7 @@ func (t *activeTermImplementation) GetTerm() entitystore.TaxonomyTermInterface {
 
 func (t *activeTermImplementation) GetTaxonomy() (ActiveTaxonomyInterface, error) {
 	taxonomy, err := t.store.TaxonomyFind(t.ctx, t.term.GetTaxonomyID())
-	if err != nil {
+	if err != nil || taxonomy == nil {
 		return nil, err
 	}
 	return newActiveTaxonomy(t.ctx, t.store, taxonomy)
@@ -123,7 +123,7 @@ func (t *activeTermImplementation) Parent() (ActiveTaxonomyTermInterface, error)
 		return nil, nil
 	}
 	parent, err := t.store.TaxonomyTermFind(t.ctx, parentID)
-	if err != nil {
+	if err != nil || parent == nil {
 		return nil, err
 	}
 	return newActiveTerm(t.ctx, t.store, parent)
@@ -175,6 +175,9 @@ func hydrateEntities(ctx context.Context, store entitystore.StoreInterface, assi
 		if err != nil {
 			return nil, err
 		}
+		if ent == nil {
+			continue // dangling assignment: entity deleted or missing
+		}
 		wrapped, err := newActiveEntity(ctx, store, ent)
 		if err != nil {
 			return nil, err
@@ -198,7 +201,7 @@ func (s *activeStoreImplementation) TaxonomyCreate(options entitystore.TaxonomyO
 
 func (s *activeStoreImplementation) TaxonomyFindByID(taxonomyID string) (ActiveTaxonomyInterface, error) {
 	taxonomy, err := s.store.TaxonomyFind(s.ctx, taxonomyID)
-	if err != nil {
+	if err != nil || taxonomy == nil {
 		return nil, err
 	}
 	return newActiveTaxonomy(s.ctx, s.store, taxonomy)
@@ -206,7 +209,7 @@ func (s *activeStoreImplementation) TaxonomyFindByID(taxonomyID string) (ActiveT
 
 func (s *activeStoreImplementation) TaxonomyFindBySlug(slug string) (ActiveTaxonomyInterface, error) {
 	taxonomy, err := s.store.TaxonomyFindBySlug(s.ctx, slug)
-	if err != nil {
+	if err != nil || taxonomy == nil {
 		return nil, err
 	}
 	return newActiveTaxonomy(s.ctx, s.store, taxonomy)
@@ -262,7 +265,7 @@ func (s *activeStoreImplementation) TermCreate(options entitystore.TaxonomyTermO
 
 func (s *activeStoreImplementation) TermFindByID(termID string) (ActiveTaxonomyTermInterface, error) {
 	term, err := s.store.TaxonomyTermFind(s.ctx, termID)
-	if err != nil {
+	if err != nil || term == nil {
 		return nil, err
 	}
 	return newActiveTerm(s.ctx, s.store, term)
@@ -270,7 +273,7 @@ func (s *activeStoreImplementation) TermFindByID(termID string) (ActiveTaxonomyT
 
 func (s *activeStoreImplementation) TermFindBySlug(taxonomyID, slug string) (ActiveTaxonomyTermInterface, error) {
 	term, err := s.store.TaxonomyTermFindBySlug(s.ctx, taxonomyID, slug)
-	if err != nil {
+	if err != nil || term == nil {
 		return nil, err
 	}
 	return newActiveTerm(s.ctx, s.store, term)

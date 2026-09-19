@@ -38,7 +38,7 @@ func (r *activeRelationshipImplementation) GetRelationship() entitystore.Relatio
 
 func (r *activeRelationshipImplementation) GetEntity() (ActiveEntityInterface, error) {
 	ent, err := r.store.EntityFindByID(r.ctx, r.relationship.GetEntityID())
-	if err != nil {
+	if err != nil || ent == nil {
 		return nil, err
 	}
 	return newActiveEntity(r.ctx, r.store, ent)
@@ -46,7 +46,7 @@ func (r *activeRelationshipImplementation) GetEntity() (ActiveEntityInterface, e
 
 func (r *activeRelationshipImplementation) GetRelatedEntity() (ActiveEntityInterface, error) {
 	ent, err := r.store.EntityFindByID(r.ctx, r.relationship.GetRelatedEntityID())
-	if err != nil {
+	if err != nil || ent == nil {
 		return nil, err
 	}
 	return newActiveEntity(r.ctx, r.store, ent)
@@ -78,7 +78,7 @@ func (s *activeStoreImplementation) RelationshipCreate(options entitystore.Relat
 
 func (s *activeStoreImplementation) RelationshipFindByID(relationshipID string) (ActiveRelationshipInterface, error) {
 	rel, err := s.store.RelationshipFind(s.ctx, relationshipID)
-	if err != nil {
+	if err != nil || rel == nil {
 		return nil, err
 	}
 	return newActiveRelationship(s.ctx, s.store, rel)

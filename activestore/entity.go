@@ -274,6 +274,9 @@ func (e *activeEntityImplementation) Related(relationshipType string) ([]ActiveE
 		if err != nil {
 			return nil, err
 		}
+		if ent == nil {
+			continue // dangling reference: related entity deleted or missing
+		}
 		wrapped, err := newActiveEntity(e.ctx, e.store, ent)
 		if err != nil {
 			return nil, err
@@ -327,6 +330,9 @@ func (e *activeEntityImplementation) TermsByID(taxonomyID string) ([]ActiveTaxon
 		term, err := e.store.TaxonomyTermFind(e.ctx, assignment.GetTermID())
 		if err != nil {
 			return nil, err
+		}
+		if term == nil {
+			continue // dangling assignment: term deleted or missing
 		}
 		wrapped, err := newActiveTerm(e.ctx, e.store, term)
 		if err != nil {

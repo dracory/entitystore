@@ -88,7 +88,7 @@ func (s *activeStoreImplementation) EntityCreate(entityType string) ActiveEntity
 
 func (s *activeStoreImplementation) EntityFindByID(entityID string) (ActiveEntityInterface, error) {
 	ent, err := s.store.EntityFindByID(s.ctx, entityID)
-	if err != nil {
+	if err != nil || ent == nil {
 		return nil, err
 	}
 	return newActiveEntity(s.ctx, s.store, ent)

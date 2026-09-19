@@ -121,3 +121,17 @@ func TestRelationshipCRUD(t *testing.T) {
 		t.Fatalf("expected deleted=true, got %v err=%v", deleted, err)
 	}
 }
+
+func TestRelationshipFindByID_NotFound(t *testing.T) {
+	active, err := New(context.Background(), initFullStore(t, "activestore_relnotfound.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rel, err := active.RelationshipFindByID("no-such-id")
+	if err != nil {
+		t.Fatalf("expected nil error for missing relationship, got %v", err)
+	}
+	if rel != nil {
+		t.Fatal("expected nil relationship for missing ID")
+	}
+}

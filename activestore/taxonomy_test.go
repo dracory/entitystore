@@ -132,3 +132,22 @@ func TestTermHierarchy(t *testing.T) {
 		t.Fatalf("expected nil parent, got %v err=%v", noParent, err)
 	}
 }
+
+func TestTaxonomyAndTermFind_NotFound(t *testing.T) {
+	active, err := New(context.Background(), initFullStore(t, "activestore_taxnotfound.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tax, err := active.TaxonomyFindByID("no-such-id")
+	if err != nil || tax != nil {
+		t.Fatalf("expected (nil, nil), got tax=%v err=%v", tax, err)
+	}
+	tax, err = active.TaxonomyFindBySlug("no-such-slug")
+	if err != nil || tax != nil {
+		t.Fatalf("expected (nil, nil), got tax=%v err=%v", tax, err)
+	}
+	term, err := active.TermFindByID("no-such-id")
+	if err != nil || term != nil {
+		t.Fatalf("expected (nil, nil), got term=%v err=%v", term, err)
+	}
+}

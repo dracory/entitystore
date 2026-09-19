@@ -213,3 +213,17 @@ func TestWrapEntity_Nil(t *testing.T) {
 		t.Fatal("expected error for nil entity")
 	}
 }
+
+func TestEntityFindByID_NotFound(t *testing.T) {
+	active, err := New(context.Background(), initStore(t, "activestore_notfound.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ent, err := active.EntityFindByID("no-such-id")
+	if err != nil {
+		t.Fatalf("expected nil error for missing entity, got %v", err)
+	}
+	if ent != nil {
+		t.Fatal("expected nil entity for missing ID")
+	}
+}
