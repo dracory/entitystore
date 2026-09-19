@@ -155,3 +155,62 @@ func TestAttributeQueryTimeFilters(t *testing.T) {
 		t.Error("Expected validation error for empty created_at_gte")
 	}
 }
+
+// TestAttributeQueryKeyPatterns verifies LIKE-based attribute_key filters,
+// including literal wildcard escaping.
+func TestAttributeQueryKeyPatterns(t *testing.T) {
+	db := InitDB("attr_pattern_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "pattern_entity",
+		AttributeTableName: "pattern_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for k, v := range map[string]string{
+		"img_main":  "a.png",
+		"img_thumb": "b.png",
+		"imgXray":   "c.png", // must NOT match "img_" prefix
+		"meta_json": "{}",
+		"metaxjson": "{}", // must NOT match "_json" suffix
+		"name":      "Widget",
+	} {
+		if err := store.AttributeSetString(ctx, entity.ID(), k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	keys := func(query AttributeQueryInterface) []string {
+		list, err := store.AttributeList(ctx, query)
+		if err != nil {
+			t.Fatal("AttributeList failed:", err)
+		}
+		var out []string
+		for _, a := range list {
+			out = append(out, a.GetKey())
+		}
+		return out
+	}
+
+	if got := keys(AttributeQuery().WithAttributeKeyStartsWith("img_")); len(got) != 2 {
+		t.Errorf("StartsWith img_: expected 2 keys, got %v", got)
+	}
+	if got := keys(AttributeQuery().WithAttributeKeyEndsWith("_json")); len(got) != 1 || got[0] != "meta_json" {
+		t.Errorf("EndsWith _json: expected [meta_json], got %v", got)
+	}
+	if got := keys(AttributeQuery().WithAttributeKeyContains("img")); len(got) != 3 {
+		t.Errorf("Contains img: expected 3 keys, got %v", got)
+	}
+	if got := keys(AttributeQuery().WithAttributeKeyLike("%_thumb")); len(got) != 1 {
+		t.Errorf("Like %%_thumb: expected 1 key, got %v", got)
+	}
+}

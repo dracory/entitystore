@@ -79,6 +79,39 @@ type AttributeQueryInterface interface {
 	// WithAttributeKeys filters by multiple attribute keys (WHERE IN).
 	WithAttributeKeys(keys []string) AttributeQueryInterface
 
+	// HasAttributeKeyLike reports whether the LIKE pattern filter was set.
+	HasAttributeKeyLike() bool
+	// GetAttributeKeyLike returns the raw LIKE pattern filter.
+	GetAttributeKeyLike() string
+	// WithAttributeKeyLike filters attribute_key with a raw SQL LIKE
+	// pattern (% and _ are wildcards). Use the StartsWith/EndsWith/
+	// Contains variants for literal text — they escape wildcards.
+	WithAttributeKeyLike(pattern string) AttributeQueryInterface
+
+	// HasAttributeKeyStartsWith reports whether the key prefix filter was set.
+	HasAttributeKeyStartsWith() bool
+	// GetAttributeKeyStartsWith returns the key prefix filter.
+	GetAttributeKeyStartsWith() string
+	// WithAttributeKeyStartsWith filters attribute_key by a literal
+	// prefix (e.g. "img_").
+	WithAttributeKeyStartsWith(prefix string) AttributeQueryInterface
+
+	// HasAttributeKeyEndsWith reports whether the key suffix filter was set.
+	HasAttributeKeyEndsWith() bool
+	// GetAttributeKeyEndsWith returns the key suffix filter.
+	GetAttributeKeyEndsWith() string
+	// WithAttributeKeyEndsWith filters attribute_key by a literal
+	// suffix (e.g. "_json").
+	WithAttributeKeyEndsWith(suffix string) AttributeQueryInterface
+
+	// HasAttributeKeyContains reports whether the key substring filter was set.
+	HasAttributeKeyContains() bool
+	// GetAttributeKeyContains returns the key substring filter.
+	GetAttributeKeyContains() string
+	// WithAttributeKeyContains filters attribute_key by a literal
+	// substring.
+	WithAttributeKeyContains(substr string) AttributeQueryInterface
+
 	// HasLimit reports whether Limit was set.
 	HasLimit() bool
 	// GetLimit returns the result limit.
@@ -157,38 +190,46 @@ func AttributeQuery() AttributeQueryInterface {
 // == TYPE ===================================================================
 
 type attributeQueryImplementation struct {
-	id               string
-	hasID            bool
-	ids              []string
-	hasIDs           bool
-	entityID         string
-	hasEntityID      bool
-	entityType       string
-	hasEntityType    bool
-	entityHandle     string
-	hasEntityHandle  bool
-	attributeKey     string
-	hasAttributeKey  bool
-	attributeKeys    []string
-	hasAttributeKeys bool
-	limit            uint64
-	hasLimit         bool
-	offset           uint64
-	hasOffset        bool
-	sortBy           string
-	hasSortBy        bool
-	sortOrder        string
-	hasSortOrder     bool
-	countOnly        bool
-	hasCountOnly     bool
-	createdAtGte     string
-	hasCreatedAtGte  bool
-	createdAtLte     string
-	hasCreatedAtLte  bool
-	updatedAtGte     string
-	hasUpdatedAtGte  bool
-	updatedAtLte     string
-	hasUpdatedAtLte  bool
+	id                        string
+	hasID                     bool
+	ids                       []string
+	hasIDs                    bool
+	entityID                  string
+	hasEntityID               bool
+	entityType                string
+	hasEntityType             bool
+	entityHandle              string
+	hasEntityHandle           bool
+	attributeKey              string
+	hasAttributeKey           bool
+	attributeKeys             []string
+	hasAttributeKeys          bool
+	attributeKeyLike          string
+	hasAttributeKeyLike       bool
+	attributeKeyStartsWith    string
+	hasAttributeKeyStartsWith bool
+	attributeKeyEndsWith      string
+	hasAttributeKeyEndsWith   bool
+	attributeKeyContains      string
+	hasAttributeKeyContains   bool
+	limit                     uint64
+	hasLimit                  bool
+	offset                    uint64
+	hasOffset                 bool
+	sortBy                    string
+	hasSortBy                 bool
+	sortOrder                 string
+	hasSortOrder              bool
+	countOnly                 bool
+	hasCountOnly              bool
+	createdAtGte              string
+	hasCreatedAtGte           bool
+	createdAtLte              string
+	hasCreatedAtLte           bool
+	updatedAtGte              string
+	hasUpdatedAtGte           bool
+	updatedAtLte              string
+	hasUpdatedAtLte           bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -219,6 +260,18 @@ func (q *attributeQueryImplementation) Validate() error {
 	}
 	if q.hasAttributeKeys && len(q.attributeKeys) < 1 {
 		return errors.New("attribute query: attribute_keys cannot be empty array")
+	}
+	if q.hasAttributeKeyLike && q.attributeKeyLike == "" {
+		return errors.New("attribute query: attribute_key_like cannot be empty")
+	}
+	if q.hasAttributeKeyStartsWith && q.attributeKeyStartsWith == "" {
+		return errors.New("attribute query: attribute_key_starts_with cannot be empty")
+	}
+	if q.hasAttributeKeyEndsWith && q.attributeKeyEndsWith == "" {
+		return errors.New("attribute query: attribute_key_ends_with cannot be empty")
+	}
+	if q.hasAttributeKeyContains && q.attributeKeyContains == "" {
+		return errors.New("attribute query: attribute_key_contains cannot be empty")
 	}
 	if q.hasSortBy && q.sortBy == "" {
 		return errors.New("attribute query: sort_by cannot be empty")
@@ -287,6 +340,46 @@ func (q *attributeQueryImplementation) HasAttributeKeys() bool     { return q.ha
 func (q *attributeQueryImplementation) GetAttributeKeys() []string { return q.attributeKeys }
 func (q *attributeQueryImplementation) WithAttributeKeys(keys []string) AttributeQueryInterface {
 	q.attributeKeys, q.hasAttributeKeys = keys, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasAttributeKeyLike() bool   { return q.hasAttributeKeyLike }
+func (q *attributeQueryImplementation) GetAttributeKeyLike() string { return q.attributeKeyLike }
+func (q *attributeQueryImplementation) WithAttributeKeyLike(pattern string) AttributeQueryInterface {
+	q.attributeKeyLike, q.hasAttributeKeyLike = pattern, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasAttributeKeyStartsWith() bool {
+	return q.hasAttributeKeyStartsWith
+}
+func (q *attributeQueryImplementation) GetAttributeKeyStartsWith() string {
+	return q.attributeKeyStartsWith
+}
+func (q *attributeQueryImplementation) WithAttributeKeyStartsWith(prefix string) AttributeQueryInterface {
+	q.attributeKeyStartsWith, q.hasAttributeKeyStartsWith = prefix, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasAttributeKeyEndsWith() bool {
+	return q.hasAttributeKeyEndsWith
+}
+func (q *attributeQueryImplementation) GetAttributeKeyEndsWith() string {
+	return q.attributeKeyEndsWith
+}
+func (q *attributeQueryImplementation) WithAttributeKeyEndsWith(suffix string) AttributeQueryInterface {
+	q.attributeKeyEndsWith, q.hasAttributeKeyEndsWith = suffix, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasAttributeKeyContains() bool {
+	return q.hasAttributeKeyContains
+}
+func (q *attributeQueryImplementation) GetAttributeKeyContains() string {
+	return q.attributeKeyContains
+}
+func (q *attributeQueryImplementation) WithAttributeKeyContains(substr string) AttributeQueryInterface {
+	q.attributeKeyContains, q.hasAttributeKeyContains = substr, true
 	return q
 }
 
