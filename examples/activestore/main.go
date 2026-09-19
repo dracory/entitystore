@@ -43,11 +43,12 @@ func main() {
 	// Create a product entity with the fluent API.
 	// Attributes are staged until Save() creates the row.
 	fmt.Println("1. Creating a product entity...")
-	product := active.EntityCreate("product").
+	product, err := active.EntityCreate("product").
 		SetString("name", "Laptop").
 		SetFloat("price", 1299.99).
-		SetInt("stock", 50)
-	if _, err := product.Save(); err != nil {
+		SetInt("stock", 50).
+		Save()
+	if err != nil {
 		log.Fatalf("Failed to save product: %v", err)
 	}
 	fmt.Printf("   Created product with ID: %s\n", product.GetEntity().ID())

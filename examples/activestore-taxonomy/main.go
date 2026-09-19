@@ -59,8 +59,8 @@ func main() {
 
 	// Assign a product to the term — the entity's ID is implicit
 	fmt.Println("\n2. Assigning the term to a product...")
-	product := active.EntityCreate("product").SetString("name", "Laptop")
-	if _, err := product.Save(); err != nil {
+	product, err := active.EntityCreate("product").SetString("name", "Laptop").Save()
+	if err != nil {
 		log.Fatalf("Failed to save product: %v", err)
 	}
 	if err := product.AssignTerm(cat.GetTaxonomy().GetID(), laptops.GetTerm().GetID()); err != nil {
