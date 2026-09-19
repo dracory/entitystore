@@ -1,0 +1,67 @@
+# ActiveStore Example
+
+This example demonstrates the `activestore` package — an Active Record style wrapper around EntityStore that provides a fluent, object-oriented API.
+
+## What This Example Shows
+
+### 1. Store Initialization
+- Creating the core `entitystore` store with SQLite (in-memory)
+- Wrapping it once with `activestore.New(ctx, store)` — the single entry point
+
+### 2. Fluent Entity Creation
+- `active.New("product")` creates an unpersisted entity
+- `SetString`/`SetInt`/`SetFloat` chain and stage attribute writes
+- `Save()` creates the row and flushes staged attributes
+- Errors accumulate and surface via `Save()` or `Err()`
+
+### 3. Working with Persisted Entities
+- `FindByID` returns an `ActiveEntityInterface` that writes immediately
+- `GetString`/`GetAttributes` read attributes via the store
+- `GetEntity()` unwraps the underlying `EntityInterface` when needed
+
+### 4. Queries and Lifecycle
+- `List(query)`/`Count(query)` accept the same `EntityQueryInterface` as the core store
+- `Trash()`/`Delete()` work on the entity itself — no ID juggling
+
+## Running the Example
+
+```bash
+go run examples/activestore/main.go
+```
+
+## Running Tests
+
+```bash
+go test ./examples/activestore/... -v
+```
+
+## Code Highlights
+
+```go
+active, _ := activestore.New(ctx, store)
+
+// Fluent create — attributes staged until Save()
+err := active.New("product").
+    SetString("name", "Laptop").
+    SetFloat("price", 1299.99).
+    SetInt("stock", 50).
+    Save()
+
+// Fetch and update — writes apply immediately
+product, _ := active.FindByID(id)
+product.SetInt("stock", 45)
+product.Trash()
+```
+
+## Comparison with Core API
+
+```go
+// Core (Data Mapper)
+product := entitystore.NewEntity()
+product.SetType("product")
+_ = store.EntityCreate(ctx, product)
+_ = store.AttributeSetString(ctx, product.ID(), "name", "Laptop")
+
+// ActiveStore (Active Record)
+_ = active.New("product").SetString("name", "Laptop").Save()
+```
