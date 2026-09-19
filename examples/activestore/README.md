@@ -9,13 +9,13 @@ This example demonstrates the `activestore` package — an Active Record style w
 - Wrapping it once with `activestore.New(ctx, store)` — the single entry point
 
 ### 2. Fluent Entity Creation
-- `active.New("product")` creates an unpersisted entity
+- `active.EntityCreate("product")` creates an unpersisted entity
 - `SetString`/`SetInt`/`SetFloat` chain and stage attribute writes
 - `Save()` creates the row and flushes staged attributes
 - Errors accumulate and surface via `Save()` or `Err()`
 
 ### 3. Working with Persisted Entities
-- `FindByID` returns an `ActiveEntityInterface` that writes immediately
+- `EntityFindByID` returns an `ActiveEntityInterface` that writes immediately
 - `GetString`/`GetAttributes` read attributes via the store
 - `GetEntity()` unwraps the underlying `EntityInterface` when needed
 
@@ -41,14 +41,14 @@ go test ./examples/activestore/... -v
 active, _ := activestore.New(ctx, store)
 
 // Fluent create — attributes staged until Save()
-err := active.New("product").
+err := active.EntityCreate("product").
     SetString("name", "Laptop").
     SetFloat("price", 1299.99).
     SetInt("stock", 50).
     Save()
 
 // Fetch and update — writes apply immediately
-product, _ := active.FindByID(id)
+product, _ := active.EntityFindByID(id)
 product.SetInt("stock", 45)
 product.Trash()
 ```
@@ -63,5 +63,5 @@ _ = store.EntityCreate(ctx, product)
 _ = store.AttributeSetString(ctx, product.ID(), "name", "Laptop")
 
 // ActiveStore (Active Record)
-_ = active.New("product").SetString("name", "Laptop").Save()
+_ = active.EntityCreate("product").SetString("name", "Laptop").Save()
 ```

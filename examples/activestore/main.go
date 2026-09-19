@@ -43,7 +43,7 @@ func main() {
 	// Create a product entity with the fluent API.
 	// Attributes are staged until Save() creates the row.
 	fmt.Println("1. Creating a product entity...")
-	product := active.New("product").
+	product := active.EntityCreate("product").
 		SetString("name", "Laptop").
 		SetFloat("price", 1299.99).
 		SetInt("stock", 50)
@@ -62,7 +62,7 @@ func main() {
 	// Find an existing entity — writes on persisted entities
 	// go to the store immediately.
 	fmt.Println("\n2. Finding and updating the product...")
-	found, err := active.FindByID(product.GetEntity().ID())
+	found, err := active.EntityFindByID(product.GetEntity().ID())
 	if err != nil {
 		log.Fatalf("Failed to find product: %v", err)
 	}
@@ -74,11 +74,11 @@ func main() {
 
 	// List and count entities by type
 	fmt.Println("\n3. Listing products...")
-	products, err := active.List(entitystore.EntityQuery().WithEntityType("product"))
+	products, err := active.EntityList(entitystore.EntityQuery().WithEntityType("product"))
 	if err != nil {
 		log.Fatalf("Failed to list products: %v", err)
 	}
-	count, _ := active.Count(entitystore.EntityQuery().WithEntityType("product"))
+	count, _ := active.EntityCount(entitystore.EntityQuery().WithEntityType("product"))
 	fmt.Printf("   Found %d product(s):\n", count)
 	for _, p := range products {
 		n, _, _ := p.GetString("name")

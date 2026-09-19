@@ -45,7 +45,7 @@ func TestNewEntity_FluentSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	product := active.New("product").
+	product := active.EntityCreate("product").
 		SetString("name", "Laptop").
 		SetFloat("price", 1299.99).
 		SetInt("stock", 50)
@@ -60,7 +60,7 @@ func TestNewEntity_FluentSave(t *testing.T) {
 		t.Fatalf("expected name=Laptop, got %q exists=%v err=%v", name, exists, err)
 	}
 
-	found, err := active.FindByID(id)
+	found, err := active.EntityFindByID(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestFindByID_AndImmediateWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	product, err := active.FindByID(entity.ID())
+	product, err := active.EntityFindByID(entity.ID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,18 +108,18 @@ func TestListAndCount(t *testing.T) {
 	}
 
 	for range 3 {
-		if err := active.New("tag").Save(); err != nil {
+		if err := active.EntityCreate("tag").Save(); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	query := entitystore.EntityQuery().WithEntityType("tag")
-	count, err := active.Count(query)
+	count, err := active.EntityCount(query)
 	if err != nil || count != 3 {
 		t.Fatalf("expected count=3, got %v err=%v", count, err)
 	}
 
-	list, err := active.List(query)
+	list, err := active.EntityList(query)
 	if err != nil || len(list) != 3 {
 		t.Fatalf("expected 3 items, got %v err=%v", len(list), err)
 	}
@@ -133,7 +133,7 @@ func TestTrashAndDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	product := active.New("product")
+	product := active.EntityCreate("product")
 	if err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ func TestTrashAndDelete(t *testing.T) {
 	}
 	_ = id
 
-	other := active.New("product")
+	other := active.EntityCreate("product")
 	if err := other.Save(); err != nil {
 		t.Fatal(err)
 	}
@@ -163,14 +163,14 @@ func TestPrefetch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	product := active.New("product").
+	product := active.EntityCreate("product").
 		SetString("name", "Laptop").
 		SetInt("stock", 50)
 	if err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := active.FindByID(product.GetEntity().ID())
+	found, err := active.EntityFindByID(product.GetEntity().ID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +209,7 @@ func TestWrapEntity_Nil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := active.WrapEntity(nil); err == nil {
+	if _, err := active.EntityWrap(nil); err == nil {
 		t.Fatal("expected error for nil entity")
 	}
 }

@@ -14,13 +14,13 @@ import (
 // ActiveStoreInterface is a store-aware facade that returns
 // ActiveEntityInterface results.
 type ActiveStoreInterface interface {
-	New(entityType string) ActiveEntityInterface
-	FindByID(entityID string) (ActiveEntityInterface, error)
-	List(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error)
-	Count(query entitystore.EntityQueryInterface) (int64, error)
-	Trash(entityID string) (bool, error)
-	Delete(entityID string) (bool, error)
-	WrapEntity(entity entitystore.EntityInterface) (ActiveEntityInterface, error)
+	EntityCreate(entityType string) ActiveEntityInterface
+	EntityFindByID(entityID string) (ActiveEntityInterface, error)
+	EntityList(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error)
+	EntityCount(query entitystore.EntityQueryInterface) (int64, error)
+	EntityTrash(entityID string) (bool, error)
+	EntityDelete(entityID string) (bool, error)
+	EntityWrap(entity entitystore.EntityInterface) (ActiveEntityInterface, error)
 	GetStore() entitystore.StoreInterface
 }
 
@@ -39,7 +39,10 @@ func New(ctx context.Context, store entitystore.StoreInterface) (ActiveStoreInte
 	return &activeStoreImplementation{ctx: ctx, store: store}, nil
 }
 
-func (s *activeStoreImplementation) New(entityType string) ActiveEntityInterface {
+// EntityCreate returns a new staged entity — the row is not inserted
+// until Save() is called on it (unlike store.EntityCreate which
+// persists immediately).
+func (s *activeStoreImplementation) EntityCreate(entityType string) ActiveEntityInterface {
 	entity := entitystore.NewEntity()
 	entity.SetType(entityType)
 	return &activeEntityImplementation{
@@ -51,7 +54,7 @@ func (s *activeStoreImplementation) New(entityType string) ActiveEntityInterface
 	}
 }
 
-func (s *activeStoreImplementation) FindByID(entityID string) (ActiveEntityInterface, error) {
+func (s *activeStoreImplementation) EntityFindByID(entityID string) (ActiveEntityInterface, error) {
 	ent, err := s.store.EntityFindByID(s.ctx, entityID)
 	if err != nil {
 		return nil, err
@@ -59,7 +62,7 @@ func (s *activeStoreImplementation) FindByID(entityID string) (ActiveEntityInter
 	return newActiveEntity(s.ctx, s.store, ent)
 }
 
-func (s *activeStoreImplementation) List(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error) {
+func (s *activeStoreImplementation) EntityList(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error) {
 	entities, err := s.store.EntityList(s.ctx, query)
 	if err != nil {
 		return nil, err
@@ -75,19 +78,19 @@ func (s *activeStoreImplementation) List(query entitystore.EntityQueryInterface)
 	return active, nil
 }
 
-func (s *activeStoreImplementation) Count(query entitystore.EntityQueryInterface) (int64, error) {
+func (s *activeStoreImplementation) EntityCount(query entitystore.EntityQueryInterface) (int64, error) {
 	return s.store.EntityCount(s.ctx, query)
 }
 
-func (s *activeStoreImplementation) Trash(entityID string) (bool, error) {
+func (s *activeStoreImplementation) EntityTrash(entityID string) (bool, error) {
 	return s.store.EntityTrash(s.ctx, entityID)
 }
 
-func (s *activeStoreImplementation) Delete(entityID string) (bool, error) {
+func (s *activeStoreImplementation) EntityDelete(entityID string) (bool, error) {
 	return s.store.EntityDelete(s.ctx, entityID)
 }
 
-func (s *activeStoreImplementation) WrapEntity(entity entitystore.EntityInterface) (ActiveEntityInterface, error) {
+func (s *activeStoreImplementation) EntityWrap(entity entitystore.EntityInterface) (ActiveEntityInterface, error) {
 	return newActiveEntity(s.ctx, s.store, entity)
 }
 

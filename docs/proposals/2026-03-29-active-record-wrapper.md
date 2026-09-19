@@ -48,6 +48,17 @@ type ActiveEntityInterface interface {
 	Delete() (bool, error)
 	Err() error
 	GetEntity() entitystore.EntityInterface
+
+	// Relationships (requires RelationshipsEnabled)
+	RelateTo(relatedEntityID, relationshipType string) error
+	RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error
+	Unrelate(relatedEntityID, relationshipType string) error
+	Related(relationshipType string) ([]ActiveEntityInterface, error)
+
+	// Taxonomies (requires TaxonomiesEnabled)
+	AssignTerm(taxonomyID, termID string) error
+	RemoveTerm(taxonomyID, termID string) error
+	Terms(taxonomyID string) ([]entitystore.EntityTaxonomyInterface, error)
 }
 
 // activeEntityImplementation is the concrete wrapper.
@@ -81,14 +92,23 @@ For discoverability and a single entry point, the package can also wrap the stor
 ```go
 // ActiveStoreInterface is a store-aware facade that returns ActiveEntityInterface results.
 type ActiveStoreInterface interface {
-	New(entityType string) ActiveEntityInterface
-	FindByID(entityID string) (ActiveEntityInterface, error)
-	List(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error)
-	Count(query entitystore.EntityQueryInterface) (int64, error)
-	Trash(entityID string) (bool, error)
-	Delete(entityID string) (bool, error)
-	WrapEntity(entity entitystore.EntityInterface) (ActiveEntityInterface, error)
+	EntityCreate(entityType string) ActiveEntityInterface
+	EntityFindByID(entityID string) (ActiveEntityInterface, error)
+	EntityList(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error)
+	EntityCount(query entitystore.EntityQueryInterface) (int64, error)
+	EntityTrash(entityID string) (bool, error)
+	EntityDelete(entityID string) (bool, error)
+	EntityWrap(entity entitystore.EntityInterface) (ActiveEntityInterface, error)
 	GetStore() entitystore.StoreInterface
+
+	// Relationships (requires RelationshipsEnabled)
+	Relationships(query entitystore.RelationshipQueryInterface) ([]entitystore.RelationshipInterface, error)
+
+	// Taxonomies (requires TaxonomiesEnabled)
+	TaxonomyCreate(options entitystore.TaxonomyOptions) (entitystore.TaxonomyInterface, error)
+	TaxonomyFindBySlug(slug string) (entitystore.TaxonomyInterface, error)
+	TermCreate(options entitystore.TaxonomyTermOptions) (entitystore.TaxonomyTermInterface, error)
+	TermFindBySlug(taxonomyID, slug string) (entitystore.TaxonomyTermInterface, error)
 }
 
 // activeStoreImplementation is the concrete store wrapper.
@@ -106,14 +126,14 @@ func New(ctx context.Context, store entitystore.StoreInterface) (ActiveStoreInte
 	return &activeStoreImplementation{ctx: ctx, store: store}, nil
 }
 
-func (s *activeStoreImplementation) New(entityType string) ActiveEntityInterface {
+func (s *activeStoreImplementation) EntityCreate(entityType string) ActiveEntityInterface {
 	entity := entitystore.NewEntity() // Assuming NewEntity exists
 	entity.SetType(entityType)
 	wrapped, _ := newActiveEntity(s.ctx, s.store, entity) // entity is never nil
 	return wrapped
 }
 
-func (s *activeStoreImplementation) FindByID(entityID string) (ActiveEntityInterface, error) {
+func (s *activeStoreImplementation) EntityFindByID(entityID string) (ActiveEntityInterface, error) {
 	ent, err := s.store.EntityFindByID(s.ctx, entityID)
 	if err != nil {
 		return nil, err
@@ -121,7 +141,7 @@ func (s *activeStoreImplementation) FindByID(entityID string) (ActiveEntityInter
 	return newActiveEntity(s.ctx, s.store, ent)
 }
 
-func (s *activeStoreImplementation) List(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error) {
+func (s *activeStoreImplementation) EntityList(query entitystore.EntityQueryInterface) ([]ActiveEntityInterface, error) {
 	entities, err := s.store.EntityList(s.ctx, query)
 	if err != nil {
 		return nil, err
@@ -137,19 +157,19 @@ func (s *activeStoreImplementation) List(query entitystore.EntityQueryInterface)
 	return active, nil
 }
 
-func (s *activeStoreImplementation) Count(query entitystore.EntityQueryInterface) (int64, error) {
+func (s *activeStoreImplementation) EntityCount(query entitystore.EntityQueryInterface) (int64, error) {
 	return s.store.EntityCount(s.ctx, query)
 }
 
-func (s *activeStoreImplementation) Trash(entityID string) (bool, error) {
+func (s *activeStoreImplementation) EntityTrash(entityID string) (bool, error) {
 	return s.store.EntityTrash(s.ctx, entityID)
 }
 
-func (s *activeStoreImplementation) Delete(entityID string) (bool, error) {
+func (s *activeStoreImplementation) EntityDelete(entityID string) (bool, error) {
 	return s.store.EntityDelete(s.ctx, entityID)
 }
 
-func (s *activeStoreImplementation) WrapEntity(entity entitystore.EntityInterface) (ActiveEntityInterface, error) {
+func (s *activeStoreImplementation) EntityWrap(entity entitystore.EntityInterface) (ActiveEntityInterface, error) {
 	return newActiveEntity(s.ctx, s.store, entity)
 }
 
@@ -235,6 +255,62 @@ func (e *activeEntityImplementation) GetAttributes() ([]entitystore.AttributeInt
 }
 ```
 
+### Relationships Sugar
+
+The core API forces a three-step dance: build `RelationshipOptions` with two raw IDs, later list `RelationshipInterface` rows, then fetch each related entity by ID. Entity-centric methods collapse this:
+
+```go
+// On ActiveEntityInterface — the entity's own ID is implicit:
+RelateTo(relatedEntityID, relationshipType string) error
+RelateToOrdered(relatedEntityID, relationshipType string, sequence int) error
+Unrelate(relatedEntityID, relationshipType string) error
+Related(relationshipType string) ([]ActiveEntityInterface, error)
+```
+
+`Related(type)` is the main win — one call performs `RelationshipList` + `EntityFindByID` per row + wraps each result into `ActiveEntityInterface`.
+
+```go
+// On ActiveStoreInterface — raw relationship access when needed:
+Relationships(query entitystore.RelationshipQueryInterface) ([]entitystore.RelationshipInterface, error)
+```
+
+```go
+post.RelateTo(authorID, "written_by")
+post.RelateToOrdered(tagID, "has_tag", 3)
+
+authors, _ := post.Related("written_by")   // hydrated, wrapped entities
+tags, _ := post.Related("has_tag")
+post.Unrelate(tagID, "has_tag")
+```
+
+### Taxonomy Sugar
+
+Taxonomies juggle three objects (taxonomy, term, assignment) and three IDs. Assignment/removal becomes entity-centric; vocabulary creation stays options-struct based:
+
+```go
+// On ActiveStoreInterface — vocabulary management:
+TaxonomyCreate(options entitystore.TaxonomyOptions) (entitystore.TaxonomyInterface, error)
+TaxonomyFindBySlug(slug string) (entitystore.TaxonomyInterface, error)
+TermCreate(options entitystore.TaxonomyTermOptions) (entitystore.TaxonomyTermInterface, error)
+TermFindBySlug(taxonomyID, slug string) (entitystore.TaxonomyTermInterface, error)
+
+// On ActiveEntityInterface — the entity's ID is implicit:
+AssignTerm(taxonomyID, termID string) error
+RemoveTerm(taxonomyID, termID string) error
+Terms(taxonomyID string) ([]entitystore.EntityTaxonomyInterface, error)
+```
+
+```go
+cat, _ := products.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
+term, _ := products.TermCreate(entitystore.TaxonomyTermOptions{TaxonomyID: cat.ID(), Name: "Laptops", Slug: "laptops"})
+
+product.AssignTerm(cat.ID(), term.ID())
+terms, _ := product.Terms(cat.ID())
+product.RemoveTerm(cat.ID(), term.ID())
+```
+
+Both features are opt-in at the core store level (`RelationshipsEnabled`, `TaxonomiesEnabled`); the wrappers delegate, so a disabled feature surfaces the store's own error naturally.
+
 ## Benefits
 
 1. **Zero Core Pollution:** The core `EntityInterface` and `StoreInterface` remain 100% clean, decoupled from one another, and easy to mock.
@@ -244,7 +320,7 @@ func (e *activeEntityImplementation) GetAttributes() ([]entitystore.AttributeInt
 
 ## Drawbacks & Considerations
 
-- **Staged Writes for New Entities:** Attributes on an unpersisted entity cannot be written to the store until the entity row exists. `New()` entities must stage attribute writes in memory and flush them inside `Save()` after `EntityCreate` succeeds. Entities obtained via `FindByID`/`WrapEntity`/`List` can write immediately.
+- **Staged Writes for New Entities:** Attributes on an unpersisted entity cannot be written to the store until the entity row exists. `EntityCreate()` entities must stage attribute writes in memory and flush them inside `Save()` after the row insert succeeds. Entities obtained via `EntityFindByID`/`EntityWrap`/`EntityList` can write immediately.
 - **Deferred Errors:** The fluent setters accumulate the first error instead of returning it (required for chaining). Developers must check `Save()` or `Err()` — a silent failure mode if they forget.
 - **Prefetch Staleness:** `Prefetch()` caches all attributes in memory so `GetString` avoids per-call DB round-trips. The cache is updated by the wrapper's own setters but goes stale if another process writes to the store directly; it is opt-in per entity.
 - **Package Discoverability:** Developers need to be aware that the `activestore` package exists; otherwise, they might complain the core API is too verbose.
@@ -270,13 +346,13 @@ _ = store.AttributeSetInt(ctx, product.ID(), "stock", 50)
 ctx := context.Background()
 products, _ := activestore.New(ctx, store)
 
-err := products.New("product").
+err := products.EntityCreate("product").
 	SetString("name", "Laptop").
 	SetFloat("price", 1299.99).
 	SetInt("stock", 50).
 	Save()
 
-existing, _ := products.FindByID(entityID)
+existing, _ := products.EntityFindByID(entityID)
 name, _, _ := existing.GetString("name")
 ```
 

@@ -38,7 +38,7 @@ func TestFluentCreate(t *testing.T) {
 	active, cleanup := setupTestActiveStore(t)
 	defer cleanup()
 
-	product := active.New("product").
+	product := active.EntityCreate("product").
 		SetString("name", "Laptop").
 		SetFloat("price", 1299.99).
 		SetInt("stock", 50)
@@ -60,12 +60,12 @@ func TestFindAndUpdate(t *testing.T) {
 	active, cleanup := setupTestActiveStore(t)
 	defer cleanup()
 
-	created := active.New("product").SetString("name", "Phone")
+	created := active.EntityCreate("product").SetString("name", "Phone")
 	if err := created.Save(); err != nil {
 		t.Fatalf("Failed to save: %v", err)
 	}
 
-	found, err := active.FindByID(created.GetEntity().ID())
+	found, err := active.EntityFindByID(created.GetEntity().ID())
 	if err != nil {
 		t.Fatalf("Failed to find: %v", err)
 	}
@@ -86,13 +86,13 @@ func TestListCountTrash(t *testing.T) {
 	defer cleanup()
 
 	for range 2 {
-		if err := active.New("tag").Save(); err != nil {
+		if err := active.EntityCreate("tag").Save(); err != nil {
 			t.Fatalf("Failed to save: %v", err)
 		}
 	}
 
 	query := entitystore.EntityQuery().WithEntityType("tag")
-	list, err := active.List(query)
+	list, err := active.EntityList(query)
 	if err != nil || len(list) != 2 {
 		t.Fatalf("Expected 2 tags, got %d err=%v", len(list), err)
 	}
@@ -102,7 +102,7 @@ func TestListCountTrash(t *testing.T) {
 		t.Fatalf("Expected trashed=true, got %v err=%v", trashed, err)
 	}
 
-	count, _ := active.Count(query)
+	count, _ := active.EntityCount(query)
 	if count != 1 {
 		t.Errorf("Expected count 1 after trash, got %d", count)
 	}
