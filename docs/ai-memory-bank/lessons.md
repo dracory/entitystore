@@ -1,6 +1,9 @@
-# Taxonomy Implementation Lessons Learned
+# Lessons Learned
 
-**Date:** 2026-03-28
+Implementation lessons recorded by AI agents. See `README.md` in this folder for how to use and extend this file.
+
+## Taxonomy Implementation (2026-03-28)
+
 **Status:** Completed and Documented
 
 ## Implementation Summary
@@ -245,3 +248,47 @@ Every operation validates:
 5. **User-Friendly Errors** - Validate constraints in code for better error messages
 6. **Optional Features** - Use feature flags for backward compatibility
 7. **Follow Patterns** - Consistency across codebase makes it maintainable
+
+---
+
+## Fluent Query Refactor (branch feat/fluent-attribute-query)
+
+### 1. Query Interfaces, Not Options Structs
+
+**Problem:** `*QueryOptions` structs couldn't distinguish "field unset" from "field set to an invalid empty value", and every new filter required touching the struct plus every consumer.
+
+**Solution:** All list/count/trash-list methods take fluent query interfaces built by constructors (`EntityQuery()`, `AttributeQuery()`, ...). Each exposes `With*` chainable setters, `Get*` accessors, `Has*` presence flags, and `Validate()`; store methods reject nil queries and call `Validate()`.
+
+**Lesson:** Presence flags are the point — an empty query is valid, but `WithID("")` must fail validation. When adding a filter, add `With`/`Get`/`Has` + a `Validate()` rule, not a struct field.
+
+### 2. Shared Filter Helpers Prevent Count/List Drift
+
+**Problem:** List, Count, and TrashList each re-implemented the same filter chain, so filters added to one silently diverged from the others (the same class of bug as lesson 5 above).
+
+**Solution:** Each domain has one `apply<Domain>Filters(q orm.Query, query)` helper called by all three methods; cross-domain logic lives in `query_filters.go` (`applyTimeRange`, `escapeLike`, `applyLike`).
+
+**Lesson:** Never write per-method filter loops. A new filter goes in exactly one place — the shared helper.
+
+### 3. LIKE Wildcards Need Explicit ESCAPE
+
+**Problem:** Literal `StartsWith`/`EndsWith`/`Contains` filters broke when values contained `%` or `_`, and LIKE escape behavior differs across drivers (MySQL backslash, PostgreSQL standard, SQLite none).
+
+**Solution:** `escapeLike` escapes `\`, `%`, `_`; `applyLike` appends `ESCAPE '\'` explicitly. Raw-pattern filters (`WithAttributeKeyLike`) pass patterns through untouched.
+
+**Lesson:** Always pair escaped literals with an explicit `ESCAPE '\'` clause; never rely on driver defaults.
+
+### 4. Time Bounds as Strings
+
+**Problem:** Needed portable created/updated range filters.
+
+**Solution:** `WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte` take `"YYYY-MM-DD HH:MM:SS"` UTC strings and emit inclusive `>=`/`<=` — lexicographic string comparison works because the column format is fixed-width.
+
+**Lesson:** Lexicographic datetime comparison is safe here only because timestamps are stored in a fixed-width UTC format; document that invariant anywhere filters are described.
+
+### 5. Docs Drift Is the Real Cost of Breaking Changes
+
+**Problem:** After the API change, docs still showed `*QueryOptions`, nonexistent methods (`EntityTrashList`, `AttributeDeleteByEntityID`), wrong signatures (`EntityCreateWithType` without ctx), and fictional entity helpers (`entity.GetString`/`SetString`).
+
+**Solution:** Full docs sweep — updated signatures, converted all examples to fluent builders, corrected getter names (`GetID`/`GetKey`/`GetValue`), marked the stale proposal as historical, added `AGENTS.md` and this lessons file.
+
+**Lesson:** After a breaking API change, grep docs for the removed identifiers AND for fictional helpers that were never real — docs rot compounds. `docs/api-reference.md` must mirror `interfaces.go`.
