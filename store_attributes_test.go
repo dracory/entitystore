@@ -440,6 +440,80 @@ func TestStoreAttributesSetAtomicity(t *testing.T) {
 	}
 }
 
+// TestStoreAttributeListByKeys tests AttributeQueryOptions.AttributeKeys —
+// a single WHERE IN on attribute_key returning only the requested keys,
+// combined with the EntityType join.
+func TestStoreAttributeListByKeys(t *testing.T) {
+	db := InitDB("store_attr_keys_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "attr_keys_entity",
+		AttributeTableName: "attr_keys_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	entity, err := store.EntityCreateWithType(ctx, "character")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+	other, err := store.EntityCreateWithType(ctx, "order")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+
+	for k, v := range map[string]string{"name": "Ada", "title": "Countess", "system_prompt": "secret"} {
+		if err := store.AttributeSetString(ctx, entity.ID(), k, v); err != nil {
+			t.Fatal("AttributeSetString failed:", err)
+		}
+	}
+	if err := store.AttributeSetString(ctx, other.ID(), "name", "NotAda"); err != nil {
+		t.Fatal("AttributeSetString failed:", err)
+	}
+
+	// Only the two requested keys, only for the character entity type
+	list, err := store.AttributeList(ctx, AttributeQueryOptions{
+		EntityType:    "character",
+		AttributeKeys: []string{"name", "title"},
+	})
+	if err != nil {
+		t.Fatal("AttributeList failed:", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("Expected 2 attributes, got %d", len(list))
+	}
+	keys := map[string]string{}
+	for _, a := range list {
+		keys[a.GetKey()] = a.GetValue()
+	}
+	if keys["name"] != "Ada" {
+		t.Errorf("Expected name=Ada, got %q", keys["name"])
+	}
+	if keys["title"] != "Countess" {
+		t.Errorf("Expected title=Countess, got %q", keys["title"])
+	}
+	if _, ok := keys["system_prompt"]; ok {
+		t.Error("system_prompt should be excluded by AttributeKeys filter")
+	}
+
+	// AttributeKeys also applies to AttributeCount (shared filter builder)
+	count, err := store.AttributeCount(ctx, AttributeQueryOptions{
+		EntityType:    "character",
+		AttributeKeys: []string{"name", "title"},
+	})
+	if err != nil {
+		t.Fatal("AttributeCount failed:", err)
+	}
+	if count != 2 {
+		t.Fatalf("Expected count 2, got %d", count)
+	}
+}
+
 func TestStoreAttributeCount(t *testing.T) {
 	db := InitDB("attr_count_test")
 

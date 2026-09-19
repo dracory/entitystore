@@ -183,6 +183,14 @@ func (st *storeImplementation) applyAttributeFilters(q orm.Query, options Attrib
 		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
 	}
 
+	if len(options.AttributeKeys) > 0 {
+		keys := make([]any, len(options.AttributeKeys))
+		for i, k := range options.AttributeKeys {
+			keys[i] = k
+		}
+		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY, keys)
+	}
+
 	if options.EntityType != "" {
 		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
 	}

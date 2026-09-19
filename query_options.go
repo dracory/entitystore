@@ -16,17 +16,18 @@ type EntityQueryOptions struct {
 
 // AttributeQueryOptions provides filtering and pagination options for attribute queries
 type AttributeQueryOptions struct {
-	ID           string   // Filter by specific attribute ID
-	IDs          []string // Filter by multiple attribute IDs
-	EntityID     string   // Filter by associated entity ID
-	EntityType   string   // Filter by entity type (requires EntityHandle or join)
-	EntityHandle string   // Filter by entity handle (requires EntityType or join)
-	AttributeKey string   // Filter by attribute key/name
-	Limit        uint64   // Maximum number of results to return
-	Offset       uint64   // Number of results to skip
-	SortBy       string   // Column to sort by (default: id)
-	SortOrder    string   // Sort direction: "asc" or "desc"
-	CountOnly    bool     // Return only count, not results
+	ID            string   // Filter by specific attribute ID
+	IDs           []string // Filter by multiple attribute IDs
+	EntityID      string   // Filter by associated entity ID
+	EntityType    string   // Filter by entity type (requires EntityHandle or join)
+	EntityHandle  string   // Filter by entity handle (requires EntityType or join)
+	AttributeKey  string   // Filter by attribute key/name
+	AttributeKeys []string // Filter by multiple attribute keys/names
+	Limit         uint64   // Maximum number of results to return
+	Offset        uint64   // Number of results to skip
+	SortBy        string   // Column to sort by (default: id)
+	SortOrder     string   // Sort direction: "asc" or "desc"
+	CountOnly     bool     // Return only count, not results
 }
 
 // RelationshipQueryOptions provides filtering and pagination options for relationship queries
