@@ -17,12 +17,10 @@ func setupTestActiveStore(t *testing.T) (activestore.ActiveStoreInterface, func(
 	}
 
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
-		DB:                   db,
-		EntityTableName:      "test_entities",
-		AttributeTableName:   "test_attributes",
-		AutomigrateEnabled:   true,
-		RelationshipsEnabled: true,
-		TaxonomiesEnabled:    true,
+		DB:                 db,
+		EntityTableName:    "test_entities",
+		AttributeTableName: "test_attributes",
+		AutomigrateEnabled: true,
 	})
 	if err != nil {
 		t.Fatalf("Failed to create store: %v", err)
@@ -107,44 +105,5 @@ func TestListCountTrash(t *testing.T) {
 	count, _ := active.EntityCount(query)
 	if count != 1 {
 		t.Errorf("Expected count 1 after trash, got %d", count)
-	}
-}
-
-func TestRelationshipsAndTaxonomy(t *testing.T) {
-	active, cleanup := setupTestActiveStore(t)
-	defer cleanup()
-
-	post := active.EntityCreate("post")
-	author := active.EntityCreate("author").SetString("name", "Ada")
-	for _, e := range []activestore.ActiveEntityInterface{post, author} {
-		if err := e.Save(); err != nil {
-			t.Fatalf("Failed to save: %v", err)
-		}
-	}
-
-	if err := post.RelateTo(author.GetEntity().ID(), "written_by"); err != nil {
-		t.Fatalf("Failed to relate: %v", err)
-	}
-	authors, err := post.Related("written_by")
-	if err != nil || len(authors) != 1 {
-		t.Fatalf("Expected 1 author, got %d err=%v", len(authors), err)
-	}
-
-	cat, err := active.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
-	if err != nil {
-		t.Fatalf("Failed to create taxonomy: %v", err)
-	}
-	term, err := active.TermCreate(entitystore.TaxonomyTermOptions{
-		TaxonomyID: cat.GetTaxonomy().GetID(), Name: "Go", Slug: "go",
-	})
-	if err != nil {
-		t.Fatalf("Failed to create term: %v", err)
-	}
-	if err := post.AssignTerm(cat.GetTaxonomy().GetID(), term.GetTerm().GetID()); err != nil {
-		t.Fatalf("Failed to assign term: %v", err)
-	}
-	tagged, err := term.Entities()
-	if err != nil || len(tagged) != 1 {
-		t.Fatalf("Expected 1 tagged entity, got %d err=%v", len(tagged), err)
 	}
 }

@@ -23,14 +23,10 @@ This example demonstrates the `activestore` package — an Active Record style w
 - `EntityList(query)`/`EntityCount(query)` accept the same `EntityQueryInterface` as the core store
 - `Trash()`/`Delete()` work on the entity itself — no ID juggling
 
-### 5. Relationships (requires `RelationshipsEnabled`)
-- `RelateTo(id, type)`/`Unrelate(id, type)` create and remove links
-- `Related(type)` returns hydrated `ActiveEntityInterface` values — no manual `RelationshipList` + `EntityFindByID` loop
+## More Examples
 
-### 6. Taxonomies (requires `TaxonomiesEnabled`)
-- `TaxonomyCreate`/`TermCreate` return active wrappers with navigation methods
-- `AssignTerm`/`RemoveTerm`/`Terms` work on the entity — no ID juggling
-- `term.Entities()` lists everything tagged with that term
+- [`relationships/`](relationships/) — `RelateTo`/`Related`/`Unrelate` (requires `RelationshipsEnabled`)
+- [`taxonomy/`](taxonomy/) — `TaxonomyCreate`/`TermCreate`/`AssignTerm`/`term.Entities()` (requires `TaxonomiesEnabled`)
 
 ## Running the Example
 
@@ -60,16 +56,6 @@ err := active.EntityCreate("product").
 product, _ := active.EntityFindByID(id)
 product.SetInt("stock", 45)
 product.Trash()
-
-// Relationships — hydrated in one call
-_ = post.RelateTo(author.GetEntity().ID(), "written_by")
-authors, _ := post.Related("written_by")
-
-// Taxonomies — navigate instead of querying
-cat, _ := active.TaxonomyCreate(entitystore.TaxonomyOptions{Slug: "categories"})
-term, _ := active.TermCreate(entitystore.TaxonomyTermOptions{TaxonomyID: cat.GetTaxonomy().GetID(), Slug: "go"})
-_ = post.AssignTerm(cat.GetTaxonomy().GetID(), term.GetTerm().GetID())
-posts, _ := term.Entities()
 ```
 
 ## Comparison with Core API
