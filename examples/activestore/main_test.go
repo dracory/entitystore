@@ -43,7 +43,7 @@ func TestFluentCreate(t *testing.T) {
 		SetFloat("price", 1299.99).
 		SetInt("stock", 50)
 
-	if err := product.Save(); err != nil {
+	if _, err := product.Save(); err != nil {
 		t.Fatalf("Failed to save product: %v", err)
 	}
 
@@ -61,7 +61,7 @@ func TestFindAndUpdate(t *testing.T) {
 	defer cleanup()
 
 	created := active.EntityCreate("product").SetString("name", "Phone")
-	if err := created.Save(); err != nil {
+	if _, err := created.Save(); err != nil {
 		t.Fatalf("Failed to save: %v", err)
 	}
 
@@ -86,7 +86,7 @@ func TestListCountTrash(t *testing.T) {
 	defer cleanup()
 
 	for range 2 {
-		if err := active.EntityCreate("tag").Save(); err != nil {
+		if _, err := active.EntityCreate("tag").Save(); err != nil {
 			t.Fatalf("Failed to save: %v", err)
 		}
 	}

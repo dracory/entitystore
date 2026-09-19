@@ -66,7 +66,7 @@ func TestAssignTermAndEntities(t *testing.T) {
 	})
 
 	product := active.EntityCreate("product")
-	if err := product.Save(); err != nil {
+	if _, err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
 	if err := product.AssignTerm(cat.GetTaxonomy().GetID(), laptops.GetTerm().GetID()); err != nil {

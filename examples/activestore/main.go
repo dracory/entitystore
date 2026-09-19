@@ -47,7 +47,7 @@ func main() {
 		SetString("name", "Laptop").
 		SetFloat("price", 1299.99).
 		SetInt("stock", 50)
-	if err := product.Save(); err != nil {
+	if _, err := product.Save(); err != nil {
 		log.Fatalf("Failed to save product: %v", err)
 	}
 	fmt.Printf("   Created product with ID: %s\n", product.GetEntity().ID())

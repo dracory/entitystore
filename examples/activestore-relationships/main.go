@@ -43,7 +43,7 @@ func main() {
 	post := active.EntityCreate("post").SetString("title", "Hello World")
 	author := active.EntityCreate("author").SetString("name", "Ada")
 	for _, e := range []activestore.ActiveEntityInterface{post, author} {
-		if err := e.Save(); err != nil {
+		if _, err := e.Save(); err != nil {
 			log.Fatalf("Failed to save: %v", err)
 		}
 	}

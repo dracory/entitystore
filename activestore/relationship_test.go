@@ -40,7 +40,7 @@ func TestRelateToAndRelated(t *testing.T) {
 	author := active.EntityCreate("author")
 	tag := active.EntityCreate("tag")
 	for _, e := range []ActiveEntityInterface{post, author, tag} {
-		if err := e.Save(); err != nil {
+		if _, err := e.Save(); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -79,7 +79,7 @@ func TestRelationshipCRUD(t *testing.T) {
 	a := active.EntityCreate("post")
 	b := active.EntityCreate("author")
 	for _, e := range []ActiveEntityInterface{a, b} {
-		if err := e.Save(); err != nil {
+		if _, err := e.Save(); err != nil {
 			t.Fatal(err)
 		}
 	}

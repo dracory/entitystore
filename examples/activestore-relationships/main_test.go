@@ -36,7 +36,7 @@ func TestRelateAndUnrelate(t *testing.T) {
 	post := active.EntityCreate("post")
 	author := active.EntityCreate("author")
 	for _, e := range []activestore.ActiveEntityInterface{post, author} {
-		if err := e.Save(); err != nil {
+		if _, err := e.Save(); err != nil {
 			t.Fatalf("Failed to save: %v", err)
 		}
 	}

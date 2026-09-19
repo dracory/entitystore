@@ -50,7 +50,7 @@ func TestNewEntity_FluentSave(t *testing.T) {
 		SetFloat("price", 1299.99).
 		SetInt("stock", 50)
 
-	if err := product.Save(); err != nil {
+	if _, err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,7 +108,7 @@ func TestListAndCount(t *testing.T) {
 	}
 
 	for range 3 {
-		if err := active.EntityCreate("tag").Save(); err != nil {
+		if _, err := active.EntityCreate("tag").Save(); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -134,7 +134,7 @@ func TestTrashAndDelete(t *testing.T) {
 	}
 
 	product := active.EntityCreate("product")
-	if err := product.Save(); err != nil {
+	if _, err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
 	id := product.GetEntity().ID()
@@ -146,7 +146,7 @@ func TestTrashAndDelete(t *testing.T) {
 	_ = id
 
 	other := active.EntityCreate("product")
-	if err := other.Save(); err != nil {
+	if _, err := other.Save(); err != nil {
 		t.Fatal(err)
 	}
 	deleted, err := other.Delete()
@@ -166,7 +166,7 @@ func TestPrefetch(t *testing.T) {
 	product := active.EntityCreate("product").
 		SetString("name", "Laptop").
 		SetInt("stock", 50)
-	if err := product.Save(); err != nil {
+	if _, err := product.Save(); err != nil {
 		t.Fatal(err)
 	}
 

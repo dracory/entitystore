@@ -68,5 +68,5 @@ _ = store.EntityCreate(ctx, product)
 _ = store.AttributeSetString(ctx, product.ID(), "name", "Laptop")
 
 // ActiveStore (Active Record)
-_ = active.EntityCreate("product").SetString("name", "Laptop").Save()
+_, _ = active.EntityCreate("product").SetString("name", "Laptop").Save()
 ```

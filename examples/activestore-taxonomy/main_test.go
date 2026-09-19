@@ -45,7 +45,7 @@ func TestAssignAndNavigate(t *testing.T) {
 	}
 
 	post := active.EntityCreate("post")
-	if err := post.Save(); err != nil {
+	if _, err := post.Save(); err != nil {
 		t.Fatalf("Failed to save: %v", err)
 	}
 	if err := post.AssignTerm(cat.GetTaxonomy().GetID(), term.GetTerm().GetID()); err != nil {

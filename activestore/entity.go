@@ -18,7 +18,7 @@ type ActiveEntityInterface interface {
 	GetString(key string) (string, bool, error)
 	GetAttributes() ([]entitystore.AttributeInterface, error)
 	Prefetch() error
-	Save() error
+	Save() (ActiveEntityInterface, error)
 	Trash() (bool, error)
 	Delete() (bool, error)
 	Err() error
@@ -154,25 +154,27 @@ func (e *activeEntityImplementation) Err() error {
 
 // Save persists the underlying entity to the store, then flushes any
 // attribute writes that were staged while the entity was unpersisted.
-func (e *activeEntityImplementation) Save() error {
+// It returns the entity itself so it can be the last call in a fluent
+// chain: product, err := active.EntityCreate("x").SetString(...).Save()
+func (e *activeEntityImplementation) Save() (ActiveEntityInterface, error) {
 	if e.err != nil {
-		return e.err
+		return e, e.err
 	}
 	if e.persisted {
-		return e.store.EntityUpdate(e.ctx, e.entity)
+		return e, e.store.EntityUpdate(e.ctx, e.entity)
 	}
 	if err := e.store.EntityCreate(e.ctx, e.entity); err != nil {
-		return err
+		return e, err
 	}
 	e.persisted = true
 	for _, op := range e.pendingOps {
 		if err := op(e.ctx, e.store, e.entity.ID()); err != nil {
 			e.err = err
-			return err
+			return e, err
 		}
 	}
 	e.pendingOps = nil
-	return nil
+	return e, nil
 }
 
 // Trash moves the entity to the trash table.
