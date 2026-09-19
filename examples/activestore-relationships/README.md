@@ -7,8 +7,8 @@ Requires `RelationshipsEnabled: true` in `NewStoreOptions`.
 ## Running
 
 ```bash
-go run examples/activestore/relationships/main.go
-go test ./examples/activestore/relationships/... -v
+go run examples/activestore-relationships/main.go
+go test ./examples/activestore-relationships/... -v
 ```
 
 ## Code Highlights

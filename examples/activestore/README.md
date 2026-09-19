@@ -25,8 +25,8 @@ This example demonstrates the `activestore` package — an Active Record style w
 
 ## More Examples
 
-- [`relationships/`](relationships/) — `RelateTo`/`Related`/`Unrelate` (requires `RelationshipsEnabled`)
-- [`taxonomy/`](taxonomy/) — `TaxonomyCreate`/`TermCreate`/`AssignTerm`/`term.Entities()` (requires `TaxonomiesEnabled`)
+- [`activestore-relationships/`](../activestore-relationships/) — `RelateTo`/`Related`/`Unrelate` (requires `RelationshipsEnabled`)
+- [`activestore-taxonomy/`](../activestore-taxonomy/) — `TaxonomyCreate`/`TermCreate`/`AssignTerm`/`term.Entities()` (requires `TaxonomiesEnabled`)
 
 ## Running the Example
 

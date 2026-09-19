@@ -7,8 +7,8 @@ Requires `TaxonomiesEnabled: true` in `NewStoreOptions`.
 ## Running
 
 ```bash
-go run examples/activestore/taxonomy/main.go
-go test ./examples/activestore/taxonomy/... -v
+go run examples/activestore-taxonomy/main.go
+go test ./examples/activestore-taxonomy/... -v
 ```
 
 ## Code Highlights
