@@ -535,6 +535,11 @@ type StoreInterface interface {
 	// AttributeCount counts attributes matching the given fluent query;
 	// returns an error if the query is nil or fails validation
 	AttributeCount(ctx context.Context, query AttributeQueryInterface) (int64, error)
+	// AttributeGroupBy groups attributes by attribute_value and applies
+	// the query's aggregate function (AGGREGATE_COUNT default), returning
+	// map[attribute_value]result. Result is int64 for count, float64 for
+	// sum, string for min/max, and the value itself for distinct.
+	AttributeGroupBy(ctx context.Context, query AttributeQueryInterface) (map[string]any, error)
 	// AttributesSet creates or updates multiple attributes for an entity at once
 	AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error
 	// AttributeSetFloat stores a float64 value as an attribute

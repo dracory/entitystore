@@ -178,7 +178,33 @@ type AttributeQueryInterface interface {
 	// WithUpdatedAtLte filters to rows updated at or before the given UTC
 	// datetime ("YYYY-MM-DD HH:MM:SS").
 	WithUpdatedAtLte(updatedAtLte string) AttributeQueryInterface
+
+	// HasAggregate reports whether an aggregate function was set.
+	HasAggregate() bool
+	// GetAggregate returns the aggregate function.
+	GetAggregate() AggregateFunc
+	// WithAggregate groups rows by attribute_value and applies the
+	// aggregate function. Used by AttributeGroupBy; ignored by
+	// AttributeList/AttributeCount.
+	WithAggregate(fn AggregateFunc) AttributeQueryInterface
 }
+
+// AggregateFunc names a SQL aggregate applied to grouped
+// attribute_values by AttributeGroupBy.
+type AggregateFunc string
+
+const (
+	// AGGREGATE_COUNT counts rows per attribute_value.
+	AGGREGATE_COUNT AggregateFunc = "count"
+	// AGGREGATE_SUM sums attribute_values per group (numeric cast).
+	AGGREGATE_SUM AggregateFunc = "sum"
+	// AGGREGATE_MIN returns the smallest attribute_value per group.
+	AGGREGATE_MIN AggregateFunc = "min"
+	// AGGREGATE_MAX returns the largest attribute_value per group.
+	AGGREGATE_MAX AggregateFunc = "max"
+	// AGGREGATE_DISTINCT returns distinct attribute_values (no value).
+	AGGREGATE_DISTINCT AggregateFunc = "distinct"
+)
 
 // == CONSTRUCTOR ============================================================
 
@@ -230,6 +256,8 @@ type attributeQueryImplementation struct {
 	hasUpdatedAtGte           bool
 	updatedAtLte              string
 	hasUpdatedAtLte           bool
+	aggregate                 AggregateFunc
+	hasAggregate              bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -290,6 +318,13 @@ func (q *attributeQueryImplementation) Validate() error {
 	}
 	if q.hasUpdatedAtLte && q.updatedAtLte == "" {
 		return errors.New("attribute query: updated_at_lte cannot be empty")
+	}
+	if q.hasAggregate {
+		switch q.aggregate {
+		case AGGREGATE_COUNT, AGGREGATE_SUM, AGGREGATE_MIN, AGGREGATE_MAX, AGGREGATE_DISTINCT:
+		default:
+			return errors.New("attribute query: aggregate must be one of count, sum, min, max, distinct")
+		}
 	}
 	return nil
 }
@@ -443,5 +478,12 @@ func (q *attributeQueryImplementation) HasUpdatedAtLte() bool   { return q.hasUp
 func (q *attributeQueryImplementation) GetUpdatedAtLte() string { return q.updatedAtLte }
 func (q *attributeQueryImplementation) WithUpdatedAtLte(updatedAtLte string) AttributeQueryInterface {
 	q.updatedAtLte, q.hasUpdatedAtLte = updatedAtLte, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasAggregate() bool          { return q.hasAggregate }
+func (q *attributeQueryImplementation) GetAggregate() AggregateFunc { return q.aggregate }
+func (q *attributeQueryImplementation) WithAggregate(fn AggregateFunc) AttributeQueryInterface {
+	q.aggregate, q.hasAggregate = fn, true
 	return q
 }

@@ -333,6 +333,85 @@ func (st *storeImplementation) AttributeCount(ctx context.Context, query Attribu
 	return count, nil
 }
 
+// attributeGroupRow is used for scanning AttributeGroupBy results
+type attributeGroupRow struct {
+	Value  string `db:"attribute_value"`
+	Result string `db:"result"`
+}
+
+// AttributeGroupBy groups attributes by attribute_value and applies the
+// query's aggregate function (AGGREGATE_COUNT when unset), returning
+// map[attribute_value]result. The result is int64 for count, float64 for
+// sum, string for min/max, and the value itself for distinct.
+func (st *storeImplementation) AttributeGroupBy(ctx context.Context, query AttributeQueryInterface) (map[string]any, error) {
+	if query == nil {
+		return nil, errors.New("attribute query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
+
+	aggregate := query.GetAggregate()
+	if aggregate == "" {
+		aggregate = AGGREGATE_COUNT
+	}
+
+	valueCol := st.attributeTableName + "." + COLUMN_ATTRIBUTE_VALUE
+
+	var expr string
+	switch aggregate {
+	case AGGREGATE_COUNT:
+		expr = "COUNT(*) AS \"result\""
+	case AGGREGATE_SUM:
+		expr = "SUM(CAST(" + valueCol + " AS NUMERIC)) AS \"result\""
+	case AGGREGATE_MIN:
+		expr = "MIN(" + valueCol + ") AS \"result\""
+	case AGGREGATE_MAX:
+		expr = "MAX(" + valueCol + ") AS \"result\""
+	case AGGREGATE_DISTINCT:
+		expr = valueCol + " AS \"result\""
+	}
+
+	q := st.db.Query().Table(st.attributeTableName).
+		Select(valueCol + ", " + expr).
+		Group(valueCol)
+
+	hasJoin := query.GetEntityType() != "" || query.GetEntityHandle() != ""
+	if hasJoin {
+		q = q.Join(st.entityTableName + " ON " + st.attributeTableName + "." + COLUMN_ENTITY_ID + " = " + st.entityTableName + "." + COLUMN_ID)
+	}
+
+	q = st.applyAttributeFilters(q, query, hasJoin)
+
+	var rows []attributeGroupRow
+	if err := q.Get(&rows); err != nil {
+		return nil, err
+	}
+
+	result := map[string]any{}
+	for _, r := range rows {
+		switch aggregate {
+		case AGGREGATE_COUNT:
+			n, err := strconv.ParseInt(r.Result, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			result[r.Value] = n
+		case AGGREGATE_SUM:
+			f, err := strconv.ParseFloat(r.Result, 64)
+			if err != nil {
+				return nil, err
+			}
+			result[r.Value] = f
+		default:
+			result[r.Value] = r.Result
+		}
+	}
+
+	return result, nil
+}
+
 // AttributeSetString creates or updates a string attribute value for an entity
 func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error {
 	attr, err := st.AttributeFind(ctx, entityID, attributeKey)

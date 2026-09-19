@@ -41,6 +41,7 @@ AttributeFind(ctx context.Context, entityID string, attributeKey string) (Attrib
 AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error)
 AttributeList(ctx context.Context, query AttributeQueryInterface) ([]AttributeInterface, error)
 AttributeCount(ctx context.Context, query AttributeQueryInterface) (int64, error)
+AttributeGroupBy(ctx context.Context, query AttributeQueryInterface) (map[string]any, error)
 AttributeUpdate(ctx context.Context, attr AttributeInterface) error
 AttributeDelete(ctx context.Context, id string) error
 AttributeTrash(ctx context.Context, id string, deletedBy string) error
