@@ -23,10 +23,12 @@ func main() {
 
 	// Create the core store
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
-		DB:                 db,
-		EntityTableName:    "entities",
-		AttributeTableName: "attributes",
-		AutomigrateEnabled: true,
+		DB:                   db,
+		EntityTableName:      "entities",
+		AttributeTableName:   "attributes",
+		AutomigrateEnabled:   true,
+		RelationshipsEnabled: true,
+		TaxonomiesEnabled:    true,
 	})
 	if err != nil {
 		log.Fatalf("Failed to create store: %v", err)
@@ -85,8 +87,56 @@ func main() {
 		fmt.Printf("   - %s (ID: %s)\n", n, p.GetEntity().ID())
 	}
 
+	// Relationships — entity-centric, no IDs to juggle
+	fmt.Println("\n4. Creating relationships...")
+	author := active.EntityCreate("author").SetString("name", "Ada")
+	if err := author.Save(); err != nil {
+		log.Fatalf("Failed to save author: %v", err)
+	}
+	if err := product.RelateTo(author.GetEntity().ID(), "invented_by"); err != nil {
+		log.Fatalf("Failed to relate: %v", err)
+	}
+	inventors, err := product.Related("invented_by")
+	if err != nil {
+		log.Fatalf("Failed to list related: %v", err)
+	}
+	for _, inventor := range inventors {
+		n, _, _ := inventor.GetString("name")
+		fmt.Printf("   %s invented_by %s\n", name, n)
+	}
+
+	// Taxonomies — assign a term, navigate back to tagged entities
+	fmt.Println("\n5. Assigning a taxonomy term...")
+	cat, err := active.TaxonomyCreate(entitystore.TaxonomyOptions{
+		Name: "Categories",
+		Slug: "categories",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create taxonomy: %v", err)
+	}
+	laptops, err := active.TermCreate(entitystore.TaxonomyTermOptions{
+		TaxonomyID: cat.GetTaxonomy().GetID(),
+		Name:       "Laptops",
+		Slug:       "laptops",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create term: %v", err)
+	}
+	if err := product.AssignTerm(cat.GetTaxonomy().GetID(), laptops.GetTerm().GetID()); err != nil {
+		log.Fatalf("Failed to assign term: %v", err)
+	}
+	tagged, err := laptops.Entities()
+	if err != nil {
+		log.Fatalf("Failed to list tagged entities: %v", err)
+	}
+	fmt.Printf("   %d entit(ies) tagged 'laptops':\n", len(tagged))
+	for _, e := range tagged {
+		n, _, _ := e.GetString("name")
+		fmt.Printf("   - %s\n", n)
+	}
+
 	// Soft delete via the entity itself
-	fmt.Println("\n4. Trashing the product...")
+	fmt.Println("\n6. Trashing the product...")
 	trashed, err := product.Trash()
 	if err != nil {
 		log.Fatalf("Failed to trash product: %v", err)
