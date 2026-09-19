@@ -74,7 +74,7 @@ if err != nil {
 if term == nil {
     return errors.New("taxonomy term not found")
 }
-if term.TaxonomyID() != taxonomyID {
+if term.GetTaxonomyID() != taxonomyID {
     return errors.New("taxonomy term does not belong to the specified taxonomy")
 }
 ```
@@ -89,9 +89,8 @@ if term.TaxonomyID() != taxonomyID {
 
 ```go
 // Check for dependent taxonomy terms
-termsCount, err := st.TaxonomyTermCount(ctx, TaxonomyTermQueryOptions{
-    TaxonomyID: taxonomyID,
-})
+termsCount, err := st.TaxonomyTermCount(ctx, TaxonomyTermQuery().
+    WithTaxonomyID(taxonomyID))
 if err != nil {
     return false, err
 }
@@ -100,9 +99,8 @@ if termsCount > 0 {
 }
 
 // Check for entity assignments
-assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQueryOptions{
-    TaxonomyID: taxonomyID,
-})
+assignmentsCount, err := st.EntityTaxonomyCount(ctx, EntityTaxonomyQuery().
+    WithTaxonomyID(taxonomyID))
 if err != nil {
     return false, err
 }
@@ -121,8 +119,8 @@ if assignmentsCount > 0 {
 
 ```go
 // Check for slug conflicts with other taxonomies
-if taxonomy.Slug() != "" {
-    existing, err := st.TaxonomyFindBySlug(ctx, taxonomy.Slug())
+if taxonomy.GetSlug() != "" {
+    existing, err := st.TaxonomyFindBySlug(ctx, taxonomy.GetSlug())
     if err != nil {
         return err
     }

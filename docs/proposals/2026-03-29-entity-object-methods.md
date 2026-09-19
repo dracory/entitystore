@@ -1,7 +1,7 @@
 # Proposal: Entity Object-Like Methods
 
 **Date:** 2026-03-29  
-**Status:** DECLINED  
+**Status:** DECLINED (historical — API examples below use the superseded `*QueryOptions` structs; current code uses fluent query interfaces such as `EntityQuery()`)
 **Author:** AI Assistant  
 
 ## Decision

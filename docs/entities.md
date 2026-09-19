@@ -14,25 +14,24 @@ Entities are the primary objects in entitystore. Each entity represents a single
 ### Create with Type Only
 
 ```go
-person := store.EntityCreateWithType("person")
-person.SetString("name", "John Doe")
-person.SetInt("age", 30)
+person, err := store.EntityCreateWithType(ctx, "person")
+store.AttributeSetString(ctx, person.ID(), "name", "John Doe")
+store.AttributeSetInt(ctx, person.ID(), "age", 30)
 ```
 
 ### Create with Type and Attributes
 
 ```go
-attributes := map[string]interface{}{
+entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "person", map[string]string{
     "name": "Jane Doe",
-    "age":  25,
-}
-entity := store.EntityCreateWithTypeAndAttributes("person", attributes)
+    "age":  "25",
+})
 ```
 
 ### Create from Entity Object
 
 ```go
-entity := store.NewEntity()
+entity := entitystore.NewEntity()
 entity.SetType("person")
 entity.SetHandle("john-doe")
 store.EntityCreate(ctx, entity)
@@ -47,7 +46,7 @@ entity, err := store.EntityFindByID(ctx, "86ccrtsgx")
 if err != nil {
     log.Fatal(err)
 }
-name := entity.GetString("name", "Unknown")
+name, exists, err := store.AttributeGetString(ctx, entity.ID(), "name")
 ```
 
 ### Find by Attribute
@@ -61,19 +60,21 @@ entity, err := store.EntityFindByAttribute(ctx, "person", "email", "john@example
 
 ```go
 // List all entities of type "person"
-entities, err := store.EntityList(ctx, entitystore.EntityQueryOptions{
-    EntityType: "person",
-    Limit:      10,
-    Offset:     0,
-})
+entities, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("person").
+    WithLimit(10))
 
-// Search entities
-results, err := store.EntityList(ctx, entitystore.EntityQueryOptions{
-    EntityType: "person",
-    Search:     "john",
-    OrderBy:    "created_at",
-    SortOrder:  "desc",
-})
+// Search entities (searches across attributes)
+results, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("person").
+    WithSearch("john").
+    WithSortBy("created_at").
+    WithSortOrder("desc"))
+
+// Entities created within a UTC datetime range (inclusive bounds)
+recent, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithCreatedAtGte("2026-01-01 00:00:00").
+    WithCreatedAtLte("2026-02-01 00:00:00"))
 ```
 
 ## Entity Methods
@@ -82,16 +83,14 @@ results, err := store.EntityList(ctx, entitystore.EntityQueryOptions{
 
 | Method | Description |
 |--------|-------------|
-| `ID() string` | Returns entity unique ID |
-| `Type() string` | Returns entity type |
-| `Handle() string` | Returns entity handle (slug) |
-| `GetString(key, defaultValue string) string` | Get attribute as string |
-| `GetInt(key string, defaultValue int64) (int64, error)` | Get attribute as int |
-| `GetFloat(key string, defaultValue float64) (float64, error)` | Get attribute as float |
-| `GetInterface(key string, defaultValue interface{}) interface{}` | Get attribute as interface{} |
-| `GetAttribute(key string) AttributeInterface` | Get attribute object |
-| `CreatedAtCarbon() *carbon.Carbon` | Get creation timestamp |
-| `UpdatedAtCarbon() *carbon.Carbon` | Get update timestamp |
+| `GetID() string` | Returns entity unique ID |
+| `GetType() string` | Returns entity type |
+| `GetHandle() string` | Returns entity handle (slug) |
+| `Get(key string) string` | Get in-memory attribute (via embedded DataObject) |
+| `GetTempKey(key string) string` | Get temporary in-memory attribute |
+| `GetTempKeys() map[string]string` | Get all temporary attributes |
+| `GetCreatedAtCarbon() *carbon.Carbon` | Get creation timestamp |
+| `GetUpdatedAtCarbon() *carbon.Carbon` | Get update timestamp |
 
 ### Setters (Fluent Interface)
 
@@ -99,17 +98,22 @@ results, err := store.EntityList(ctx, entitystore.EntityQueryOptions{
 |--------|-------------|
 | `SetType(t string) EntityInterface` | Set entity type |
 | `SetHandle(h string) EntityInterface` | Set entity handle |
-| `SetString(key, value string) bool` | Set string attribute |
-| `SetInt(key string, value int64) bool` | Set int attribute |
-| `SetFloat(key string, value float64) bool` | Set float attribute |
-| `SetInterface(key string, value interface{}) bool` | Set interface{} attribute |
+| `SetTempKey(key, value string) EntityInterface` | Set temporary in-memory attribute |
+
+Persisted attributes live in the attributes table — use
+`AttributeSetString`/`AttributeSetInt`/`AttributeSetFloat` and
+`AttributeGetString`/`AttributeGetInt`/`AttributeGetFloat` to read and write
+them by entity ID.
 
 ## Updating Entities
 
 ```go
 entity, _ := store.EntityFindByID(ctx, "86ccrtsgx")
-entity.SetString("name", "Updated Name")
+entity.SetHandle("new-handle")
 store.EntityUpdate(ctx, entity)
+
+// Update an attribute
+store.AttributeSetString(ctx, entity.ID(), "name", "Updated Name")
 ```
 
 ## Deleting Entities
@@ -133,53 +137,51 @@ trashed, err := store.EntityTrash(ctx, "86ccrtsgx")
 ### Restore from Trash
 
 ```go
-restored, err := store.EntityRestore(ctx, "86ccrtsgx")
-```
-
-### List Trashed Entities
-
-```go
-trashed, err := store.EntityTrashList(ctx, entitystore.EntityQueryOptions{
-    Limit: 10,
-})
+err := store.EntityRestore(ctx, "86ccrtsgx")
 ```
 
 ## Store Methods
 
 | Method | Description |
 |--------|-------------|
-| `EntityCount(ctx, opts) (int64, error)` | Count entities matching options |
+| `EntityCount(ctx, query) (int64, error)` | Count entities matching query |
 | `EntityCreate(ctx, entity) error` | Create from entity object |
-| `EntityCreateWithType(type string) EntityInterface` | Create with type only |
-| `EntityCreateWithTypeAndAttributes(type string, attrs map) EntityInterface` | Create with attributes |
+| `EntityCreateWithType(ctx, type string) (EntityInterface, error)` | Create with type only |
+| `EntityCreateWithTypeAndAttributes(ctx, type string, attrs map) (EntityInterface, error)` | Create with attributes |
 | `EntityDelete(ctx, id string) (bool, error)` | Hard delete entity |
 | `EntityFindByID(ctx, id string) (EntityInterface, error)` | Find by ID |
 | `EntityFindByAttribute(ctx, type, key, value string) (EntityInterface, error)` | Find by attribute |
-| `EntityList(ctx, opts) ([]EntityInterface, error)` | List entities |
+| `EntityList(ctx, query) ([]EntityInterface, error)` | List entities |
 | `EntityListByAttribute(ctx, type, key, value string) ([]EntityInterface, error)` | List by attribute |
-| `EntityRestore(ctx, id string) (bool, error)` | Restore from trash |
+| `EntityRestore(ctx, id string) error` | Restore from trash |
 | `EntityTrash(ctx, id string) (bool, error)` | Soft delete entity |
-| `EntityTrashList(ctx, opts) ([]EntityTrashInterface, error)` | List trashed entities |
 | `EntityUpdate(ctx, entity) error` | Update entity |
 
-## Query Options
+## Fluent Queries
+
+`EntityList` and `EntityCount` accept an `EntityQueryInterface` built with the
+fluent `EntityQuery()` constructor. `With*` setters chain, `Get*`/`Has*`
+accessors expose the current state, and `Validate()` is run by the store
+(nil or invalid queries are rejected).
 
 ```go
-type EntityQueryOptions struct {
-    EntityType string
-    IDs        []string
-    Handle     string
-    Search     string
-    OrderBy    string
-    SortOrder  string
-    Limit      int
-    Offset     int
-}
+entities, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("person").
+    WithIDs([]string{"id1", "id2"}).
+    WithLimit(10).
+    WithOffset(0).
+    WithSortBy("created_at").
+    WithSortOrder("desc")) // asc / desc
 ```
+
+Available filters: `WithID`, `WithIDs`, `WithEntityType`, `WithEntityHandle`,
+`WithSearch`, `WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`,
+`WithCountOnly`, and inclusive UTC time bounds `WithCreatedAtGte/Lte` and
+`WithUpdatedAtGte/Lte` in `"YYYY-MM-DD HH:MM:SS"` format.
 
 ## Trash Entity Methods
 
 Trashed entities have the same getters as regular entities plus:
 
-- `DeletedAtCarbon() *carbon.Carbon` - When entity was deleted
+- `GetDeletedAtCarbon() *carbon.Carbon` - When entity was deleted
 - `DeletedBy() string` - Who deleted the entity

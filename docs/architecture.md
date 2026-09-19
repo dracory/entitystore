@@ -58,7 +58,7 @@ type StoreInterface interface {
     // Entity repository
     EntityCreate(ctx context.Context, entity EntityInterface) error
     EntityFindByID(ctx context.Context, id string) (EntityInterface, error)
-    EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error)
+    EntityList(ctx context.Context, query EntityQueryInterface) ([]EntityInterface, error)
     
     // Attribute repository  
     AttributeSetString(ctx context.Context, entityID, key, value string) error
@@ -158,23 +158,33 @@ Short IDs (9 characters by default) using `GenerateShortID()`:
 
 ## Query Builder
 
-Entity Store uses `goqu` for SQL generation:
+Entity Store uses `goqu` for SQL generation. List, count, and trash-list
+methods accept fluent query interfaces (`EntityQueryInterface`,
+`AttributeQueryInterface`, etc.) built via `EntityQuery()`,
+`AttributeQuery()`, and friends. Each domain applies filters through a shared
+`applyXFilters` helper so list and count queries never drift apart:
 
 ```go
-func (st *storeImplementation) EntityQuery(options EntityQueryOptions) *goqu.SelectDataset {
-    q := goqu.Dialect(st.dbDriverName).From(st.entityTableName)
-    
-    if options.EntityType != "" {
-        q = q.Where(goqu.C(COLUMN_ENTITY_TYPE).Eq(options.EntityType))
+func (st *storeImplementation) applyEntityFilters(q orm.Query, query EntityQueryInterface) orm.Query {
+    if query.HasEntityType() {
+        q = q.Where(goqu.C(COLUMN_ENTITY_TYPE).Eq(query.GetEntityType()))
     }
-    
-    if options.SortOrder == "asc" {
-        q = q.Order(goqu.I(options.SortBy).Asc())
-    }
-    
-    return q.Offset(uint(options.Offset)).Limit(uint(options.Limit))
+
+    q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+
+    return q
 }
 ```
+
+Shared helpers in `query_filters.go` provide:
+
+- `applyTimeRange` — inclusive `>=`/`<=` bounds on UTC datetime strings
+- `escapeLike`/`applyLike` — escapes `\`, `%`, and `_` and adds explicit
+  `ESCAPE '\'` so literal `LIKE` matching behaves identically on SQLite,
+  MySQL, and PostgreSQL
+
+Store methods reject `nil` queries and call `query.Validate()` before
+executing.
 
 ## Transaction Support
 
@@ -221,24 +231,26 @@ type Product struct {
     entitystore.EntityInterface
 }
 
-func (p *Product) Name() string {
-    return p.GetString("name", "")
+func (p *Product) Name(store entitystore.StoreInterface, ctx context.Context) string {
+    name, _, _ := store.AttributeGetString(ctx, p.ID(), "name")
+    return name
 }
 
-func (p *Product) SetName(name string) {
-    p.SetString("name", name)
+func (p *Product) SetName(store entitystore.StoreInterface, ctx context.Context, name string) {
+    store.AttributeSetString(ctx, p.ID(), "name", name)
 }
 ```
 
 ### Query Extensions
 
-Extend query options for custom filtering:
+Implement a custom query interface or wrap the fluent builders for domain
+filtering:
 
 ```go
-type ProductQueryOptions struct {
-    entitystore.EntityQueryOptions
-    MinPrice float64
-    MaxPrice float64
+type ProductQueryInterface interface {
+    entitystore.EntityQueryInterface
+    GetMinPrice() float64
+    GetMaxPrice() float64
 }
 ```
 
@@ -351,8 +363,7 @@ func TestEntityCreate(t *testing.T) {
     store := testutils.InitStore(t)
     ctx := context.Background()
     
-    entity := store.EntityCreateWithType("test")
-    err := store.EntityCreate(ctx, entity)
+    entity, err := store.EntityCreateWithType(ctx, "test")
     
     assert.NoError(t, err)
     assert.NotEmpty(t, entity.ID())
