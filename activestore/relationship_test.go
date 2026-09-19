@@ -122,6 +122,50 @@ func TestRelationshipCRUD(t *testing.T) {
 	}
 }
 
+func TestRelated_SkipsDanglingEntity(t *testing.T) {
+	ctx := context.Background()
+	store := initFullStore(t, "activestore_reldangle.db")
+	active, err := New(ctx, store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	post := active.EntityCreate("post")
+	author := active.EntityCreate("author")
+	for _, e := range []ActiveEntityInterface{post, author} {
+		if _, err := e.Save(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := post.RelateTo(author, "written_by"); err != nil {
+		t.Fatal(err)
+	}
+
+	// hard-delete the related entity, leaving a dangling relationship
+	if _, err := store.EntityDelete(ctx, author.GetEntity().ID()); err != nil {
+		t.Fatal(err)
+	}
+
+	authors, err := post.Related("written_by")
+	if err != nil {
+		t.Fatalf("expected nil error for dangling reference, got %v", err)
+	}
+	if len(authors) != 0 {
+		t.Fatalf("expected dangling reference to be skipped, got %v authors", len(authors))
+	}
+
+	// direct navigation on the relationship also yields (nil, nil)
+	rels, err := active.RelationshipList(entitystore.RelationshipQuery().
+		WithEntityID(post.GetEntity().ID()))
+	if err != nil || len(rels) != 1 {
+		t.Fatalf("expected 1 relationship, got %v err=%v", len(rels), err)
+	}
+	related, err := rels[0].GetRelatedEntity()
+	if err != nil || related != nil {
+		t.Fatalf("expected (nil, nil) for deleted entity, got %v err=%v", related, err)
+	}
+}
+
 func TestRelationshipFindByID_NotFound(t *testing.T) {
 	active, err := New(context.Background(), initFullStore(t, "activestore_relnotfound.db"))
 	if err != nil {
