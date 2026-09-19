@@ -529,10 +529,12 @@ type StoreInterface interface {
 	AttributeFind(ctx context.Context, entityID string, attributeKey string) (AttributeInterface, error)
 	// AttributeFindByHandle retrieves an attribute by entity type, handle, and attribute key
 	AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error)
-	// AttributeList retrieves attributes matching the given query options
-	AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error)
-	// AttributeCount counts attributes matching the given query options
-	AttributeCount(ctx context.Context, options AttributeQueryOptions) (int64, error)
+	// AttributeList retrieves attributes matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	AttributeList(ctx context.Context, query AttributeQueryInterface) ([]AttributeInterface, error)
+	// AttributeCount counts attributes matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	AttributeCount(ctx context.Context, query AttributeQueryInterface) (int64, error)
 	// AttributesSet creates or updates multiple attributes for an entity at once
 	AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error
 	// AttributeSetFloat stores a float64 value as an attribute
