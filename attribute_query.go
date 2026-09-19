@@ -113,6 +113,38 @@ type AttributeQueryInterface interface {
 	GetCountOnly() bool
 	// WithCountOnly returns only a count, not results.
 	WithCountOnly(countOnly bool) AttributeQueryInterface
+
+	// HasCreatedAtGte reports whether the created_at lower bound was set.
+	HasCreatedAtGte() bool
+	// GetCreatedAtGte returns the created_at lower bound (inclusive).
+	GetCreatedAtGte() string
+	// WithCreatedAtGte filters to rows created at or after the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtGte(createdAtGte string) AttributeQueryInterface
+
+	// HasCreatedAtLte reports whether the created_at upper bound was set.
+	HasCreatedAtLte() bool
+	// GetCreatedAtLte returns the created_at upper bound (inclusive).
+	GetCreatedAtLte() string
+	// WithCreatedAtLte filters to rows created at or before the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtLte(createdAtLte string) AttributeQueryInterface
+
+	// HasUpdatedAtGte reports whether the updated_at lower bound was set.
+	HasUpdatedAtGte() bool
+	// GetUpdatedAtGte returns the updated_at lower bound (inclusive).
+	GetUpdatedAtGte() string
+	// WithUpdatedAtGte filters to rows updated at or after the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithUpdatedAtGte(updatedAtGte string) AttributeQueryInterface
+
+	// HasUpdatedAtLte reports whether the updated_at upper bound was set.
+	HasUpdatedAtLte() bool
+	// GetUpdatedAtLte returns the updated_at upper bound (inclusive).
+	GetUpdatedAtLte() string
+	// WithUpdatedAtLte filters to rows updated at or before the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithUpdatedAtLte(updatedAtLte string) AttributeQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -149,6 +181,14 @@ type attributeQueryImplementation struct {
 	hasSortOrder     bool
 	countOnly        bool
 	hasCountOnly     bool
+	createdAtGte     string
+	hasCreatedAtGte  bool
+	createdAtLte     string
+	hasCreatedAtLte  bool
+	updatedAtGte     string
+	hasUpdatedAtGte  bool
+	updatedAtLte     string
+	hasUpdatedAtLte  bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -185,6 +225,18 @@ func (q *attributeQueryImplementation) Validate() error {
 	}
 	if q.hasSortOrder && q.sortOrder != "asc" && q.sortOrder != "desc" {
 		return errors.New("attribute query: sort_order must be \"asc\" or \"desc\"")
+	}
+	if q.hasCreatedAtGte && q.createdAtGte == "" {
+		return errors.New("attribute query: created_at_gte cannot be empty")
+	}
+	if q.hasCreatedAtLte && q.createdAtLte == "" {
+		return errors.New("attribute query: created_at_lte cannot be empty")
+	}
+	if q.hasUpdatedAtGte && q.updatedAtGte == "" {
+		return errors.New("attribute query: updated_at_gte cannot be empty")
+	}
+	if q.hasUpdatedAtLte && q.updatedAtLte == "" {
+		return errors.New("attribute query: updated_at_lte cannot be empty")
 	}
 	return nil
 }
@@ -270,5 +322,33 @@ func (q *attributeQueryImplementation) HasCountOnly() bool { return q.hasCountOn
 func (q *attributeQueryImplementation) GetCountOnly() bool { return q.countOnly }
 func (q *attributeQueryImplementation) WithCountOnly(countOnly bool) AttributeQueryInterface {
 	q.countOnly, q.hasCountOnly = countOnly, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasCreatedAtGte() bool   { return q.hasCreatedAtGte }
+func (q *attributeQueryImplementation) GetCreatedAtGte() string { return q.createdAtGte }
+func (q *attributeQueryImplementation) WithCreatedAtGte(createdAtGte string) AttributeQueryInterface {
+	q.createdAtGte, q.hasCreatedAtGte = createdAtGte, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasCreatedAtLte() bool   { return q.hasCreatedAtLte }
+func (q *attributeQueryImplementation) GetCreatedAtLte() string { return q.createdAtLte }
+func (q *attributeQueryImplementation) WithCreatedAtLte(createdAtLte string) AttributeQueryInterface {
+	q.createdAtLte, q.hasCreatedAtLte = createdAtLte, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasUpdatedAtGte() bool   { return q.hasUpdatedAtGte }
+func (q *attributeQueryImplementation) GetUpdatedAtGte() string { return q.updatedAtGte }
+func (q *attributeQueryImplementation) WithUpdatedAtGte(updatedAtGte string) AttributeQueryInterface {
+	q.updatedAtGte, q.hasUpdatedAtGte = updatedAtGte, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasUpdatedAtLte() bool   { return q.hasUpdatedAtLte }
+func (q *attributeQueryImplementation) GetUpdatedAtLte() string { return q.updatedAtLte }
+func (q *attributeQueryImplementation) WithUpdatedAtLte(updatedAtLte string) AttributeQueryInterface {
+	q.updatedAtLte, q.hasUpdatedAtLte = updatedAtLte, true
 	return q
 }
