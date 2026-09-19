@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -128,10 +129,9 @@ func (st *storeImplementation) RelationshipFind(ctx context.Context, relationshi
 		return nil, errors.New("relationship ID cannot be empty")
 	}
 
-	list, err := st.RelationshipList(ctx, RelationshipQueryOptions{
-		ID:    relationshipID,
-		Limit: 1,
-	})
+	list, err := st.RelationshipList(ctx, RelationshipQuery().
+		WithID(relationshipID).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -150,12 +150,11 @@ func (st *storeImplementation) RelationshipFindByEntities(ctx context.Context, e
 		return nil, errors.New("entityID, relatedEntityID, and relationshipType are required")
 	}
 
-	list, err := st.RelationshipList(ctx, RelationshipQueryOptions{
-		EntityID:         entityID,
-		RelatedEntityID:  relatedEntityID,
-		RelationshipType: relationshipType,
-		Limit:            1,
-	})
+	list, err := st.RelationshipList(ctx, RelationshipQuery().
+		WithEntityID(entityID).
+		WithRelatedEntityID(relatedEntityID).
+		WithRelationshipType(relationshipType).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -168,73 +167,90 @@ func (st *storeImplementation) RelationshipFindByEntities(ctx context.Context, e
 	return nil, nil
 }
 
-// RelationshipList lists relationships matching the given query options
-func (st *storeImplementation) RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error) {
-	q := st.db.Query().Table(st.relationshipTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+// applyRelationshipFilters applies the common filter clauses from a
+// validated relationship query to a query. Shared by RelationshipList,
+// RelationshipCount and RelationshipTrashList to prevent filter drift.
+func (st *storeImplementation) applyRelationshipFilters(q orm.Query, query RelationshipQueryInterface) orm.Query {
+	if query.GetID() != "" {
+		q = q.Where(COLUMN_ID+" = ?", query.GetID())
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
+	if len(query.GetIDs()) > 0 {
+		ids := make([]any, len(query.GetIDs()))
+		for i, id := range query.GetIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_ID, ids)
 	}
 
-	if options.EntityID != "" {
-		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
+	if query.GetEntityID() != "" {
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", query.GetEntityID())
 	}
 
-	if len(options.EntityIDs) > 0 {
-		ids := make([]any, len(options.EntityIDs))
-		for i, id := range options.EntityIDs {
+	if len(query.GetEntityIDs()) > 0 {
+		ids := make([]any, len(query.GetEntityIDs()))
+		for i, id := range query.GetEntityIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
 	}
 
-	if options.RelatedEntityID != "" {
-		q = q.Where(COLUMN_RELATED_ENTITY_ID+" = ?", options.RelatedEntityID)
+	if query.GetRelatedEntityID() != "" {
+		q = q.Where(COLUMN_RELATED_ENTITY_ID+" = ?", query.GetRelatedEntityID())
 	}
 
-	if len(options.RelatedEntityIDs) > 0 {
-		ids := make([]any, len(options.RelatedEntityIDs))
-		for i, id := range options.RelatedEntityIDs {
+	if len(query.GetRelatedEntityIDs()) > 0 {
+		ids := make([]any, len(query.GetRelatedEntityIDs()))
+		for i, id := range query.GetRelatedEntityIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_RELATED_ENTITY_ID, ids)
 	}
 
-	if options.RelationshipType != "" {
-		q = q.Where(COLUMN_RELATIONSHIP_TYPE+" = ?", options.RelationshipType)
+	if query.GetRelationshipType() != "" {
+		q = q.Where(COLUMN_RELATIONSHIP_TYPE+" = ?", query.GetRelationshipType())
 	}
 
-	if options.ParentID != "" {
-		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
+	if query.GetParentID() != "" {
+		q = q.Where(COLUMN_PARENT_ID+" = ?", query.GetParentID())
 	}
+
+	q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+
+	return q
+}
+
+// RelationshipList lists relationships matching the given fluent query
+func (st *storeImplementation) RelationshipList(ctx context.Context, query RelationshipQueryInterface) ([]RelationshipInterface, error) {
+	if query == nil {
+		return nil, errors.New("relationship query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
+
+	q := st.applyRelationshipFilters(st.db.Query().Table(st.relationshipTableName), query)
 
 	sortByColumn := COLUMN_CREATED_AT
 	sortOrder := "asc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	q = q.OrderBy(sortByColumn, sortOrder)
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []relationshipRow
@@ -261,59 +277,22 @@ func (st *storeImplementation) RelationshipList(ctx context.Context, options Rel
 
 // RelationshipListRelated lists all relationships where the given entity is the related (target) entity
 func (st *storeImplementation) RelationshipListRelated(ctx context.Context, relatedEntityID string, relationshipType string) ([]RelationshipInterface, error) {
-	return st.RelationshipList(ctx, RelationshipQueryOptions{
-		RelatedEntityID:  relatedEntityID,
-		RelationshipType: relationshipType,
-	})
+	return st.RelationshipList(ctx, RelationshipQuery().
+		WithRelatedEntityID(relatedEntityID).
+		WithRelationshipType(relationshipType))
 }
 
-// RelationshipCount counts relationships matching the given options
-func (st *storeImplementation) RelationshipCount(ctx context.Context, options RelationshipQueryOptions) (int64, error) {
-	q := st.db.Query().Table(st.relationshipTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+// RelationshipCount counts relationships matching the given fluent query
+func (st *storeImplementation) RelationshipCount(ctx context.Context, query RelationshipQueryInterface) (int64, error) {
+	if query == nil {
+		return 0, errors.New("relationship query cannot be nil")
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ID, ids)
+	if err := query.Validate(); err != nil {
+		return 0, err
 	}
 
-	if options.EntityID != "" {
-		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
-	}
-
-	if len(options.EntityIDs) > 0 {
-		ids := make([]any, len(options.EntityIDs))
-		for i, id := range options.EntityIDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
-	}
-
-	if options.RelatedEntityID != "" {
-		q = q.Where(COLUMN_RELATED_ENTITY_ID+" = ?", options.RelatedEntityID)
-	}
-
-	if len(options.RelatedEntityIDs) > 0 {
-		ids := make([]any, len(options.RelatedEntityIDs))
-		for i, id := range options.RelatedEntityIDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_RELATED_ENTITY_ID, ids)
-	}
-
-	if options.RelationshipType != "" {
-		q = q.Where(COLUMN_RELATIONSHIP_TYPE+" = ?", options.RelationshipType)
-	}
-
-	if options.ParentID != "" {
-		q = q.Where(COLUMN_PARENT_ID+" = ?", options.ParentID)
-	}
+	q := st.applyRelationshipFilters(st.db.Query().Table(st.relationshipTableName), query)
 
 	var count int64
 	if err := q.Count(&count); err != nil {

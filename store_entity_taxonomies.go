@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
 )
 
@@ -64,12 +65,11 @@ func (st *storeImplementation) EntityTaxonomyAssign(ctx context.Context, entityI
 		return errors.New("taxonomy term does not belong to the specified taxonomy")
 	}
 
-	existing, err := st.EntityTaxonomyList(ctx, EntityTaxonomyQueryOptions{
-		EntityID:   entityID,
-		TaxonomyID: taxonomyID,
-		TermID:     termID,
-		Limit:      1,
-	})
+	existing, err := st.EntityTaxonomyList(ctx, EntityTaxonomyQuery().
+		WithEntityID(entityID).
+		WithTaxonomyID(taxonomyID).
+		WithTermID(termID).
+		WithLimit(1))
 	if err != nil {
 		return err
 	}
@@ -109,65 +109,82 @@ func (st *storeImplementation) EntityTaxonomyRemove(ctx context.Context, entityI
 	return err
 }
 
-// EntityTaxonomyList lists entity-taxonomy assignments matching the given query options
-func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, options EntityTaxonomyQueryOptions) ([]EntityTaxonomyInterface, error) {
-	if !st.taxonomiesEnabled {
-		return nil, errors.New("taxonomies are not enabled")
+// applyEntityTaxonomyFilters applies the common filter clauses from a
+// validated entity-taxonomy query to a query. Shared by EntityTaxonomyList
+// and EntityTaxonomyCount to prevent filter drift.
+func (st *storeImplementation) applyEntityTaxonomyFilters(q orm.Query, query EntityTaxonomyQueryInterface) orm.Query {
+	if query.GetID() != "" {
+		q = q.Where(COLUMN_ID+" = ?", query.GetID())
 	}
 
-	q := st.db.Query().Table(st.entityTaxonomyTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	if query.GetEntityID() != "" {
+		q = q.Where(COLUMN_ENTITY_ID+" = ?", query.GetEntityID())
 	}
 
-	if options.EntityID != "" {
-		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
-	}
-
-	if len(options.EntityIDs) > 0 {
-		ids := make([]any, len(options.EntityIDs))
-		for i, id := range options.EntityIDs {
+	if len(query.GetEntityIDs()) > 0 {
+		ids := make([]any, len(query.GetEntityIDs()))
+		for i, id := range query.GetEntityIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
 	}
 
-	if options.TaxonomyID != "" {
-		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
+	if query.GetTaxonomyID() != "" {
+		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", query.GetTaxonomyID())
 	}
 
-	if options.TermID != "" {
-		q = q.Where(COLUMN_TERM_ID+" = ?", options.TermID)
+	if query.GetTermID() != "" {
+		q = q.Where(COLUMN_TERM_ID+" = ?", query.GetTermID())
 	}
 
-	if len(options.TermIDs) > 0 {
-		ids := make([]any, len(options.TermIDs))
-		for i, id := range options.TermIDs {
+	if len(query.GetTermIDs()) > 0 {
+		ids := make([]any, len(query.GetTermIDs()))
+		for i, id := range query.GetTermIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(COLUMN_TERM_ID, ids)
 	}
 
+	q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+
+	return q
+}
+
+// EntityTaxonomyList lists entity-taxonomy assignments matching the given fluent query
+func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, query EntityTaxonomyQueryInterface) ([]EntityTaxonomyInterface, error) {
+	if !st.taxonomiesEnabled {
+		return nil, errors.New("taxonomies are not enabled")
+	}
+
+	if query == nil {
+		return nil, errors.New("entity taxonomy query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
+
+	q := st.applyEntityTaxonomyFilters(st.db.Query().Table(st.entityTaxonomyTableName), query)
+
 	sortByColumn := COLUMN_CREATED_AT
 	sortOrder := "desc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	q = q.OrderBy(sortByColumn, sortOrder)
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []entityTaxonomyRow
@@ -189,45 +206,21 @@ func (st *storeImplementation) EntityTaxonomyList(ctx context.Context, options E
 	return list, nil
 }
 
-// EntityTaxonomyCount counts entity-taxonomy assignments matching the given options
-func (st *storeImplementation) EntityTaxonomyCount(ctx context.Context, options EntityTaxonomyQueryOptions) (int64, error) {
+// EntityTaxonomyCount counts entity-taxonomy assignments matching the given fluent query
+func (st *storeImplementation) EntityTaxonomyCount(ctx context.Context, query EntityTaxonomyQueryInterface) (int64, error) {
 	if !st.taxonomiesEnabled {
 		return 0, errors.New("taxonomies are not enabled")
 	}
 
-	q := st.db.Query().Table(st.entityTaxonomyTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+	if query == nil {
+		return 0, errors.New("entity taxonomy query cannot be nil")
 	}
 
-	if options.EntityID != "" {
-		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
+	if err := query.Validate(); err != nil {
+		return 0, err
 	}
 
-	if len(options.EntityIDs) > 0 {
-		ids := make([]any, len(options.EntityIDs))
-		for i, id := range options.EntityIDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ENTITY_ID, ids)
-	}
-
-	if options.TaxonomyID != "" {
-		q = q.Where(COLUMN_TAXONOMY_ID+" = ?", options.TaxonomyID)
-	}
-
-	if options.TermID != "" {
-		q = q.Where(COLUMN_TERM_ID+" = ?", options.TermID)
-	}
-
-	if len(options.TermIDs) > 0 {
-		ids := make([]any, len(options.TermIDs))
-		for i, id := range options.TermIDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_TERM_ID, ids)
-	}
+	q := st.applyEntityTaxonomyFilters(st.db.Query().Table(st.entityTaxonomyTableName), query)
 
 	var count int64
 	if err := q.Count(&count); err != nil {

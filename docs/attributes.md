@@ -20,49 +20,33 @@ Attributes store typed data for entities. Each attribute is a key-value pair lin
 
 ## Creating Attributes
 
-### Direct on Entity (Recommended)
+### Using Store Setters (Recommended)
 
 ```go
-entity := store.EntityCreateWithType("person")
-entity.SetString("name", "John Doe")
-entity.SetInt("age", 30)
-entity.SetFloat("salary", 75000.50)
-entity.SetInterface("tags", []string{"developer", "golang"})
+entity, _ := store.EntityCreateWithType(ctx, "person")
+store.AttributeSetString(ctx, entity.ID(), "name", "John Doe")
+store.AttributeSetInt(ctx, entity.ID(), "age", 30)
+store.AttributeSetFloat(ctx, entity.ID(), "salary", 75000.50)
 ```
 
-### Using Store Methods
+`AttributesSet` sets several attributes in one call:
 
 ```go
-// Create attribute object
-attr := store.NewAttribute()
-attr.SetEntityID(entity.ID())
-attr.SetKey("email")
-attr.SetString("john@example.com")
-store.AttributeCreate(ctx, attr)
+err := store.AttributesSet(ctx, entity.ID(), map[string]string{
+    "name": "John Doe",
+    "age":  "30",
+})
 ```
 
-### Shortcut Methods
+### Using Attribute Objects
 
 ```go
-// Set directly via store
-store.AttributeSetString(ctx, entity.ID(), "status", "active")
-store.AttributeSetInt(ctx, entity.ID(), "login_count", 5)
-store.AttributeSetFloat(ctx, entity.ID(), "rating", 4.5)
+attr := entitystore.NewAttribute()
+attr.SetEntityID(entity.ID()).SetKey("email").SetValue("john@example.com")
+err := store.AttributeCreate(ctx, attr)
 ```
 
 ## Retrieving Attributes
-
-### Via Entity (Recommended)
-
-```go
-entity, _ := store.EntityFindByID(ctx, "86ccrtsgx")
-
-// Get with default values
-name := entity.GetString("name", "Unknown")
-age, _ := entity.GetInt("age", 0)
-salary, _ := entity.GetFloat("salary", 0.0)
-tags := entity.GetInterface("tags", []string{}).([]string)
-```
 
 ### Using Store Getters
 
@@ -87,7 +71,9 @@ rating, exists, err := store.AttributeGetFloat(ctx, entity.ID(), "rating")
 // Get attribute object
 attr, _ := store.AttributeFind(ctx, entity.ID(), "email")
 if attr != nil {
-    email := attr.GetString()
+    email := attr.GetValue()
+    asInt, err := attr.GetInt()
+    asFloat, err := attr.GetFloat()
 }
 ```
 
@@ -96,8 +82,8 @@ if attr != nil {
 Setting an attribute with the same key updates the existing value:
 
 ```go
-entity.SetString("status", "active")   // Creates or updates
-entity.SetString("status", "inactive") // Updates existing
+store.AttributeSetString(ctx, entity.ID(), "status", "active")   // Creates or updates
+store.AttributeSetString(ctx, entity.ID(), "status", "inactive") // Updates existing
 ```
 
 ## Deleting Attributes
@@ -105,13 +91,13 @@ entity.SetString("status", "inactive") // Updates existing
 ### Hard Delete
 
 ```go
-deleted, err := store.AttributeDelete(ctx, "86ccrtsgx")
+err := store.AttributeDelete(ctx, "86ccrtsgx")
 ```
 
 ### Soft Delete (Trash)
 
 ```go
-trashed, err := store.AttributeTrash(ctx, "86ccrtsgx")
+err := store.AttributeTrash(ctx, "86ccrtsgx", "admin")
 ```
 
 ### Delete by Entity ID
@@ -119,7 +105,7 @@ trashed, err := store.AttributeTrash(ctx, "86ccrtsgx")
 Delete all attributes for an entity:
 
 ```go
-deletedCount, err := store.AttributeDeleteByEntityID(ctx, entity.ID())
+err := store.AttributesDeleteByEntityID(ctx, entity.ID())
 ```
 
 ## Attribute Methods
@@ -128,15 +114,14 @@ deletedCount, err := store.AttributeDeleteByEntityID(ctx, entity.ID())
 
 | Method | Description |
 |--------|-------------|
-| `ID() string` | Returns attribute ID |
-| `EntityID() string` | Returns parent entity ID |
-| `Key() string` | Returns attribute key |
-| `GetString() string` | Returns value as string |
+| `GetID() string` | Returns attribute ID |
+| `GetEntityID() string` | Returns parent entity ID |
+| `GetKey() string` | Returns attribute key |
+| `GetValue() string` | Returns value as string |
 | `GetInt() (int64, error)` | Returns value as int |
 | `GetFloat() (float64, error)` | Returns value as float |
-| `GetInterface() interface{}` | Returns JSON deserialized value |
-| `CreatedAtCarbon() *carbon.Carbon` | Get creation timestamp |
-| `UpdatedAtCarbon() *carbon.Carbon` | Get update timestamp |
+| `GetCreatedAtCarbon() *carbon.Carbon` | Get creation timestamp |
+| `GetUpdatedAtCarbon() *carbon.Carbon` | Get update timestamp |
 
 ### Setters (Fluent Interface)
 
@@ -144,60 +129,67 @@ deletedCount, err := store.AttributeDeleteByEntityID(ctx, entity.ID())
 |--------|-------------|
 | `SetEntityID(id string) AttributeInterface` | Set parent entity ID |
 | `SetKey(key string) AttributeInterface` | Set attribute key |
-| `SetString(value string) bool` | Set string value |
-| `SetInt(value int64) bool` | Set int value |
-| `SetFloat(value float64) bool` | Set float value |
-| `SetInterface(value interface{}) bool` | Set interface{} value (JSON) |
+| `SetValue(value string) AttributeInterface` | Set string value |
+| `SetInt(value int64) AttributeInterface` | Set int value |
+| `SetFloat(value float64) AttributeInterface` | Set float value |
 
 ## Store Methods
 
 | Method | Description |
 |--------|-------------|
-| `AttributeCount(ctx, opts) (int64, error)` | Count attributes |
+| `AttributeCount(ctx, query) (int64, error)` | Count attributes |
 | `AttributeCreate(ctx, attr) error` | Create attribute |
-| `AttributeDelete(ctx, id string) (bool, error)` | Hard delete |
-| `AttributeDeleteByEntityID(ctx, entityID string) (int64, error)` | Delete by entity |
+| `AttributeDelete(ctx, id string) error` | Hard delete |
+| `AttributesDeleteByEntityID(ctx, entityID string) error` | Delete by entity |
 | `AttributeFind(ctx, entityID, key string) (AttributeInterface, error)` | Find attribute |
 | `AttributeGetFloat(ctx, entityID, key string) (float64, bool, error)` | Get float value |
 | `AttributeGetInt(ctx, entityID, key string) (int64, bool, error)` | Get int value |
 | `AttributeGetString(ctx, entityID, key string) (string, bool, error)` | Get string value |
-| `AttributeList(ctx, opts) ([]AttributeInterface, error)` | List attributes |
-| `AttributeRestore(ctx, id string) (bool, error)` | Restore from trash |
+| `AttributeList(ctx, query) ([]AttributeInterface, error)` | List attributes |
+| `AttributeRestore(ctx, id string) error` | Restore from trash |
 | `AttributeSetFloat(ctx, entityID, key string, value float64) error` | Upsert float |
 | `AttributeSetInt(ctx, entityID, key string, value int64) error` | Upsert int |
 | `AttributeSetInterface(ctx, entityID, key string, value interface{}) error` | Upsert interface{} |
 | `AttributeSetString(ctx, entityID, key, value string) error` | Upsert string |
-| `AttributeTrash(ctx, id string) (bool, error)` | Soft delete |
-| `AttributeTrashList(ctx, opts) ([]AttributeTrashInterface, error)` | List trashed |
+| `AttributeTrash(ctx, id string, deletedBy string) error` | Soft delete |
 | `AttributeUpdate(ctx, attr) error` | Update attribute |
 
-## Query Options
+## Fluent Queries
+
+`AttributeList` and `AttributeCount` accept an `AttributeQueryInterface` built
+with the fluent `AttributeQuery()` constructor. `With*` setters chain,
+`Get*`/`Has*` accessors expose state, and the store calls `Validate()` before
+executing (nil or invalid queries are rejected).
 
 ```go
-type AttributeQueryOptions struct {
-    EntityID    string
-    EntityIDs   []string
-    Key         string
-    Keys        []string
-    Search      string
-    OrderBy     string
-    SortOrder   string
-    Limit       int
-    Offset      int
-}
+attrs, err := store.AttributeList(ctx, entitystore.AttributeQuery().
+    WithEntityID(entity.ID()).
+    WithAttributeKeys([]string{"name", "age"}).
+    WithSortBy("created_at").
+    WithSortOrder("desc").
+    WithLimit(10))
 ```
+
+Available filters: `WithID`, `WithIDs`, `WithEntityID`, `WithEntityType`,
+`WithEntityHandle`, `WithAttributeKey`, `WithAttributeKeys`, `WithLimit`,
+`WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`, and inclusive
+UTC time bounds `WithCreatedAtGte/Lte` and `WithUpdatedAtGte/Lte` in
+`"YYYY-MM-DD HH:MM:SS"` format.
+
+`WithEntityType`/`WithEntityHandle` join the entities table. The same filters
+are applied uniformly to `AttributeList`, `AttributeCount`, and trash listing
+via shared helpers, so count and list results never drift apart.
 
 ## Trash Attribute Methods
 
 Trashed attributes have the same getters plus:
 
-- `DeletedAtCarbon() *carbon.Carbon` - When attribute was deleted
-- `DeletedBy() string` - Who deleted the attribute
+- `GetDeletedAtCarbon() *carbon.Carbon` - When attribute was deleted
+- `GetDeletedBy() string` - Who deleted the attribute
 
 ## Best Practices
 
-1. **Use entity methods** for simple attribute operations
-2. **Use store methods** when working with attributes independently
-3. **Use SetInterface for complex types** - arrays, maps, structs
-4. **Handle errors** when parsing int/float values
-5. **Use consistent key naming** across your application
+1. **Use store setters** (`AttributeSetString`/`SetInt`/`SetFloat`) for simple attribute operations
+2. **Use attribute objects** when working with attributes independently
+3. **Handle errors** when parsing int/float values
+4. **Use consistent key naming** across your application

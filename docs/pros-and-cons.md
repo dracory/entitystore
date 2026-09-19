@@ -20,23 +20,23 @@ When to use Entity Store and when to choose something else.
 
 ```go
 // E-commerce product with custom attributes
-product := store.EntityCreateWithType("product")
-product.SetString("name", "Laptop")
-product.SetFloat("price", 999.99)
-product.SetInterface("specs", map[string]string{
+product, _ := store.EntityCreateWithType(ctx, "product")
+store.AttributeSetString(ctx, product.ID(), "name", "Laptop")
+store.AttributeSetFloat(ctx, product.ID(), "price", 999.99)
+store.AttributesSet(ctx, product.ID(), map[string]string{
     "cpu": "Intel i7",
     "ram": "16GB",
     "ssd": "512GB",
 })
 
 // Later add new attribute without migration
-product.SetString("warranty", "2 years")
+store.AttributeSetString(ctx, product.ID(), "warranty", "2 years")
 ```
 
 ```go
 // CMS content with taxonomy
-article := store.EntityCreateWithType("article")
-article.SetString("title", "Go Tips")
+article, _ := store.EntityCreateWithType(ctx, "article")
+store.AttributeSetString(ctx, article.ID(), "title", "Go Tips")
 store.EntityTaxonomyAssign(ctx, article.ID(), blogCategories.ID(), golangTag.ID())
 ```
 
@@ -62,8 +62,8 @@ store.EntityTaxonomyAssign(ctx, article.ID(), blogCategories.ID(), golangTag.ID(
 // CREATE TABLE users (id INT, email VARCHAR, name VARCHAR);
 
 // DON'T: Store large blobs/files
-// Use S3/file storage instead:
-// file.SetString("s3_url", "s3://bucket/file.pdf")
+// Use S3/file storage instead, then store the URL:
+// store.AttributeSetString(ctx, file.ID(), "s3_url", "s3://bucket/file.pdf")
 
 // DON'T: Complex reporting without indexes
 // EAV requires joins; materialized views or separate tables for reporting
@@ -137,19 +137,17 @@ store.EntityTaxonomyAssign(ctx, article.ID(), blogCategories.ID(), golangTag.ID(
 
 ```go
 // GOOD: Filter by entity_type first
-store.EntityList(ctx, EntityQueryOptions{
-    EntityType: "product", // Uses index
-    Limit:      20,
-})
+store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("product"). // Uses index
+    WithLimit(20))
 
 // BAD: Load all then filter in code
-all, _ := store.EntityList(ctx, EntityQueryOptions{})
+all, _ := store.EntityList(ctx, entitystore.EntityQuery())
 products := filterByType(all, "product") // Slow!
 
 // GOOD: Use IDs for batch operations
-store.EntityList(ctx, EntityQueryOptions{
-    IDs: []string{"id1", "id2", "id3"},
-})
+store.EntityList(ctx, entitystore.EntityQuery().
+    WithIDs([]string{"id1", "id2", "id3"}))
 ```
 
 ## Complexity Trade-offs

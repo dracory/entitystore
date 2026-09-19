@@ -73,14 +73,12 @@ store.TaxonomyUpdate(ctx, taxonomy)
 
 ```go
 // All taxonomies
-taxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQueryOptions{
-    Limit: 20,
-})
+taxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQuery().
+    WithLimit(20))
 
 // By entity type
-productTaxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQueryOptions{
-    EntityType: "product", // Taxonomies applicable to products
-})
+productTaxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQuery().
+    WithEntityType("product")) // Taxonomies applicable to products
 ```
 
 ### Delete Taxonomy
@@ -134,22 +132,14 @@ term, err := store.TaxonomyTermFindBySlug(ctx, categories.ID(), "electronics")
 
 ```go
 // All terms in taxonomy
-terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
-    TaxonomyID: categories.ID(),
-    Limit:      50,
-})
-
-// Top-level terms only
-rootTerms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
-    TaxonomyID: categories.ID(),
-    ParentID:   "", // Empty parent = root level
-})
+terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQuery().
+    WithTaxonomyID(categories.ID()).
+    WithLimit(50))
 
 // Children of specific term
-children, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
-    TaxonomyID: categories.ID(),
-    ParentID:   electronics.ID(),
-})
+children, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQuery().
+    WithTaxonomyID(categories.ID()).
+    WithParentID(electronics.ID()))
 ```
 
 ### Update Term
@@ -199,12 +189,11 @@ store.EntityTaxonomyAssign(ctx, product.ID(), tags.ID(), featured.ID())
 err := store.EntityTaxonomyRemove(ctx, product.ID(), categories.ID(), electronics.ID())
 
 // Remove from all terms in taxonomy
-assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-    EntityID:   product.ID(),
-    TaxonomyID: categories.ID(),
-})
+assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+    WithEntityID(product.ID()).
+    WithTaxonomyID(categories.ID()))
 for _, a := range assignments {
-    store.EntityTaxonomyRemove(ctx, a.EntityID(), a.TaxonomyID(), a.TermID())
+    store.EntityTaxonomyRemove(ctx, a.GetEntityID(), a.GetTaxonomyID(), a.GetTermID())
 }
 ```
 
@@ -212,27 +201,25 @@ for _, a := range assignments {
 
 ```go
 // Find entities in term
-assignments, err := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-    TaxonomyID: categories.ID(),
-    TermID:     electronics.ID(),
-    Limit:      20,
-})
+assignments, err := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+    WithTaxonomyID(categories.ID()).
+    WithTermID(electronics.ID()).
+    WithLimit(20))
 
 for _, a := range assignments {
-    entity, _ := store.EntityFindByID(ctx, a.EntityID())
-    fmt.Println(entity.GetString("name", ""))
+    entity, _ := store.EntityFindByID(ctx, a.GetEntityID())
+    name, _, _ := store.AttributeGetString(ctx, entity.ID(), "name")
+    fmt.Println(name)
 }
 
 // Find all assignments for an entity
-entityAssignments, err := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-    EntityID: product.ID(),
-})
+entityAssignments, err := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+    WithEntityID(product.ID()))
 
 // Count entities in term
-count, err := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{
-    TaxonomyID: categories.ID(),
-    TermID:     electronics.ID(),
-})
+count, err := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQuery().
+    WithTaxonomyID(categories.ID()).
+    WithTermID(electronics.ID()))
 ```
 
 ## Complete Example
@@ -273,34 +260,32 @@ phones, _ := store.TaxonomyTermCreateByOptions(ctx, entitystore.TaxonomyTermOpti
 })
 
 // 3. Create product entity
-product := store.EntityCreateWithType("product")
-product.SetString("name", "iPhone 15")
-product.SetFloat("price", 999.99)
-store.EntityCreate(ctx, product)
+product, _ := store.EntityCreateWithType(ctx, "product")
+store.AttributeSetString(ctx, product.ID(), "name", "iPhone 15")
+store.AttributeSetFloat(ctx, product.ID(), "price", 999.99)
 
 // 4. Assign to taxonomy terms
 store.EntityTaxonomyAssign(ctx, product.ID(), categories.ID(), electronics.ID())
 store.EntityTaxonomyAssign(ctx, product.ID(), categories.ID(), phones.ID())
 
 // 5. Query products in category
-assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-    TaxonomyID: categories.ID(),
-    TermID:     phones.ID(),
-})
+assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+    WithTaxonomyID(categories.ID()).
+    WithTermID(phones.ID()))
 
 for _, a := range assignments {
-    p, _ := store.EntityFindByID(ctx, a.EntityID())
-    fmt.Printf("Product in Smartphones: %s\n", p.GetString("name", ""))
+    p, _ := store.EntityFindByID(ctx, a.GetEntityID())
+    name, _, _ := store.AttributeGetString(ctx, p.ID(), "name")
+    fmt.Printf("Product in Smartphones: %s\n", name)
 }
 
 // 6. Get all categories for product
-productAssignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-    EntityID: product.ID(),
-})
+productAssignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+    WithEntityID(product.ID()))
 
 for _, a := range productAssignments {
-    term, _ := store.TaxonomyTermFind(ctx, a.TermID())
-    fmt.Printf("Product is in: %s\n", term.Name())
+    term, _ := store.TaxonomyTermFind(ctx, a.GetTermID())
+    fmt.Printf("Product is in: %s\n", term.GetName())
 }
 ```
 
@@ -310,9 +295,9 @@ Navigate the taxonomy hierarchy:
 
 ```go
 // Get parent term
-if term.ParentID() != "" {
-    parent, _ := store.TaxonomyTermFind(ctx, term.ParentID())
-    fmt.Printf("Parent: %s\n", parent.Name())
+if term.GetParentID() != "" {
+    parent, _ := store.TaxonomyTermFind(ctx, term.GetParentID())
+    fmt.Printf("Parent: %s\n", parent.GetName())
 }
 
 // Get all ancestors (up the tree)
@@ -325,8 +310,8 @@ func getTermAncestors(ctx context.Context, store entitystore.StoreInterface, ter
     }
     
     current := term
-    for current.ParentID() != "" {
-        parent, err := store.TaxonomyTermFind(ctx, current.ParentID())
+    for current.GetParentID() != "" {
+        parent, err := store.TaxonomyTermFind(ctx, current.GetParentID())
         if err != nil || parent == nil {
             break
         }
@@ -341,10 +326,9 @@ func getTermAncestors(ctx context.Context, store entitystore.StoreInterface, ter
 func getTermDescendants(ctx context.Context, store entitystore.StoreInterface, taxonomyID, termID string) ([]entitystore.TaxonomyTermInterface, error) {
     var descendants []entitystore.TaxonomyTermInterface
     
-    children, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
-        TaxonomyID: taxonomyID,
-        ParentID:   termID,
-    })
+    children, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQuery().
+        WithTaxonomyID(taxonomyID).
+        WithParentID(termID))
     if err != nil {
         return descendants, err
     }
@@ -368,54 +352,30 @@ func getTermDescendants(ctx context.Context, store entitystore.StoreInterface, t
 5. **Soft delete first** - Use trash before hard delete to allow recovery
 6. **Index frequently queried** - Terms accessed often benefit from caching
 
-## Query Options Reference
+## Fluent Query Reference
 
-### TaxonomyQueryOptions
+List, count, and trash-list methods take fluent query interfaces
+(`With*`/`Get*`/`Has*` methods plus `Validate()`; the store rejects nil or
+invalid queries before executing).
 
-```go
-type TaxonomyQueryOptions struct {
-    ID           string
-    Slug         string
-    EntityType   string   // Filter by applicable entity type
-    Limit        uint64
-    Offset       uint64
-    OrderBy      string
-    SortOrder    string
-    CountOnly    bool
-}
-```
+### TaxonomyQuery()
 
-### TaxonomyTermQueryOptions
+`WithID`, `WithIDs`, `WithSlug`, `WithParentID`, `WithEntityType`,
+`WithEntityTypes`, `WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`,
+`WithCountOnly`, and inclusive UTC time bounds `WithCreatedAtGte/Lte` and
+`WithUpdatedAtGte/Lte` in `"YYYY-MM-DD HH:MM:SS"` format.
 
-```go
-type TaxonomyTermQueryOptions struct {
-    ID         string
-    TaxonomyID string   // Required for most queries
-    ParentID   string   // "" for root terms
-    Slug       string
-    Limit      uint64
-    Offset     uint64
-    OrderBy    string
-    SortOrder  string
-    CountOnly  bool
-}
-```
+### TaxonomyTermQuery()
 
-### EntityTaxonomyQueryOptions
+`WithID`, `WithIDs`, `WithTaxonomyID`, `WithSlug`, `WithParentID`,
+`WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`,
+plus the same time-bound filters.
 
-```go
-type EntityTaxonomyQueryOptions struct {
-    ID         string
-    EntityID   string
-    TaxonomyID string
-    TermID     string
-    Limit      uint64
-    Offset     uint64
-    OrderBy    string
-    SortOrder  string
-    CountOnly  bool
-}
-```
+### EntityTaxonomyQuery()
+
+`WithID`, `WithEntityID`, `WithEntityIDs`, `WithTaxonomyID`, `WithTermID`,
+`WithTermIDs`, `WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`,
+`WithCountOnly`, plus the same time-bound filters.
 
 ## Store Methods Reference
 
@@ -427,13 +387,13 @@ type EntityTaxonomyQueryOptions struct {
 | `TaxonomyCreateByOptions(ctx, opts)` | Create with options |
 | `TaxonomyFind(ctx, id)` | Find by ID |
 | `TaxonomyFindBySlug(ctx, slug)` | Find by slug |
-| `TaxonomyList(ctx, opts)` | List taxonomies |
-| `TaxonomyCount(ctx, opts)` | Count matching |
+| `TaxonomyList(ctx, query)` | List taxonomies |
+| `TaxonomyCount(ctx, query)` | Count matching |
 | `TaxonomyUpdate(ctx, taxonomy)` | Update taxonomy |
 | `TaxonomyDelete(ctx, id)` | Hard delete |
 | `TaxonomyTrash(ctx, id, deletedBy)` | Soft delete |
 | `TaxonomyRestore(ctx, id)` | Restore from trash |
-| `TaxonomyTrashList(ctx, opts)` | List trashed |
+| `TaxonomyTrashList(ctx, query)` | List trashed |
 
 ### Taxonomy Term Methods
 
@@ -443,13 +403,13 @@ type EntityTaxonomyQueryOptions struct {
 | `TaxonomyTermCreateByOptions(ctx, opts)` | Create with options |
 | `TaxonomyTermFind(ctx, id)` | Find by ID |
 | `TaxonomyTermFindBySlug(ctx, taxonomyID, slug)` | Find by slug |
-| `TaxonomyTermList(ctx, opts)` | List terms |
-| `TaxonomyTermCount(ctx, opts)` | Count matching |
+| `TaxonomyTermList(ctx, query)` | List terms |
+| `TaxonomyTermCount(ctx, query)` | Count matching |
 | `TaxonomyTermUpdate(ctx, term)` | Update term |
 | `TaxonomyTermDelete(ctx, id)` | Hard delete |
 | `TaxonomyTermTrash(ctx, id, deletedBy)` | Soft delete |
 | `TaxonomyTermRestore(ctx, id)` | Restore from trash |
-| `TaxonomyTermTrashList(ctx, opts)` | List trashed |
+| `TaxonomyTermTrashList(ctx, query)` | List trashed |
 
 ### Entity Taxonomy Methods
 
@@ -457,5 +417,5 @@ type EntityTaxonomyQueryOptions struct {
 |--------|-------------|
 | `EntityTaxonomyAssign(ctx, entityID, taxonomyID, termID)` | Assign entity to term |
 | `EntityTaxonomyRemove(ctx, entityID, taxonomyID, termID)` | Remove assignment |
-| `EntityTaxonomyList(ctx, opts)` | List assignments |
-| `EntityTaxonomyCount(ctx, opts)` | Count assignments |
+| `EntityTaxonomyList(ctx, query)` | List assignments |
+| `EntityTaxonomyCount(ctx, query)` | Count assignments |

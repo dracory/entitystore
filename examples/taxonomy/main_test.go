@@ -120,7 +120,7 @@ func TestTaxonomyList(t *testing.T) {
 		t.Fatal("Expected taxonomy to be created")
 	}
 
-	taxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQueryOptions{})
+	taxonomies, err := store.TaxonomyList(ctx, entitystore.TaxonomyQuery())
 	if err != nil {
 		t.Fatalf("Failed to list taxonomies: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestTaxonomyCount(t *testing.T) {
 		t.Fatalf("Failed to create taxonomy: %v", err)
 	}
 
-	count, _ := store.TaxonomyCount(ctx, entitystore.TaxonomyQueryOptions{})
+	count, _ := store.TaxonomyCount(ctx, entitystore.TaxonomyQuery())
 	if count != 2 {
 		t.Errorf("Expected count 2, got %d", count)
 	}
@@ -276,9 +276,8 @@ func TestTaxonomyTermListByTaxonomy(t *testing.T) {
 		t.Fatalf("Failed to create term: %v", err)
 	}
 
-	terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
-		TaxonomyID: tax.ID(),
-	})
+	terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQuery().
+		WithTaxonomyID(tax.ID()))
 	if err != nil {
 		t.Fatalf("Failed to list terms: %v", err)
 	}
@@ -334,9 +333,8 @@ func TestEntityTaxonomyAssign(t *testing.T) {
 	}
 
 	// Verify assignment exists
-	assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-		EntityID: entity.ID(),
-	})
+	assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+		WithEntityID(entity.ID()))
 
 	if len(assignments) != 1 {
 		t.Errorf("Expected 1 assignment, got %d", len(assignments))
@@ -391,9 +389,8 @@ func TestEntityTaxonomyRemove(t *testing.T) {
 	}
 
 	// Verify removal
-	assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-		EntityID: entity.ID(),
-	})
+	assignments, _ := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+		WithEntityID(entity.ID()))
 
 	if len(assignments) != 0 {
 		t.Errorf("Expected 0 assignments after removal, got %d", len(assignments))
@@ -455,10 +452,9 @@ func TestEntityTaxonomyCount(t *testing.T) {
 		t.Fatalf("Failed to assign taxonomy to entity2: %v", err)
 	}
 
-	count, _ := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{
-		TaxonomyID: tax.ID(),
-		TermID:     term.ID(),
-	})
+	count, _ := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQuery().
+		WithTaxonomyID(tax.ID()).
+		WithTermID(term.ID()))
 
 	if count != 2 {
 		t.Errorf("Expected count 2, got %d", count)
@@ -579,7 +575,7 @@ func TestTaxonomyTrash(t *testing.T) {
 	}
 
 	// Count should be 0
-	count, _ := store.TaxonomyCount(ctx, entitystore.TaxonomyQueryOptions{})
+	count, _ := store.TaxonomyCount(ctx, entitystore.TaxonomyQuery())
 	if count != 0 {
 		t.Errorf("Expected count 0 after trash, got %d", count)
 	}
@@ -624,9 +620,8 @@ func TestTaxonomyTermTrash(t *testing.T) {
 	}
 
 	// Count should be 0
-	count, _ := store.TaxonomyTermCount(ctx, entitystore.TaxonomyTermQueryOptions{
-		TaxonomyID: tax.ID(),
-	})
+	count, _ := store.TaxonomyTermCount(ctx, entitystore.TaxonomyTermQuery().
+		WithTaxonomyID(tax.ID()))
 	if count != 0 {
 		t.Errorf("Expected count 0 after trash, got %d", count)
 	}

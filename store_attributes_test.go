@@ -69,7 +69,7 @@ func TestStoreAttributeList(t *testing.T) {
 		t.Fatal("AttributeSetString failed:", err)
 	}
 
-	list, err := store.AttributeList(context.Background(), AttributeQueryOptions{EntityID: entityID})
+	list, err := store.AttributeList(context.Background(), AttributeQuery().WithEntityID(entityID))
 	if err != nil {
 		t.Fatal("AttributeList failed:", err)
 	}
@@ -296,11 +296,10 @@ func TestStoreAttributeListWithEntityTypeJoin(t *testing.T) {
 	}
 
 	// Query: all utm_source attributes for page_view entities only
-	list, err := store.AttributeList(ctx, AttributeQueryOptions{
-		EntityType:   "page_view",
-		AttributeKey: "utm_source",
-		Limit:        100,
-	})
+	list, err := store.AttributeList(ctx, AttributeQuery().
+		WithEntityType("page_view").
+		WithAttributeKey("utm_source").
+		WithLimit(100))
 	if err != nil {
 		t.Fatal("AttributeList with EntityType join failed:", err)
 	}
@@ -440,7 +439,7 @@ func TestStoreAttributesSetAtomicity(t *testing.T) {
 	}
 }
 
-// TestStoreAttributeListByKeys tests AttributeQueryOptions.AttributeKeys —
+// TestStoreAttributeListByKeys tests the AttributeKeys filter —
 // a single WHERE IN on attribute_key returning only the requested keys,
 // combined with the EntityType join.
 func TestStoreAttributeListByKeys(t *testing.T) {
@@ -477,10 +476,9 @@ func TestStoreAttributeListByKeys(t *testing.T) {
 	}
 
 	// Only the two requested keys, only for the character entity type
-	list, err := store.AttributeList(ctx, AttributeQueryOptions{
-		EntityType:    "character",
-		AttributeKeys: []string{"name", "title"},
-	})
+	list, err := store.AttributeList(ctx, AttributeQuery().
+		WithEntityType("character").
+		WithAttributeKeys([]string{"name", "title"}))
 	if err != nil {
 		t.Fatal("AttributeList failed:", err)
 	}
@@ -502,10 +500,9 @@ func TestStoreAttributeListByKeys(t *testing.T) {
 	}
 
 	// AttributeKeys also applies to AttributeCount (shared filter builder)
-	count, err := store.AttributeCount(ctx, AttributeQueryOptions{
-		EntityType:    "character",
-		AttributeKeys: []string{"name", "title"},
-	})
+	count, err := store.AttributeCount(ctx, AttributeQuery().
+		WithEntityType("character").
+		WithAttributeKeys([]string{"name", "title"}))
 	if err != nil {
 		t.Fatal("AttributeCount failed:", err)
 	}
@@ -546,7 +543,7 @@ func TestStoreAttributeCount(t *testing.T) {
 	}
 
 	// Count all attributes (6 total: 3 entities × 2 attrs)
-	count, err := store.AttributeCount(ctx, AttributeQueryOptions{})
+	count, err := store.AttributeCount(ctx, AttributeQuery())
 	if err != nil {
 		t.Fatal("AttributeCount failed:", err)
 	}
@@ -555,7 +552,7 @@ func TestStoreAttributeCount(t *testing.T) {
 	}
 
 	// Count by AttributeKey
-	count, err = store.AttributeCount(ctx, AttributeQueryOptions{AttributeKey: "color"})
+	count, err = store.AttributeCount(ctx, AttributeQuery().WithAttributeKey("color"))
 	if err != nil {
 		t.Fatal("AttributeCount failed:", err)
 	}
@@ -564,7 +561,7 @@ func TestStoreAttributeCount(t *testing.T) {
 	}
 
 	// Count with JOIN path (EntityType filter)
-	count, err = store.AttributeCount(ctx, AttributeQueryOptions{EntityType: "product"})
+	count, err = store.AttributeCount(ctx, AttributeQuery().WithEntityType("product"))
 	if err != nil {
 		t.Fatal("AttributeCount with JOIN failed:", err)
 	}
@@ -573,7 +570,7 @@ func TestStoreAttributeCount(t *testing.T) {
 	}
 
 	// Verify count matches list length for the JOIN path
-	list, err := store.AttributeList(ctx, AttributeQueryOptions{EntityType: "product"})
+	list, err := store.AttributeList(ctx, AttributeQuery().WithEntityType("product"))
 	if err != nil {
 		t.Fatal("AttributeList failed:", err)
 	}
@@ -591,7 +588,7 @@ func TestStoreAttributeCount(t *testing.T) {
 		t.Fatal("AttributeSetString failed:", err)
 	}
 
-	count, err = store.AttributeCount(ctx, AttributeQueryOptions{EntityID: entity.ID()})
+	count, err = store.AttributeCount(ctx, AttributeQuery().WithEntityID(entity.ID()))
 	if err != nil {
 		t.Fatal("AttributeCount failed:", err)
 	}

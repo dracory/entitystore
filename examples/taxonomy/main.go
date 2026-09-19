@@ -176,10 +176,9 @@ func main() {
 
 	// Query taxonomy assignments
 	fmt.Println("\n5. Finding products in 'Laptops' category...")
-	assignments, err := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQueryOptions{
-		TaxonomyID: categoriesTax.ID(),
-		TermID:     laptops.ID(),
-	})
+	assignments, err := store.EntityTaxonomyList(ctx, entitystore.EntityTaxonomyQuery().
+		WithTaxonomyID(categoriesTax.ID()).
+		WithTermID(laptops.ID()))
 	if err != nil {
 		log.Fatalf("Failed to list assignments: %v", err)
 	}
@@ -201,9 +200,8 @@ func main() {
 
 	// List all terms in taxonomy
 	fmt.Println("\n6. Listing all terms in 'Product Categories' taxonomy...")
-	terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQueryOptions{
-		TaxonomyID: categoriesTax.ID(),
-	})
+	terms, err := store.TaxonomyTermList(ctx, entitystore.TaxonomyTermQuery().
+		WithTaxonomyID(categoriesTax.ID()))
 	if err != nil {
 		log.Fatalf("Failed to list terms: %v", err)
 	}
@@ -241,9 +239,8 @@ func main() {
 
 	// Count terms in taxonomy
 	fmt.Println("\n9. Counting taxonomy terms...")
-	termCount, err := store.TaxonomyTermCount(ctx, entitystore.TaxonomyTermQueryOptions{
-		TaxonomyID: categoriesTax.ID(),
-	})
+	termCount, err := store.TaxonomyTermCount(ctx, entitystore.TaxonomyTermQuery().
+		WithTaxonomyID(categoriesTax.ID()))
 	if err != nil {
 		log.Fatalf("Failed to count terms: %v", err)
 	}
@@ -251,9 +248,8 @@ func main() {
 
 	// Count entity assignments
 	fmt.Println("\n10. Counting entity-taxonomy assignments...")
-	assignmentCount, err := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{
-		TaxonomyID: categoriesTax.ID(),
-	})
+	assignmentCount, err := store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQuery().
+		WithTaxonomyID(categoriesTax.ID()))
 	if err != nil {
 		log.Fatalf("Failed to count assignments: %v", err)
 	}
@@ -268,7 +264,7 @@ func main() {
 	fmt.Println("    ✓ Removed The Hobbit from Books category")
 
 	// Verify removal
-	assignmentCount, err = store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQueryOptions{})
+	assignmentCount, err = store.EntityTaxonomyCount(ctx, entitystore.EntityTaxonomyQuery())
 	if err != nil {
 		log.Fatalf("Failed to count assignments: %v", err)
 	}

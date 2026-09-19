@@ -96,16 +96,15 @@ Entities are the core objects in Entity Store. Each entity has a type and a set 
 ```go
 ctx := context.Background()
 
-// Create a person entity
-person := store.EntityCreateWithType("person")
-person.SetString("name", "John Doe")
-person.SetInt("age", 30)
-
-// Persist to database
-err := store.EntityCreate(ctx, person)
+// Create and persist a person entity
+person, err := store.EntityCreateWithType(ctx, "person")
 if err != nil {
     log.Fatal(err)
 }
+
+// Set attributes
+store.AttributeSetString(ctx, person.ID(), "name", "John Doe")
+store.AttributeSetInt(ctx, person.ID(), "age", 30)
 
 fmt.Println("Created person with ID:", person.ID())
 ```
@@ -114,14 +113,11 @@ fmt.Println("Created person with ID:", person.ID())
 
 ```go
 // Create with attributes map
-attrs := map[string]string{
+user, err := store.EntityCreateWithTypeAndAttributes(ctx, "user", map[string]string{
     "name":  "Jane Doe",
     "email": "jane@example.com",
     "role":  "admin",
-}
-
-user := store.EntityCreateWithTypeAndAttributes("user", attrs)
-store.EntityCreate(ctx, user)
+})
 ```
 
 ## Working with Attributes
@@ -131,27 +127,21 @@ Attributes store typed data for entities:
 ### Setting Attributes
 
 ```go
-entity := store.EntityCreateWithType("product")
+entity, _ := store.EntityCreateWithType(ctx, "product")
 
 // String
-entity.SetString("name", "Laptop")
-entity.SetString("sku", "LAP-001")
+store.AttributeSetString(ctx, entity.ID(), "name", "Laptop")
+store.AttributeSetString(ctx, entity.ID(), "sku", "LAP-001")
 
 // Numbers
-entity.SetInt("stock", 50)
-entity.SetFloat("price", 999.99)
+store.AttributeSetInt(ctx, entity.ID(), "stock", 50)
+store.AttributeSetFloat(ctx, entity.ID(), "price", 999.99)
 
-// Complex data (JSON-serialized)
-tags := []string{"electronics", "computers"}
-entity.SetInterface("tags", tags)
-
-specs := map[string]string{
-    "cpu": "Intel i7",
-    "ram": "16GB",
-}
-entity.SetInterface("specs", specs)
-
-store.EntityCreate(ctx, entity)
+// Multiple attributes at once
+store.AttributesSet(ctx, entity.ID(), map[string]string{
+    "color": "silver",
+    "brand": "ACME",
+})
 ```
 
 ### Getting Attributes
@@ -160,14 +150,10 @@ store.EntityCreate(ctx, entity)
 // Retrieve entity
 product, _ := store.EntityFindByID(ctx, "abc123xyz")
 
-// Get with defaults
-name := product.GetString("name", "Unknown")
-stock, _ := product.GetInt("stock", 0)
-price, _ := product.GetFloat("price", 0.0)
-
-// Get complex data
-tags := product.GetInterface("tags", []string{}).([]string)
-specs := product.GetInterface("specs", map[string]string{}).(map[string]string)
+// Get attributes (returns value, exists flag, and error)
+name, exists, err := store.AttributeGetString(ctx, product.ID(), "name")
+stock, _, _ := store.AttributeGetInt(ctx, product.ID(), "stock")
+price, _, _ := store.AttributeGetFloat(ctx, product.ID(), "price")
 ```
 
 ## Querying Entities
@@ -180,37 +166,37 @@ if err != nil {
     log.Fatal(err)
 }
 if entity != nil {
-    fmt.Println("Found:", entity.GetString("name", ""))
+    name, _, _ := store.AttributeGetString(ctx, entity.ID(), "name")
+    fmt.Println("Found:", name)
 }
 ```
 
 ### List by Type
 
 ```go
-people, err := store.EntityList(ctx, entitystore.EntityQueryOptions{
-    EntityType: "person",
-    Limit:      10,
-    Offset:     0,
-    SortBy:     "created_at",
-    SortOrder:  "desc",
-})
+people, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("person").
+    WithLimit(10).
+    WithOffset(0).
+    WithSortBy("created_at").
+    WithSortOrder("desc"))
 if err != nil {
     log.Fatal(err)
 }
 
 for _, person := range people {
-    fmt.Println(person.GetString("name", ""))
+    name, _, _ := store.AttributeGetString(ctx, person.ID(), "name")
+    fmt.Println(name)
 }
 ```
 
 ### Search
 
 ```go
-results, err := store.EntityList(ctx, entitystore.EntityQueryOptions{
-    EntityType: "person",
-    Search:     "john", // Searches across attributes
-    Limit:      20,
-})
+results, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("person").
+    WithSearch("john"). // Searches across attributes
+    WithLimit(20))
 ```
 
 ### Find by Attribute
@@ -226,9 +212,8 @@ admins, err := store.EntityListByAttribute(ctx, "user", "role", "admin")
 ### Count
 
 ```go
-count, err := store.EntityCount(ctx, entitystore.EntityQueryOptions{
-    EntityType: "product",
-})
+count, err := store.EntityCount(ctx, entitystore.EntityQuery().
+    WithEntityType("product"))
 fmt.Printf("Total products: %d\n", count)
 ```
 
@@ -238,12 +223,13 @@ fmt.Printf("Total products: %d\n", count)
 // Retrieve
 entity, _ := store.EntityFindByID(ctx, "abc123xyz")
 
-// Modify
-entity.SetString("status", "active")
-entity.SetInt("login_count", 5)
-
-// Persist changes
+// Modify core fields and persist
+entity.SetHandle("new-handle")
 err := store.EntityUpdate(ctx, entity)
+
+// Modify attributes
+store.AttributeSetString(ctx, entity.ID(), "status", "active")
+store.AttributeSetInt(ctx, entity.ID(), "login_count", 5)
 ```
 
 ## Deleting Entities
@@ -269,13 +255,8 @@ if trashed {
     fmt.Println("Entity moved to trash")
 }
 
-// List trashed entities
-trashed, _ := store.EntityTrashList(ctx, entitystore.EntityQueryOptions{
-    Limit: 10,
-})
-
 // Restore
-restored, _ := store.EntityRestore(ctx, "abc123xyz")
+err = store.EntityRestore(ctx, "abc123xyz")
 ```
 
 ## Complete Example
@@ -307,33 +288,28 @@ func main() {
     ctx := context.Background()
     
     // Create
-    person := store.EntityCreateWithType("person")
-    person.SetString("name", "Alice Smith")
-    person.SetInt("age", 28)
-    store.EntityCreate(ctx, person)
+    person, _ := store.EntityCreateWithType(ctx, "person")
+    store.AttributeSetString(ctx, person.ID(), "name", "Alice Smith")
+    store.AttributeSetInt(ctx, person.ID(), "age", 28)
     
     // Read
     found, _ := store.EntityFindByID(ctx, person.ID())
-    fmt.Printf("Found: %s (age %d)\n", 
-        found.GetString("name", ""),
-        mustInt(found.GetInt("age", 0)))
+    name, _, _ := store.AttributeGetString(ctx, found.ID(), "name")
+    age, _, _ := store.AttributeGetInt(ctx, found.ID(), "age")
+    fmt.Printf("Found: %s (age %d)\n", name, age)
     
     // Update
-    found.SetString("name", "Alice Johnson")
-    store.EntityUpdate(ctx, found)
+    store.AttributeSetString(ctx, found.ID(), "name", "Alice Johnson")
     
     // List
-    people, _ := store.EntityList(ctx, entitystore.EntityQueryOptions{
-        EntityType: "person",
-    })
+    people, _ := store.EntityList(ctx, entitystore.EntityQuery().
+        WithEntityType("person"))
     fmt.Printf("Total people: %d\n", len(people))
     
     // Soft delete
     store.EntityTrash(ctx, person.ID())
     fmt.Println("Person moved to trash")
 }
-
-func mustInt(i int64, _ error) int64 { return i }
 ```
 
 ## Next Steps

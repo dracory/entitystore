@@ -110,11 +110,10 @@ func (st *storeImplementation) AttributeFind(ctx context.Context, entityID strin
 		return nil, errors.New("attribute key cannot be empty")
 	}
 
-	list, err := st.AttributeList(ctx, AttributeQueryOptions{
-		EntityID:     entityID,
-		AttributeKey: attributeKey,
-		Limit:        1,
-	})
+	list, err := st.AttributeList(ctx, AttributeQuery().
+		WithEntityID(entityID).
+		WithAttributeKey(attributeKey).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -141,12 +140,11 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 		return nil, errors.New("attribute key cannot be empty")
 	}
 
-	list, err := st.AttributeList(ctx, AttributeQueryOptions{
-		EntityType:   entityType,
-		EntityHandle: entityHandle,
-		AttributeKey: attributeKey,
-		Limit:        1,
-	})
+	list, err := st.AttributeList(ctx, AttributeQuery().
+		WithEntityType(entityType).
+		WithEntityHandle(entityHandle).
+		WithAttributeKey(attributeKey).
+		WithLimit(1))
 
 	if err != nil {
 		return nil, err
@@ -159,45 +157,61 @@ func (st *storeImplementation) AttributeFindByHandle(ctx context.Context, entity
 	return nil, nil
 }
 
-// applyAttributeFilters applies the common filter clauses from AttributeQueryOptions
-// to a query. Shared by AttributeList and AttributeCount to prevent filter drift.
-// When hasJoin is true, column references are table-qualified to avoid ambiguity.
-func (st *storeImplementation) applyAttributeFilters(q orm.Query, options AttributeQueryOptions, hasJoin bool) orm.Query {
-	if options.ID != "" {
-		q = q.Where(st.attributeTableName+"."+COLUMN_ID+" = ?", options.ID)
+// applyAttributeFilters applies the common filter clauses from a validated
+// attribute query to a query. Shared by AttributeList and AttributeCount to
+// prevent filter drift. When hasJoin is true, column references are
+// table-qualified to avoid ambiguity.
+func (st *storeImplementation) applyAttributeFilters(q orm.Query, query AttributeQueryInterface, hasJoin bool) orm.Query {
+	if query.GetID() != "" {
+		q = q.Where(st.attributeTableName+"."+COLUMN_ID+" = ?", query.GetID())
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
+	if len(query.GetIDs()) > 0 {
+		ids := make([]any, len(query.GetIDs()))
+		for i, id := range query.GetIDs() {
 			ids[i] = id
 		}
 		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ID, ids)
 	}
 
-	if options.EntityID != "" {
-		q = q.Where(st.attributeTableName+"."+COLUMN_ENTITY_ID+" = ?", options.EntityID)
+	if query.GetEntityID() != "" {
+		q = q.Where(st.attributeTableName+"."+COLUMN_ENTITY_ID+" = ?", query.GetEntityID())
 	}
 
-	if options.AttributeKey != "" {
-		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", options.AttributeKey)
+	if query.GetAttributeKey() != "" {
+		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", query.GetAttributeKey())
 	}
 
-	if len(options.AttributeKeys) > 0 {
-		keys := make([]any, len(options.AttributeKeys))
-		for i, k := range options.AttributeKeys {
+	if len(query.GetAttributeKeys()) > 0 {
+		keys := make([]any, len(query.GetAttributeKeys()))
+		for i, k := range query.GetAttributeKeys() {
 			keys[i] = k
 		}
 		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY, keys)
 	}
 
-	if options.EntityType != "" {
-		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", options.EntityType)
+	keyCol := st.attributeTableName + "." + COLUMN_ATTRIBUTE_KEY
+	q = applyLike(q, keyCol, query.GetAttributeKeyLike())
+	if query.GetAttributeKeyStartsWith() != "" {
+		q = applyLike(q, keyCol, escapeLike(query.GetAttributeKeyStartsWith())+"%")
+	}
+	if query.GetAttributeKeyEndsWith() != "" {
+		q = applyLike(q, keyCol, "%"+escapeLike(query.GetAttributeKeyEndsWith()))
+	}
+	if query.GetAttributeKeyContains() != "" {
+		q = applyLike(q, keyCol, "%"+escapeLike(query.GetAttributeKeyContains())+"%")
 	}
 
-	if options.EntityHandle != "" {
-		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_HANDLE+" = ?", options.EntityHandle)
+	if query.GetEntityType() != "" {
+		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_TYPE+" = ?", query.GetEntityType())
 	}
+
+	if query.GetEntityHandle() != "" {
+		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_HANDLE+" = ?", query.GetEntityHandle())
+	}
+
+	q = applyTimeRange(q, st.attributeTableName+"."+COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+	q = applyTimeRange(q, st.attributeTableName+"."+COLUMN_UPDATED_AT, query.GetUpdatedAtGte(), query.GetUpdatedAtLte())
 
 	return q
 }
@@ -207,12 +221,20 @@ func (st *storeImplementation) applyAttributeFilters(q orm.Query, options Attrib
 // (WP posts/postmeta pattern) to filter attributes by the parent entity's
 // type or handle. This avoids N+1 query patterns when loading attributes for
 // a specific entity type.
-func (st *storeImplementation) AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error) {
+func (st *storeImplementation) AttributeList(ctx context.Context, query AttributeQueryInterface) ([]AttributeInterface, error) {
+	if query == nil {
+		return nil, errors.New("attribute query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
+
 	q := st.db.Query().Table(st.attributeTableName)
 
 	// Join entities table when filtering by EntityType or EntityHandle
 	// (WP wp_postmeta JOIN wp_posts ON post_id = id pattern)
-	hasJoin := options.EntityType != "" || options.EntityHandle != ""
+	hasJoin := query.GetEntityType() != "" || query.GetEntityHandle() != ""
 
 	if hasJoin {
 		q = q.Join(st.entityTableName + " ON " + st.attributeTableName + "." + COLUMN_ENTITY_ID + " = " + st.entityTableName + "." + COLUMN_ID)
@@ -231,17 +253,17 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 		)
 	}
 
-	q = st.applyAttributeFilters(q, options, hasJoin)
+	q = st.applyAttributeFilters(q, query, hasJoin)
 
 	sortByColumn := COLUMN_ID
 	sortOrder := "asc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	// Use Order (not OrderBy) when JOIN is active to allow table-qualified column
@@ -254,12 +276,12 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 		q = q.OrderBy(sortByColumn, sortOrder)
 	}
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []attributeRow
@@ -284,16 +306,24 @@ func (st *storeImplementation) AttributeList(ctx context.Context, options Attrib
 
 // AttributeCount counts attributes matching the given query options.
 // Applies the same filters as AttributeList but returns a count instead of rows.
-func (st *storeImplementation) AttributeCount(ctx context.Context, options AttributeQueryOptions) (int64, error) {
+func (st *storeImplementation) AttributeCount(ctx context.Context, query AttributeQueryInterface) (int64, error) {
+	if query == nil {
+		return 0, errors.New("attribute query cannot be nil")
+	}
+
+	if err := query.Validate(); err != nil {
+		return 0, err
+	}
+
 	q := st.db.Query().Table(st.attributeTableName)
 
-	hasJoin := options.EntityType != "" || options.EntityHandle != ""
+	hasJoin := query.GetEntityType() != "" || query.GetEntityHandle() != ""
 
 	if hasJoin {
 		q = q.Join(st.entityTableName + " ON " + st.attributeTableName + "." + COLUMN_ENTITY_ID + " = " + st.entityTableName + "." + COLUMN_ID)
 	}
 
-	q = st.applyAttributeFilters(q, options, hasJoin)
+	q = st.applyAttributeFilters(q, query, hasJoin)
 
 	var count int64
 	if err := q.Count(&count); err != nil {

@@ -14,7 +14,7 @@ func InitStore(filepath string) (entitystore.StoreInterface, error) {
 	store, err := entitystore.NewStore(entitystore.NewStoreOptions{
 		DB:                      db,
 		EntityTableName:         "entities",
-		AttributeTableName:        "attributes",
+		AttributeTableName:      "attributes",
 		EntityTrashTableName:    "entities_trash",
 		AttributeTrashTableName: "attributes_trash",
 		AutomigrateEnabled:      true,

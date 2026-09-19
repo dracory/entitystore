@@ -80,7 +80,7 @@ func TestStoreEntityList(t *testing.T) {
 		}
 	}
 
-	list, err := store.EntityList(context.Background(), EntityQueryOptions{})
+	list, err := store.EntityList(context.Background(), EntityQuery())
 	if err != nil {
 		t.Fatal("EntityList failed:", err)
 	}

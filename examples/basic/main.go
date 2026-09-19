@@ -99,7 +99,7 @@ func main() {
 
 	// List all entities
 	fmt.Println("\n3. Listing all entities...")
-	entities, err := store.EntityList(ctx, entitystore.EntityQueryOptions{})
+	entities, err := store.EntityList(ctx, entitystore.EntityQuery())
 	if err != nil {
 		log.Fatalf("Failed to list entities: %v", err)
 	}
@@ -151,15 +151,15 @@ func main() {
 
 	// Count entities
 	fmt.Println("\n7. Counting entities...")
-	count, err := store.EntityCount(ctx, entitystore.EntityQueryOptions{})
+	count, err := store.EntityCount(ctx, entitystore.EntityQuery())
 	if err != nil {
 		log.Fatalf("Failed to count entities: %v", err)
 	}
 	fmt.Printf("   Total entities: %d\n", count)
 
 	// Count by type
-	personCount, _ := store.EntityCount(ctx, entitystore.EntityQueryOptions{EntityType: "person"})
-	productCount, _ := store.EntityCount(ctx, entitystore.EntityQueryOptions{EntityType: "product"})
+	personCount, _ := store.EntityCount(ctx, entitystore.EntityQuery().WithEntityType("person"))
+	productCount, _ := store.EntityCount(ctx, entitystore.EntityQuery().WithEntityType("product"))
 	fmt.Printf("   Persons: %d, Products: %d\n", personCount, productCount)
 
 	// Soft delete (trash)
@@ -171,7 +171,7 @@ func main() {
 	fmt.Printf("   Deleted: %v\n", deleted)
 
 	// Count after delete
-	count, _ = store.EntityCount(ctx, entitystore.EntityQueryOptions{})
+	count, _ = store.EntityCount(ctx, entitystore.EntityQuery())
 	fmt.Printf("   Total entities after delete: %d\n", count)
 
 	fmt.Println("\n=== Example completed successfully! ===")

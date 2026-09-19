@@ -76,10 +76,9 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 		return false, errors.New("relationship ID cannot be empty")
 	}
 
-	trashItems, err := st.RelationshipTrashList(ctx, RelationshipQueryOptions{
-		ID:    relationshipID,
-		Limit: 1,
-	})
+	trashItems, err := st.RelationshipTrashList(ctx, RelationshipQuery().
+		WithID(relationshipID).
+		WithLimit(1))
 
 	if err != nil {
 		return false, err
@@ -121,52 +120,36 @@ func (st *storeImplementation) RelationshipRestore(ctx context.Context, relation
 }
 
 // RelationshipTrashList lists deleted relationships in trash
-func (st *storeImplementation) RelationshipTrashList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipTrashInterface, error) {
-	q := st.db.Query().Table(st.relationshipTrashTableName)
-
-	if options.ID != "" {
-		q = q.Where(COLUMN_ID+" = ?", options.ID)
+func (st *storeImplementation) RelationshipTrashList(ctx context.Context, query RelationshipQueryInterface) ([]RelationshipTrashInterface, error) {
+	if query == nil {
+		return nil, errors.New("relationship query cannot be nil")
 	}
 
-	if len(options.IDs) > 0 {
-		ids := make([]any, len(options.IDs))
-		for i, id := range options.IDs {
-			ids[i] = id
-		}
-		q = q.WhereIn(COLUMN_ID, ids)
+	if err := query.Validate(); err != nil {
+		return nil, err
 	}
 
-	if options.EntityID != "" {
-		q = q.Where(COLUMN_ENTITY_ID+" = ?", options.EntityID)
-	}
-
-	if options.RelatedEntityID != "" {
-		q = q.Where(COLUMN_RELATED_ENTITY_ID+" = ?", options.RelatedEntityID)
-	}
-
-	if options.RelationshipType != "" {
-		q = q.Where(COLUMN_RELATIONSHIP_TYPE+" = ?", options.RelationshipType)
-	}
+	q := st.applyRelationshipFilters(st.db.Query().Table(st.relationshipTrashTableName), query)
 
 	sortByColumn := COLUMN_DELETED_AT
 	sortOrder := "desc"
 
-	if options.SortOrder != "" {
-		sortOrder = options.SortOrder
+	if query.GetSortOrder() != "" {
+		sortOrder = query.GetSortOrder()
 	}
 
-	if options.SortBy != "" {
-		sortByColumn = options.SortBy
+	if query.GetSortBy() != "" {
+		sortByColumn = query.GetSortBy()
 	}
 
 	q = q.OrderBy(sortByColumn, sortOrder)
 
-	if options.Offset > 0 {
-		q = q.Offset(int(options.Offset))
+	if query.GetOffset() > 0 {
+		q = q.Offset(int(query.GetOffset()))
 	}
 
-	if options.Limit > 0 {
-		q = q.Limit(int(options.Limit))
+	if query.GetLimit() > 0 {
+		q = q.Limit(int(query.GetLimit()))
 	}
 
 	var rows []relationshipTrashRow

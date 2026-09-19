@@ -18,9 +18,9 @@ EntityCreateWithTypeAndAttributes(ctx context.Context, entityType string, attrib
 EntityFindByID(ctx context.Context, id string) (EntityInterface, error)
 EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (EntityInterface, error)
 EntityFindByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) (EntityInterface, error)
-EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error)
+EntityList(ctx context.Context, query EntityQueryInterface) ([]EntityInterface, error)
 EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error)
-EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error)
+EntityCount(ctx context.Context, query EntityQueryInterface) (int64, error)
 EntityAttributeList(ctx context.Context, entityID string) ([]AttributeInterface, error)
 
 // Update
@@ -29,8 +29,7 @@ EntityUpdate(ctx context.Context, entity EntityInterface) error
 // Delete
 EntityDelete(ctx context.Context, id string) (bool, error)
 EntityTrash(ctx context.Context, id string) (bool, error)
-EntityRestore(ctx context.Context, id string) (bool, error)
-EntityTrashList(ctx context.Context, options EntityQueryOptions) ([]EntityTrashInterface, error)
+EntityRestore(ctx context.Context, id string) error
 ```
 
 ### Attribute Operations
@@ -40,13 +39,13 @@ EntityTrashList(ctx context.Context, options EntityQueryOptions) ([]EntityTrashI
 AttributeCreate(ctx context.Context, attr AttributeInterface) error
 AttributeFind(ctx context.Context, entityID string, attributeKey string) (AttributeInterface, error)
 AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error)
-AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error)
-AttributeCount(ctx context.Context, options AttributeQueryOptions) (int64, error)
+AttributeList(ctx context.Context, query AttributeQueryInterface) ([]AttributeInterface, error)
+AttributeCount(ctx context.Context, query AttributeQueryInterface) (int64, error)
 AttributeUpdate(ctx context.Context, attr AttributeInterface) error
-AttributeDelete(ctx context.Context, id string) (bool, error)
-AttributeTrash(ctx context.Context, id string) (bool, error)
-AttributeRestore(ctx context.Context, id string) (bool, error)
-AttributeTrashList(ctx context.Context, options AttributeQueryOptions) ([]AttributeTrashInterface, error)
+AttributeDelete(ctx context.Context, id string) error
+AttributeTrash(ctx context.Context, id string, deletedBy string) error
+AttributeRestore(ctx context.Context, id string) error
+AttributesDeleteByEntityID(ctx context.Context, entityID string) error
 
 // Shortcuts
 AttributeCreateWithKeyAndValue(ctx context.Context, entityID string, attributeKey string, attributeValue string) (AttributeInterface, error)
@@ -70,15 +69,15 @@ RelationshipCreate(ctx context.Context, relationship RelationshipInterface) erro
 RelationshipCreateByOptions(ctx context.Context, options RelationshipOptions) (RelationshipInterface, error)
 RelationshipFind(ctx context.Context, relationshipID string) (RelationshipInterface, error)
 RelationshipFindByEntities(ctx context.Context, entityID string, relatedEntityID string, relationshipType string) (RelationshipInterface, error)
-RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error)
-RelationshipCount(ctx context.Context, options RelationshipQueryOptions) (int64, error)
+RelationshipList(ctx context.Context, query RelationshipQueryInterface) ([]RelationshipInterface, error)
+RelationshipCount(ctx context.Context, query RelationshipQueryInterface) (int64, error)
 RelationshipDelete(ctx context.Context, relationshipID string) (bool, error)
 RelationshipDeleteAll(ctx context.Context, entityID string) error
 
 // Trash
 RelationshipTrash(ctx context.Context, relationshipID string, deletedBy string) (bool, error)
 RelationshipRestore(ctx context.Context, relationshipID string) (bool, error)
-RelationshipTrashList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipTrashInterface, error)
+RelationshipTrashList(ctx context.Context, query RelationshipQueryInterface) ([]RelationshipTrashInterface, error)
 
 // Queries
 RelationshipListRelated(ctx context.Context, relatedEntityID string, relationshipType string) ([]RelationshipInterface, error)
@@ -92,32 +91,32 @@ TaxonomyCreate(ctx context.Context, taxonomy TaxonomyInterface) error
 TaxonomyCreateByOptions(ctx context.Context, options TaxonomyOptions) (TaxonomyInterface, error)
 TaxonomyFind(ctx context.Context, taxonomyID string) (TaxonomyInterface, error)
 TaxonomyFindBySlug(ctx context.Context, slug string) (TaxonomyInterface, error)
-TaxonomyList(ctx context.Context, options TaxonomyQueryOptions) ([]TaxonomyInterface, error)
-TaxonomyCount(ctx context.Context, options TaxonomyQueryOptions) (int64, error)
+TaxonomyList(ctx context.Context, query TaxonomyQueryInterface) ([]TaxonomyInterface, error)
+TaxonomyCount(ctx context.Context, query TaxonomyQueryInterface) (int64, error)
 TaxonomyUpdate(ctx context.Context, taxonomy TaxonomyInterface) error
 TaxonomyDelete(ctx context.Context, taxonomyID string) (bool, error)
 TaxonomyTrash(ctx context.Context, taxonomyID string, deletedBy string) (bool, error)
 TaxonomyRestore(ctx context.Context, taxonomyID string) (bool, error)
-TaxonomyTrashList(ctx context.Context, options TaxonomyQueryOptions) ([]TaxonomyTrashInterface, error)
+TaxonomyTrashList(ctx context.Context, query TaxonomyQueryInterface) ([]TaxonomyTrashInterface, error)
 
 // TaxonomyTerm CRUD
 TaxonomyTermCreate(ctx context.Context, term TaxonomyTermInterface) error
 TaxonomyTermCreateByOptions(ctx context.Context, options TaxonomyTermOptions) (TaxonomyTermInterface, error)
 TaxonomyTermFind(ctx context.Context, termID string) (TaxonomyTermInterface, error)
 TaxonomyTermFindBySlug(ctx context.Context, taxonomyID string, slug string) (TaxonomyTermInterface, error)
-TaxonomyTermList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermInterface, error)
-TaxonomyTermCount(ctx context.Context, options TaxonomyTermQueryOptions) (int64, error)
+TaxonomyTermList(ctx context.Context, query TaxonomyTermQueryInterface) ([]TaxonomyTermInterface, error)
+TaxonomyTermCount(ctx context.Context, query TaxonomyTermQueryInterface) (int64, error)
 TaxonomyTermUpdate(ctx context.Context, term TaxonomyTermInterface) error
 TaxonomyTermDelete(ctx context.Context, termID string) (bool, error)
 TaxonomyTermTrash(ctx context.Context, termID string, deletedBy string) (bool, error)
 TaxonomyTermRestore(ctx context.Context, termID string) (bool, error)
-TaxonomyTermTrashList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermTrashInterface, error)
+TaxonomyTermTrashList(ctx context.Context, query TaxonomyTermQueryInterface) ([]TaxonomyTermTrashInterface, error)
 
 // Entity Assignment
 EntityTaxonomyAssign(ctx context.Context, entityID string, taxonomyID string, termID string) error
 EntityTaxonomyRemove(ctx context.Context, entityID string, taxonomyID string, termID string) error
-EntityTaxonomyList(ctx context.Context, options EntityTaxonomyQueryOptions) ([]EntityTaxonomyInterface, error)
-EntityTaxonomyCount(ctx context.Context, options EntityTaxonomyQueryOptions) (int64, error)
+EntityTaxonomyList(ctx context.Context, query EntityTaxonomyQueryInterface) ([]EntityTaxonomyInterface, error)
+EntityTaxonomyCount(ctx context.Context, query EntityTaxonomyQueryInterface) (int64, error)
 ```
 
 ### Utility Methods
@@ -150,45 +149,34 @@ type EntityInterface interface {
     dataobject.DataObjectInterface
     
     // Core getters
-    EntityType() string
-    EntityHandle() string
-    CreatedAt() string
-    CreatedAtCarbon() *carbon.Carbon
-    UpdatedAt() string
-    UpdatedAtCarbon() *carbon.Carbon
+    GetID() string
+    GetType() string
+    GetHandle() string
+    GetCreatedAt() string
+    GetCreatedAtCarbon() *carbon.Carbon
+    GetUpdatedAt() string
+    GetUpdatedAtCarbon() *carbon.Carbon
     
     // Core setters (fluent)
-    SetEntityType(entityType string) EntityInterface
-    SetEntityHandle(handle string) EntityInterface
+    SetType(entityType string) EntityInterface
+    SetHandle(handle string) EntityInterface
     SetCreatedAt(createdAt string) EntityInterface
     SetUpdatedAt(updatedAt string) EntityInterface
     
-    // Dynamic attributes (in-memory only)
-    GetAttribute(key string) string
-    SetAttribute(key string, value string) EntityInterface
-    GetAllAttributes() map[string]string
+    // Temporary attributes (in-memory only, not persisted)
+    GetTempKey(key string) string
+    SetTempKey(key string, value string) EntityInterface
+    GetTempKeys() map[string]string
 }
 ```
 
-### Convenience Methods (via type assertion)
+### Embedded DataObject Methods
 
-```go
-// String getter/setter
-GetString(key string, defaultValue string) string
-SetString(key string, value string) bool
-
-// Int getter/setter
-GetInt(key string, defaultValue int64) (int64, error)
-SetInt(key string, value int64) bool
-
-// Float getter/setter
-GetFloat(key string, defaultValue float64) (float64, error)
-SetFloat(key string, value float64) bool
-
-// Interface getter/setter (JSON)
-GetInterface(key string, defaultValue interface{}) interface{}
-SetInterface(key string, value interface{}) bool
-```
+`EntityInterface` embeds `dataobject.DataObjectInterface`, which provides
+in-memory key-value storage (`Get`, `Set`, `ID`, etc.). Note that entity
+attributes persisted in the attributes table are accessed through the store
+(`AttributeGetString`, `AttributeSetString`, ...) — in-memory values are not
+persisted automatically.
 
 ## AttributeInterface
 
@@ -199,28 +187,27 @@ type AttributeInterface interface {
     dataobject.DataObjectInterface
     
     // Core getters
-    EntityID() string
-    AttributeKey() string
-    AttributeValue() string
-    CreatedAt() string
-    CreatedAtCarbon() *carbon.Carbon
-    UpdatedAt() string
-    UpdatedAtCarbon() *carbon.Carbon
+    GetID() string
+    GetEntityID() string
+    GetKey() string
+    GetValue() string
+    GetCreatedAt() string
+    GetCreatedAtCarbon() *carbon.Carbon
+    GetUpdatedAt() string
+    GetUpdatedAtCarbon() *carbon.Carbon
     
     // Core setters (fluent)
     SetEntityID(entityID string) AttributeInterface
-    SetAttributeKey(key string) AttributeInterface
-    SetAttributeValue(value string) AttributeInterface
+    SetKey(key string) AttributeInterface
+    SetValue(value string) AttributeInterface
     SetCreatedAt(createdAt string) AttributeInterface
     SetUpdatedAt(updatedAt string) AttributeInterface
     
     // Type conversion
     GetInt() (int64, error)
     GetFloat() (float64, error)
-    GetInterface() interface{}
     SetInt(value int64) AttributeInterface
     SetFloat(value float64) AttributeInterface
-    SetInterface(value interface{}) AttributeInterface
 }
 ```
 
@@ -233,14 +220,15 @@ type RelationshipInterface interface {
     dataobject.DataObjectInterface
     
     // Core getters
-    EntityID() string
-    RelatedEntityID() string
-    RelationshipType() string
-    ParentID() string
-    Sequence() int
-    Metadata() string
-    CreatedAt() string
-    CreatedAtCarbon() *carbon.Carbon
+    GetID() string
+    GetEntityID() string
+    GetRelatedEntityID() string
+    GetRelationshipType() string
+    GetParentID() string
+    GetSequence() int
+    GetMetadata() string
+    GetCreatedAt() string
+    GetCreatedAtCarbon() *carbon.Carbon
     
     // Core setters (fluent)
     SetEntityID(entityID string) RelationshipInterface
@@ -262,15 +250,16 @@ type TaxonomyInterface interface {
     dataobject.DataObjectInterface
     
     // Core getters
-    Name() string
-    Slug() string
-    Description() string
-    ParentID() string
-    EntityTypes() []string
-    CreatedAt() string
-    CreatedAtCarbon() *carbon.Carbon
-    UpdatedAt() string
-    UpdatedAtCarbon() *carbon.Carbon
+    GetID() string
+    GetName() string
+    GetSlug() string
+    GetDescription() string
+    GetParentID() string
+    GetEntityTypes() []string
+    GetCreatedAt() string
+    GetCreatedAtCarbon() *carbon.Carbon
+    GetUpdatedAt() string
+    GetUpdatedAtCarbon() *carbon.Carbon
     
     // Core setters (fluent)
     SetName(name string) TaxonomyInterface
@@ -292,15 +281,16 @@ type TaxonomyTermInterface interface {
     dataobject.DataObjectInterface
     
     // Core getters
-    TaxonomyID() string
-    Name() string
-    Slug() string
-    ParentID() string
-    SortOrder() int
-    CreatedAt() string
-    CreatedAtCarbon() *carbon.Carbon
-    UpdatedAt() string
-    UpdatedAtCarbon() *carbon.Carbon
+    GetID() string
+    GetTaxonomyID() string
+    GetName() string
+    GetSlug() string
+    GetParentID() string
+    GetSortOrder() int
+    GetCreatedAt() string
+    GetCreatedAtCarbon() *carbon.Carbon
+    GetUpdatedAt() string
+    GetUpdatedAtCarbon() *carbon.Carbon
     
     // Core setters (fluent)
     SetTaxonomyID(taxonomyID string) TaxonomyTermInterface
@@ -322,11 +312,12 @@ type EntityTaxonomyInterface interface {
     dataobject.DataObjectInterface
     
     // Core getters
-    EntityID() string
-    TaxonomyID() string
-    TermID() string
-    CreatedAt() string
-    CreatedAtCarbon() *carbon.Carbon
+    GetID() string
+    GetEntityID() string
+    GetTaxonomyID() string
+    GetTermID() string
+    GetCreatedAt() string
+    GetCreatedAtCarbon() *carbon.Carbon
     
     // Core setters (fluent)
     SetEntityID(entityID string) EntityTaxonomyInterface
@@ -336,60 +327,104 @@ type EntityTaxonomyInterface interface {
 }
 ```
 
-## Query Options
+## Fluent Queries
 
-### EntityQueryOptions
-
-```go
-type EntityQueryOptions struct {
-    ID           string
-    IDs          []string
-    EntityType   string
-    EntityHandle string
-    Limit        uint64
-    Offset       uint64
-    Search       string
-    SortBy       string
-    SortOrder    string // asc / desc
-    CountOnly    bool
-}
-```
-
-### AttributeQueryOptions
+List, count, and trash-list methods accept fluent query interfaces built by
+constructor functions. Queries are validated by the store before execution;
+passing `nil` or an invalid query returns an error.
 
 ```go
-type AttributeQueryOptions struct {
-    ID        string
-    EntityID  string
-    EntityIDs []string
-    Key       string
-    Keys      []string
-    Limit     uint64
-    Offset    uint64
-    OrderBy   string
-    SortOrder string
-    CountOnly bool
-}
+entities, err := store.EntityList(ctx, entitystore.EntityQuery().
+    WithEntityType("person").
+    WithSortBy("created_at").
+    WithSortOrder("desc").
+    WithLimit(10))
 ```
 
-### RelationshipQueryOptions
+Every query interface exposes three method families plus validation:
+
+- `With<Field>(value)` — sets a filter and returns the query for chaining
+- `Get<Field>()` — returns the current value (empty if unset)
+- `Has<Field>() bool` — reports whether the field was explicitly set
+- `Validate() error` — checks the query; called by store methods automatically
+
+Presence flags distinguish an unset field from an explicitly set invalid value:
+an empty query is valid, but `WithID("")`, `WithIDs([]string{})`, an unknown
+`SortOrder` (only `asc`/`desc` are allowed), or an empty time bound fails
+validation.
+
+### Time Range Filters
+
+All query types support inclusive UTC timestamp bounds in
+`"YYYY-MM-DD HH:MM:SS"` format:
+
+- `WithCreatedAtGte(ts)` / `WithCreatedAtLte(ts)` — `created_at >= ts` / `created_at <= ts`
+- `WithUpdatedAtGte(ts)` / `WithUpdatedAtLte(ts)` — `updated_at >= ts` / `updated_at <= ts`
+
+Both bounds are inclusive and can be combined for a closed range.
+
+### EntityQuery()
+
+`WithID`, `WithIDs`, `WithEntityType`, `WithEntityHandle`, `WithSearch`,
+`WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`,
+`WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+
+`WithSearch` matches against entity attributes via an escaped `LIKE` pattern.
+
+### AttributeQuery()
+
+`WithID`, `WithIDs`, `WithEntityID`, `WithEntityType`, `WithEntityHandle`,
+`WithAttributeKey`, `WithAttributeKeys`, `WithAttributeKeyLike`,
+`WithAttributeKeyStartsWith`, `WithAttributeKeyEndsWith`,
+`WithAttributeKeyContains`, `WithLimit`, `WithOffset`,
+`WithSortBy`, `WithSortOrder`, `WithCountOnly`,
+`WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+
+`WithEntityType` and `WithEntityHandle` join the entities table; filters apply
+to `List`, `Count`, and `TrashList` uniformly via shared helpers.
+
+The key-pattern filters differ in wildcard handling:
+
+- `WithAttributeKeyLike(pattern)` — raw SQL `LIKE` pattern; `%` and `_` act as
+  wildcards
+- `WithAttributeKeyStartsWith`/`EndsWith`/`Contains` — literal text; any `%`,
+  `_`, or `\` in the value is escaped so it matches verbatim
+
+All `LIKE` clauses use an explicit `ESCAPE '\'` for consistent behavior across
+SQLite, MySQL, and PostgreSQL.
+
+### RelationshipQuery()
+
+`WithID`, `WithIDs`, `WithEntityID`, `WithEntityIDs`, `WithRelatedEntityID`,
+`WithRelatedEntityIDs`, `WithRelationshipType`, `WithParentID`, `WithLimit`,
+`WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`,
+`WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+
+### TaxonomyQuery()
+
+`WithID`, `WithIDs`, `WithSlug`, `WithParentID`, `WithEntityType`,
+`WithEntityTypes`, `WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`,
+`WithCountOnly`, `WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+
+### TaxonomyTermQuery()
+
+`WithID`, `WithIDs`, `WithTaxonomyID`, `WithSlug`, `WithParentID`,
+`WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`,
+`WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+
+### EntityTaxonomyQuery()
+
+`WithID`, `WithEntityID`, `WithEntityIDs`, `WithTaxonomyID`, `WithTermID`,
+`WithTermIDs`, `WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`,
+`WithCountOnly`, `WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+
+## Create Options
+
+`RelationshipCreateByOptions`, `TaxonomyCreateByOptions`, and
+`TaxonomyTermCreateByOptions` take plain options structs (distinct from the
+fluent queries above):
 
 ```go
-type RelationshipQueryOptions struct {
-    ID               string
-    IDs              []string
-    EntityID         string
-    RelatedEntityID  string
-    RelationshipType string
-    ParentID         string
-    Limit            uint64
-    Offset           uint64
-    OrderBy          string
-    SortOrder        string
-    CountOnly        bool
-}
-```
-
 type RelationshipOptions struct {
     EntityID         string
     RelatedEntityID  string
@@ -398,22 +433,6 @@ type RelationshipOptions struct {
     Sequence         int
     Metadata         string
 }
-```
-
-### TaxonomyQueryOptions
-
-```go
-type TaxonomyQueryOptions struct {
-    ID         string
-    Slug       string
-    EntityType string
-    Limit      uint64
-    Offset     uint64
-    OrderBy    string
-    SortOrder  string
-    CountOnly  bool
-}
-```
 
 type TaxonomyOptions struct {
     Name        string
@@ -422,23 +441,6 @@ type TaxonomyOptions struct {
     ParentID    string
     EntityTypes []string
 }
-```
-
-### TaxonomyTermQueryOptions
-
-```go
-type TaxonomyTermQueryOptions struct {
-    ID         string
-    TaxonomyID string
-    ParentID   string
-    Slug       string
-    Limit      uint64
-    Offset     uint64
-    OrderBy    string
-    SortOrder  string
-    CountOnly  bool
-}
-```
 
 type TaxonomyTermOptions struct {
     TaxonomyID string
@@ -446,22 +448,6 @@ type TaxonomyTermOptions struct {
     Slug       string
     ParentID   string
     SortOrder  int
-}
-```
-
-### EntityTaxonomyQueryOptions
-
-```go
-type EntityTaxonomyQueryOptions struct {
-    ID         string
-    EntityID   string
-    TaxonomyID string
-    TermID     string
-    Limit      uint64
-    Offset     uint64
-    OrderBy    string
-    SortOrder  string
-    CountOnly  bool
 }
 ```
 

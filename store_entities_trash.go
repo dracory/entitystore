@@ -17,7 +17,7 @@ func (st *storeImplementation) EntityTrash(ctx context.Context, id string) (bool
 		return false, errors.New("entity not found")
 	}
 
-	attributes, err := st.AttributeList(ctx, AttributeQueryOptions{EntityID: id})
+	attributes, err := st.AttributeList(ctx, AttributeQuery().WithEntityID(id))
 	if err != nil {
 		return false, err
 	}

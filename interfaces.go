@@ -529,10 +529,12 @@ type StoreInterface interface {
 	AttributeFind(ctx context.Context, entityID string, attributeKey string) (AttributeInterface, error)
 	// AttributeFindByHandle retrieves an attribute by entity type, handle, and attribute key
 	AttributeFindByHandle(ctx context.Context, entityType string, entityHandle string, attributeKey string) (AttributeInterface, error)
-	// AttributeList retrieves attributes matching the given query options
-	AttributeList(ctx context.Context, options AttributeQueryOptions) ([]AttributeInterface, error)
-	// AttributeCount counts attributes matching the given query options
-	AttributeCount(ctx context.Context, options AttributeQueryOptions) (int64, error)
+	// AttributeList retrieves attributes matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	AttributeList(ctx context.Context, query AttributeQueryInterface) ([]AttributeInterface, error)
+	// AttributeCount counts attributes matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	AttributeCount(ctx context.Context, query AttributeQueryInterface) (int64, error)
 	// AttributesSet creates or updates multiple attributes for an entity at once
 	AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error
 	// AttributeSetFloat stores a float64 value as an attribute
@@ -552,8 +554,9 @@ type StoreInterface interface {
 
 	// EntityAttributeList retrieves all attributes for a given entity
 	EntityAttributeList(ctx context.Context, entityID string) ([]AttributeInterface, error)
-	// EntityCount counts entities matching the given query options
-	EntityCount(ctx context.Context, options EntityQueryOptions) (int64, error)
+	// EntityCount counts entities matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	EntityCount(ctx context.Context, query EntityQueryInterface) (int64, error)
 	// EntityCreate persists a new entity record
 	EntityCreate(ctx context.Context, entity EntityInterface) error
 	// EntityCreateWithType creates a new entity with the given type
@@ -568,8 +571,9 @@ type StoreInterface interface {
 	EntityFindByHandle(ctx context.Context, entityType string, entityHandle string) (EntityInterface, error)
 	// EntityFindByID finds an entity by its unique ID
 	EntityFindByID(ctx context.Context, entityID string) (EntityInterface, error)
-	// EntityList retrieves entities matching the given query options
-	EntityList(ctx context.Context, options EntityQueryOptions) ([]EntityInterface, error)
+	// EntityList retrieves entities matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	EntityList(ctx context.Context, query EntityQueryInterface) ([]EntityInterface, error)
 	// EntityListByAttribute finds all entities of a type with a specific attribute value
 	EntityListByAttribute(ctx context.Context, entityType string, attributeKey string, attributeValue string) ([]EntityInterface, error)
 	// EntityTrash soft-deletes an entity by moving it to the trash table
@@ -581,8 +585,9 @@ type StoreInterface interface {
 	RelationshipCreate(ctx context.Context, relationship RelationshipInterface) error
 	// RelationshipCreateByOptions creates a relationship using the provided options
 	RelationshipCreateByOptions(ctx context.Context, options RelationshipOptions) (RelationshipInterface, error)
-	// RelationshipCount counts relationships matching the given query options
-	RelationshipCount(ctx context.Context, options RelationshipQueryOptions) (int64, error)
+	// RelationshipCount counts relationships matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	RelationshipCount(ctx context.Context, query RelationshipQueryInterface) (int64, error)
 	// RelationshipDelete permanently removes a relationship by ID
 	RelationshipDelete(ctx context.Context, relationshipID string) (bool, error)
 	// RelationshipDeleteAll removes all relationships for a given entity
@@ -591,37 +596,42 @@ type StoreInterface interface {
 	RelationshipFind(ctx context.Context, relationshipID string) (RelationshipInterface, error)
 	// RelationshipFindByEntities finds a relationship by source, target, and type
 	RelationshipFindByEntities(ctx context.Context, entityID string, relatedEntityID string, relationshipType string) (RelationshipInterface, error)
-	// RelationshipList retrieves relationships matching the given query options
-	RelationshipList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipInterface, error)
+	// RelationshipList retrieves relationships matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	RelationshipList(ctx context.Context, query RelationshipQueryInterface) ([]RelationshipInterface, error)
 	// RelationshipListRelated retrieves relationships where the given entity is the target
 	RelationshipListRelated(ctx context.Context, relatedEntityID string, relationshipType string) ([]RelationshipInterface, error)
 	// RelationshipRestore restores a trashed relationship
 	RelationshipRestore(ctx context.Context, relationshipID string) (bool, error)
 	// RelationshipTrash soft-deletes a relationship by moving it to the trash table
 	RelationshipTrash(ctx context.Context, relationshipID string, deletedBy string) (bool, error)
-	// RelationshipTrashList retrieves trashed relationships matching the query options
-	RelationshipTrashList(ctx context.Context, options RelationshipQueryOptions) ([]RelationshipTrashInterface, error)
+	// RelationshipTrashList retrieves trashed relationships matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	RelationshipTrashList(ctx context.Context, query RelationshipQueryInterface) ([]RelationshipTrashInterface, error)
 
 	// TaxonomyCreate persists a new taxonomy record
 	TaxonomyCreate(ctx context.Context, taxonomy TaxonomyInterface) error
 	// TaxonomyCreateByOptions creates a taxonomy using the provided options
 	TaxonomyCreateByOptions(ctx context.Context, options TaxonomyOptions) (TaxonomyInterface, error)
-	// TaxonomyCount counts taxonomies matching the given query options
-	TaxonomyCount(ctx context.Context, options TaxonomyQueryOptions) (int64, error)
+	// TaxonomyCount counts taxonomies matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	TaxonomyCount(ctx context.Context, query TaxonomyQueryInterface) (int64, error)
 	// TaxonomyDelete permanently removes a taxonomy by ID
 	TaxonomyDelete(ctx context.Context, taxonomyID string) (bool, error)
 	// TaxonomyFind retrieves a taxonomy by its ID
 	TaxonomyFind(ctx context.Context, taxonomyID string) (TaxonomyInterface, error)
 	// TaxonomyFindBySlug finds a taxonomy by its slug
 	TaxonomyFindBySlug(ctx context.Context, slug string) (TaxonomyInterface, error)
-	// TaxonomyList retrieves taxonomies matching the given query options
-	TaxonomyList(ctx context.Context, options TaxonomyQueryOptions) ([]TaxonomyInterface, error)
+	// TaxonomyList retrieves taxonomies matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	TaxonomyList(ctx context.Context, query TaxonomyQueryInterface) ([]TaxonomyInterface, error)
 	// TaxonomyRestore restores a trashed taxonomy
 	TaxonomyRestore(ctx context.Context, taxonomyID string) (bool, error)
 	// TaxonomyTrash soft-deletes a taxonomy by moving it to the trash table
 	TaxonomyTrash(ctx context.Context, taxonomyID string, deletedBy string) (bool, error)
-	// TaxonomyTrashList retrieves trashed taxonomies matching the query options
-	TaxonomyTrashList(ctx context.Context, options TaxonomyQueryOptions) ([]TaxonomyTrashInterface, error)
+	// TaxonomyTrashList retrieves trashed taxonomies matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	TaxonomyTrashList(ctx context.Context, query TaxonomyQueryInterface) ([]TaxonomyTrashInterface, error)
 	// TaxonomyUpdate updates an existing taxonomy record
 	TaxonomyUpdate(ctx context.Context, taxonomy TaxonomyInterface) error
 
@@ -629,31 +639,36 @@ type StoreInterface interface {
 	TaxonomyTermCreate(ctx context.Context, term TaxonomyTermInterface) error
 	// TaxonomyTermCreateByOptions creates a taxonomy term using the provided options
 	TaxonomyTermCreateByOptions(ctx context.Context, options TaxonomyTermOptions) (TaxonomyTermInterface, error)
-	// TaxonomyTermCount counts taxonomy terms matching the given query options
-	TaxonomyTermCount(ctx context.Context, options TaxonomyTermQueryOptions) (int64, error)
+	// TaxonomyTermCount counts taxonomy terms matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	TaxonomyTermCount(ctx context.Context, query TaxonomyTermQueryInterface) (int64, error)
 	// TaxonomyTermDelete permanently removes a taxonomy term by ID
 	TaxonomyTermDelete(ctx context.Context, termID string) (bool, error)
 	// TaxonomyTermFind retrieves a taxonomy term by its ID
 	TaxonomyTermFind(ctx context.Context, termID string) (TaxonomyTermInterface, error)
 	// TaxonomyTermFindBySlug finds a taxonomy term by its taxonomy ID and slug
 	TaxonomyTermFindBySlug(ctx context.Context, taxonomyID string, slug string) (TaxonomyTermInterface, error)
-	// TaxonomyTermList retrieves taxonomy terms matching the given query options
-	TaxonomyTermList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermInterface, error)
+	// TaxonomyTermList retrieves taxonomy terms matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	TaxonomyTermList(ctx context.Context, query TaxonomyTermQueryInterface) ([]TaxonomyTermInterface, error)
 	// TaxonomyTermRestore restores a trashed taxonomy term
 	TaxonomyTermRestore(ctx context.Context, termID string) (bool, error)
 	// TaxonomyTermTrash soft-deletes a taxonomy term by moving it to the trash table
 	TaxonomyTermTrash(ctx context.Context, termID string, deletedBy string) (bool, error)
-	// TaxonomyTermTrashList retrieves trashed taxonomy terms matching the query options
-	TaxonomyTermTrashList(ctx context.Context, options TaxonomyTermQueryOptions) ([]TaxonomyTermTrashInterface, error)
+	// TaxonomyTermTrashList retrieves trashed taxonomy terms matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	TaxonomyTermTrashList(ctx context.Context, query TaxonomyTermQueryInterface) ([]TaxonomyTermTrashInterface, error)
 	// TaxonomyTermUpdate updates an existing taxonomy term record
 	TaxonomyTermUpdate(ctx context.Context, term TaxonomyTermInterface) error
 
 	// EntityTaxonomyAssign assigns an entity to a taxonomy term
 	EntityTaxonomyAssign(ctx context.Context, entityID string, taxonomyID string, termID string) error
-	// EntityTaxonomyCount counts entity-taxonomy assignments matching the given query options
-	EntityTaxonomyCount(ctx context.Context, options EntityTaxonomyQueryOptions) (int64, error)
-	// EntityTaxonomyList retrieves entity-taxonomy assignments matching the given query options
-	EntityTaxonomyList(ctx context.Context, options EntityTaxonomyQueryOptions) ([]EntityTaxonomyInterface, error)
+	// EntityTaxonomyCount counts entity-taxonomy assignments matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	EntityTaxonomyCount(ctx context.Context, query EntityTaxonomyQueryInterface) (int64, error)
+	// EntityTaxonomyList retrieves entity-taxonomy assignments matching the given fluent query;
+	// returns an error if the query is nil or fails validation
+	EntityTaxonomyList(ctx context.Context, query EntityTaxonomyQueryInterface) ([]EntityTaxonomyInterface, error)
 	// EntityTaxonomyRemove removes an entity from a taxonomy term
 	EntityTaxonomyRemove(ctx context.Context, entityID string, taxonomyID string, termID string) error
 

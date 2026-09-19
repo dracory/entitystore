@@ -33,11 +33,11 @@ store, err := entitystore.NewStore(entitystore.NewStoreOptions{
 
 ```go
 // Create entities
-author := store.EntityCreateWithType("author")
-author.SetString("name", "John Doe")
+author, _ := store.EntityCreateWithType(ctx, "author")
+store.AttributeSetString(ctx, author.ID(), "name", "John Doe")
 
-book := store.EntityCreateWithType("book")
-book.SetString("title", "Go Programming")
+book, _ := store.EntityCreateWithType(ctx, "book")
+store.AttributeSetString(ctx, book.ID(), "title", "Go Programming")
 
 // Link book to author
 rel, _ := store.RelationshipCreateByOptions(ctx, entitystore.RelationshipOptions{
@@ -53,9 +53,15 @@ rel, _ := store.RelationshipCreateByOptions(ctx, entitystore.RelationshipOptions
 // Find all books by author
 relationships, _ := store.RelationshipListRelated(ctx, author.ID(), entitystore.RELATIONSHIP_TYPE_BELONGS_TO)
 for _, rel := range relationships {
-    book, _ := store.EntityFindByID(ctx, rel.EntityID())
-    fmt.Println(book.GetString("title"))
+    book, _ := store.EntityFindByID(ctx, rel.GetEntityID())
+    title, _, _ := store.AttributeGetString(ctx, book.ID(), "title")
+    fmt.Println(title)
 }
+
+// Or with a fluent query (validated by the store)
+relationships, _ = store.RelationshipList(ctx, entitystore.RelationshipQuery().
+    WithRelatedEntityID(author.ID()).
+    WithRelationshipType(entitystore.RELATIONSHIP_TYPE_BELONGS_TO))
 ```
 
 ## Hierarchical Relationships
@@ -64,11 +70,11 @@ Use `parent_id` and `sequence` for tree structures:
 
 ```go
 // Create nested categories
-electronics := store.EntityCreateWithType("category")
-electronics.SetString("name", "Electronics")
+electronics, _ := store.EntityCreateWithType(ctx, "category")
+store.AttributeSetString(ctx, electronics.ID(), "name", "Electronics")
 
-phones := store.EntityCreateWithType("category")
-phones.SetString("name", "Phones")
+phones, _ := store.EntityCreateWithType(ctx, "category")
+store.AttributeSetString(ctx, phones.ID(), "name", "Phones")
 
 // Create relationship with parent_id
 store.RelationshipCreateByOptions(ctx, entitystore.RelationshipOptions{
@@ -88,9 +94,9 @@ store.RelationshipCreateByOptions(ctx, entitystore.RelationshipOptions{
 - `RelationshipCreateByOptions(ctx, options RelationshipOptions) (RelationshipInterface, error)`
 - `RelationshipFind(ctx, relationshipID string) (RelationshipInterface, error)`
 - `RelationshipFindByEntities(ctx, entityID, relatedEntityID, relationshipType string) (RelationshipInterface, error)`
-- `RelationshipList(ctx, options RelationshipQueryOptions) ([]RelationshipInterface, error)`
+- `RelationshipList(ctx, query RelationshipQueryInterface) ([]RelationshipInterface, error)`
 - `RelationshipListRelated(ctx, relatedEntityID string, relationshipType string) ([]RelationshipInterface, error)`
-- `RelationshipCount(ctx, options RelationshipQueryOptions) (int64, error)`
+- `RelationshipCount(ctx, query RelationshipQueryInterface) (int64, error)`
 - `RelationshipDelete(ctx, relationshipID string) (bool, error)`
 - `RelationshipDeleteAll(ctx, entityID string) error`
 
@@ -98,13 +104,18 @@ store.RelationshipCreateByOptions(ctx, entitystore.RelationshipOptions{
 
 - `RelationshipTrash(ctx, relationshipID string, deletedBy string) (bool, error)`
 - `RelationshipRestore(ctx, relationshipID string) (bool, error)`
-- `RelationshipTrashList(ctx, options RelationshipQueryOptions) ([]RelationshipTrashInterface, error)`
+- `RelationshipTrashList(ctx, query RelationshipQueryInterface) ([]RelationshipTrashInterface, error)`
 
 ## Relationship Object Methods
 
-- `EntityID() string` / `SetEntityID(id string) RelationshipInterface`
-- `RelatedEntityID() string` / `SetRelatedEntityID(id string) RelationshipInterface`
-- `RelationshipType() string` / `SetRelationshipType(t string) RelationshipInterface`
-- `ParentID() string` / `SetParentID(id string) RelationshipInterface`
-- `Sequence() int` / `SetSequence(n int) RelationshipInterface`
-- `Metadata() string` / `SetMetadata(json string) RelationshipInterface`
+- `GetEntityID() string` / `SetEntityID(id string) RelationshipInterface`
+- `GetRelatedEntityID() string` / `SetRelatedEntityID(id string) RelationshipInterface`
+- `GetRelationshipType() string` / `SetRelationshipType(t string) RelationshipInterface`
+- `GetParentID() string` / `SetParentID(id string) RelationshipInterface`
+- `GetSequence() int` / `SetSequence(n int) RelationshipInterface`
+- `GetMetadata() string` / `SetMetadata(json string) RelationshipInterface`
+
+`RelationshipList`, `RelationshipCount`, and `RelationshipTrashList` accept a
+`RelationshipQueryInterface` built via `RelationshipQuery()`, with filters for
+ID(s), entity/related-entity IDs, type, parent ID, pagination, sorting, and
+inclusive created/updated UTC time bounds.
