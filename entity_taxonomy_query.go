@@ -107,6 +107,22 @@ type EntityTaxonomyQueryInterface interface {
 	GetCountOnly() bool
 	// WithCountOnly returns only a count, not results.
 	WithCountOnly(countOnly bool) EntityTaxonomyQueryInterface
+
+	// HasCreatedAtGte reports whether the created_at lower bound was set.
+	HasCreatedAtGte() bool
+	// GetCreatedAtGte returns the created_at lower bound (inclusive).
+	GetCreatedAtGte() string
+	// WithCreatedAtGte filters to rows created at or after the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtGte(createdAtGte string) EntityTaxonomyQueryInterface
+
+	// HasCreatedAtLte reports whether the created_at upper bound was set.
+	HasCreatedAtLte() bool
+	// GetCreatedAtLte returns the created_at upper bound (inclusive).
+	GetCreatedAtLte() string
+	// WithCreatedAtLte filters to rows created at or before the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtLte(createdAtLte string) EntityTaxonomyQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -119,28 +135,32 @@ func EntityTaxonomyQuery() EntityTaxonomyQueryInterface {
 // == TYPE ===================================================================
 
 type entityTaxonomyQueryImplementation struct {
-	id            string
-	hasID         bool
-	entityID      string
-	hasEntityID   bool
-	entityIDs     []string
-	hasEntityIDs  bool
-	taxonomyID    string
-	hasTaxonomyID bool
-	termID        string
-	hasTermID     bool
-	termIDs       []string
-	hasTermIDs    bool
-	limit         uint64
-	hasLimit      bool
-	offset        uint64
-	hasOffset     bool
-	sortBy        string
-	hasSortBy     bool
-	sortOrder     string
-	hasSortOrder  bool
-	countOnly     bool
-	hasCountOnly  bool
+	id              string
+	hasID           bool
+	entityID        string
+	hasEntityID     bool
+	entityIDs       []string
+	hasEntityIDs    bool
+	taxonomyID      string
+	hasTaxonomyID   bool
+	termID          string
+	hasTermID       bool
+	termIDs         []string
+	hasTermIDs      bool
+	limit           uint64
+	hasLimit        bool
+	offset          uint64
+	hasOffset       bool
+	sortBy          string
+	hasSortBy       bool
+	sortOrder       string
+	hasSortOrder    bool
+	countOnly       bool
+	hasCountOnly    bool
+	createdAtGte    string
+	hasCreatedAtGte bool
+	createdAtLte    string
+	hasCreatedAtLte bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -174,6 +194,12 @@ func (q *entityTaxonomyQueryImplementation) Validate() error {
 	}
 	if q.hasSortOrder && q.sortOrder != "asc" && q.sortOrder != "desc" {
 		return errors.New("entity taxonomy query: sort_order must be \"asc\" or \"desc\"")
+	}
+	if q.hasCreatedAtGte && q.createdAtGte == "" {
+		return errors.New("entity taxonomy query: created_at_gte cannot be empty")
+	}
+	if q.hasCreatedAtLte && q.createdAtLte == "" {
+		return errors.New("entity taxonomy query: created_at_lte cannot be empty")
 	}
 	return nil
 }
@@ -252,5 +278,19 @@ func (q *entityTaxonomyQueryImplementation) HasCountOnly() bool { return q.hasCo
 func (q *entityTaxonomyQueryImplementation) GetCountOnly() bool { return q.countOnly }
 func (q *entityTaxonomyQueryImplementation) WithCountOnly(countOnly bool) EntityTaxonomyQueryInterface {
 	q.countOnly, q.hasCountOnly = countOnly, true
+	return q
+}
+
+func (q *entityTaxonomyQueryImplementation) HasCreatedAtGte() bool   { return q.hasCreatedAtGte }
+func (q *entityTaxonomyQueryImplementation) GetCreatedAtGte() string { return q.createdAtGte }
+func (q *entityTaxonomyQueryImplementation) WithCreatedAtGte(createdAtGte string) EntityTaxonomyQueryInterface {
+	q.createdAtGte, q.hasCreatedAtGte = createdAtGte, true
+	return q
+}
+
+func (q *entityTaxonomyQueryImplementation) HasCreatedAtLte() bool   { return q.hasCreatedAtLte }
+func (q *entityTaxonomyQueryImplementation) GetCreatedAtLte() string { return q.createdAtLte }
+func (q *entityTaxonomyQueryImplementation) WithCreatedAtLte(createdAtLte string) EntityTaxonomyQueryInterface {
+	q.createdAtLte, q.hasCreatedAtLte = createdAtLte, true
 	return q
 }

@@ -117,6 +117,38 @@ type TaxonomyQueryInterface interface {
 	GetCountOnly() bool
 	// WithCountOnly returns only a count, not results.
 	WithCountOnly(countOnly bool) TaxonomyQueryInterface
+
+	// HasCreatedAtGte reports whether the created_at lower bound was set.
+	HasCreatedAtGte() bool
+	// GetCreatedAtGte returns the created_at lower bound (inclusive).
+	GetCreatedAtGte() string
+	// WithCreatedAtGte filters to rows created at or after the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtGte(createdAtGte string) TaxonomyQueryInterface
+
+	// HasCreatedAtLte reports whether the created_at upper bound was set.
+	HasCreatedAtLte() bool
+	// GetCreatedAtLte returns the created_at upper bound (inclusive).
+	GetCreatedAtLte() string
+	// WithCreatedAtLte filters to rows created at or before the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtLte(createdAtLte string) TaxonomyQueryInterface
+
+	// HasUpdatedAtGte reports whether the updated_at lower bound was set.
+	HasUpdatedAtGte() bool
+	// GetUpdatedAtGte returns the updated_at lower bound (inclusive).
+	GetUpdatedAtGte() string
+	// WithUpdatedAtGte filters to rows updated at or after the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithUpdatedAtGte(updatedAtGte string) TaxonomyQueryInterface
+
+	// HasUpdatedAtLte reports whether the updated_at upper bound was set.
+	HasUpdatedAtLte() bool
+	// GetUpdatedAtLte returns the updated_at upper bound (inclusive).
+	GetUpdatedAtLte() string
+	// WithUpdatedAtLte filters to rows updated at or before the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithUpdatedAtLte(updatedAtLte string) TaxonomyQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -129,26 +161,34 @@ func TaxonomyQuery() TaxonomyQueryInterface {
 // == TYPE ===================================================================
 
 type taxonomyQueryImplementation struct {
-	id             string
-	hasID          bool
-	ids            []string
-	hasIDs         bool
-	slug           string
-	hasSlug        bool
-	parentID       string
-	hasParentID    bool
-	entityTypes    []string
-	hasEntityTypes bool
-	limit          uint64
-	hasLimit       bool
-	offset         uint64
-	hasOffset      bool
-	sortBy         string
-	hasSortBy      bool
-	sortOrder      string
-	hasSortOrder   bool
-	countOnly      bool
-	hasCountOnly   bool
+	id              string
+	hasID           bool
+	ids             []string
+	hasIDs          bool
+	slug            string
+	hasSlug         bool
+	parentID        string
+	hasParentID     bool
+	entityTypes     []string
+	hasEntityTypes  bool
+	limit           uint64
+	hasLimit        bool
+	offset          uint64
+	hasOffset       bool
+	sortBy          string
+	hasSortBy       bool
+	sortOrder       string
+	hasSortOrder    bool
+	countOnly       bool
+	hasCountOnly    bool
+	createdAtGte    string
+	hasCreatedAtGte bool
+	createdAtLte    string
+	hasCreatedAtLte bool
+	updatedAtGte    string
+	hasUpdatedAtGte bool
+	updatedAtLte    string
+	hasUpdatedAtLte bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -179,6 +219,18 @@ func (q *taxonomyQueryImplementation) Validate() error {
 	}
 	if q.hasSortOrder && q.sortOrder != "asc" && q.sortOrder != "desc" {
 		return errors.New("taxonomy query: sort_order must be \"asc\" or \"desc\"")
+	}
+	if q.hasCreatedAtGte && q.createdAtGte == "" {
+		return errors.New("taxonomy query: created_at_gte cannot be empty")
+	}
+	if q.hasCreatedAtLte && q.createdAtLte == "" {
+		return errors.New("taxonomy query: created_at_lte cannot be empty")
+	}
+	if q.hasUpdatedAtGte && q.updatedAtGte == "" {
+		return errors.New("taxonomy query: updated_at_gte cannot be empty")
+	}
+	if q.hasUpdatedAtLte && q.updatedAtLte == "" {
+		return errors.New("taxonomy query: updated_at_lte cannot be empty")
 	}
 	return nil
 }
@@ -250,5 +302,33 @@ func (q *taxonomyQueryImplementation) HasCountOnly() bool { return q.hasCountOnl
 func (q *taxonomyQueryImplementation) GetCountOnly() bool { return q.countOnly }
 func (q *taxonomyQueryImplementation) WithCountOnly(countOnly bool) TaxonomyQueryInterface {
 	q.countOnly, q.hasCountOnly = countOnly, true
+	return q
+}
+
+func (q *taxonomyQueryImplementation) HasCreatedAtGte() bool   { return q.hasCreatedAtGte }
+func (q *taxonomyQueryImplementation) GetCreatedAtGte() string { return q.createdAtGte }
+func (q *taxonomyQueryImplementation) WithCreatedAtGte(createdAtGte string) TaxonomyQueryInterface {
+	q.createdAtGte, q.hasCreatedAtGte = createdAtGte, true
+	return q
+}
+
+func (q *taxonomyQueryImplementation) HasCreatedAtLte() bool   { return q.hasCreatedAtLte }
+func (q *taxonomyQueryImplementation) GetCreatedAtLte() string { return q.createdAtLte }
+func (q *taxonomyQueryImplementation) WithCreatedAtLte(createdAtLte string) TaxonomyQueryInterface {
+	q.createdAtLte, q.hasCreatedAtLte = createdAtLte, true
+	return q
+}
+
+func (q *taxonomyQueryImplementation) HasUpdatedAtGte() bool   { return q.hasUpdatedAtGte }
+func (q *taxonomyQueryImplementation) GetUpdatedAtGte() string { return q.updatedAtGte }
+func (q *taxonomyQueryImplementation) WithUpdatedAtGte(updatedAtGte string) TaxonomyQueryInterface {
+	q.updatedAtGte, q.hasUpdatedAtGte = updatedAtGte, true
+	return q
+}
+
+func (q *taxonomyQueryImplementation) HasUpdatedAtLte() bool   { return q.hasUpdatedAtLte }
+func (q *taxonomyQueryImplementation) GetUpdatedAtLte() string { return q.updatedAtLte }
+func (q *taxonomyQueryImplementation) WithUpdatedAtLte(updatedAtLte string) TaxonomyQueryInterface {
+	q.updatedAtLte, q.hasUpdatedAtLte = updatedAtLte, true
 	return q
 }

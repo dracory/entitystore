@@ -215,6 +215,8 @@ func (st *storeImplementation) applyRelationshipFilters(q orm.Query, query Relat
 		q = q.Where(COLUMN_PARENT_ID+" = ?", query.GetParentID())
 	}
 
+	q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+
 	return q
 }
 

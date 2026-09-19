@@ -145,6 +145,8 @@ func (st *storeImplementation) applyEntityTaxonomyFilters(q orm.Query, query Ent
 		q = q.WhereIn(COLUMN_TERM_ID, ids)
 	}
 
+	q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+
 	return q
 }
 

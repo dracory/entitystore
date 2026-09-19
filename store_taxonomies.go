@@ -198,6 +198,9 @@ func (st *storeImplementation) applyTaxonomyFilters(q orm.Query, query TaxonomyQ
 		q = q.Where(COLUMN_PARENT_ID+" = ?", query.GetParentID())
 	}
 
+	q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+	q = applyTimeRange(q, COLUMN_UPDATED_AT, query.GetUpdatedAtGte(), query.GetUpdatedAtLte())
+
 	return q
 }
 

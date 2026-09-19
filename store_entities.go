@@ -161,6 +161,9 @@ func (st *storeImplementation) applyEntityFilters(q orm.Query, query EntityQuery
 		q = q.Where(COLUMN_ENTITY_HANDLE+" = ?", query.GetEntityHandle())
 	}
 
+	q = applyTimeRange(q, COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+	q = applyTimeRange(q, COLUMN_UPDATED_AT, query.GetUpdatedAtGte(), query.GetUpdatedAtLte())
+
 	return q
 }
 

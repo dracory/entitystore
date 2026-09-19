@@ -121,6 +121,22 @@ type RelationshipQueryInterface interface {
 	GetCountOnly() bool
 	// WithCountOnly returns only a count, not results.
 	WithCountOnly(countOnly bool) RelationshipQueryInterface
+
+	// HasCreatedAtGte reports whether the created_at lower bound was set.
+	HasCreatedAtGte() bool
+	// GetCreatedAtGte returns the created_at lower bound (inclusive).
+	GetCreatedAtGte() string
+	// WithCreatedAtGte filters to rows created at or after the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtGte(createdAtGte string) RelationshipQueryInterface
+
+	// HasCreatedAtLte reports whether the created_at upper bound was set.
+	HasCreatedAtLte() bool
+	// GetCreatedAtLte returns the created_at upper bound (inclusive).
+	GetCreatedAtLte() string
+	// WithCreatedAtLte filters to rows created at or before the given UTC
+	// datetime ("YYYY-MM-DD HH:MM:SS").
+	WithCreatedAtLte(createdAtLte string) RelationshipQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -159,6 +175,10 @@ type relationshipQueryImplementation struct {
 	hasSortOrder        bool
 	countOnly           bool
 	hasCountOnly        bool
+	createdAtGte        string
+	hasCreatedAtGte     bool
+	createdAtLte        string
+	hasCreatedAtLte     bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -198,6 +218,12 @@ func (q *relationshipQueryImplementation) Validate() error {
 	}
 	if q.hasSortOrder && q.sortOrder != "asc" && q.sortOrder != "desc" {
 		return errors.New("relationship query: sort_order must be \"asc\" or \"desc\"")
+	}
+	if q.hasCreatedAtGte && q.createdAtGte == "" {
+		return errors.New("relationship query: created_at_gte cannot be empty")
+	}
+	if q.hasCreatedAtLte && q.createdAtLte == "" {
+		return errors.New("relationship query: created_at_lte cannot be empty")
 	}
 	return nil
 }
@@ -298,5 +324,19 @@ func (q *relationshipQueryImplementation) HasCountOnly() bool { return q.hasCoun
 func (q *relationshipQueryImplementation) GetCountOnly() bool { return q.countOnly }
 func (q *relationshipQueryImplementation) WithCountOnly(countOnly bool) RelationshipQueryInterface {
 	q.countOnly, q.hasCountOnly = countOnly, true
+	return q
+}
+
+func (q *relationshipQueryImplementation) HasCreatedAtGte() bool   { return q.hasCreatedAtGte }
+func (q *relationshipQueryImplementation) GetCreatedAtGte() string { return q.createdAtGte }
+func (q *relationshipQueryImplementation) WithCreatedAtGte(createdAtGte string) RelationshipQueryInterface {
+	q.createdAtGte, q.hasCreatedAtGte = createdAtGte, true
+	return q
+}
+
+func (q *relationshipQueryImplementation) HasCreatedAtLte() bool   { return q.hasCreatedAtLte }
+func (q *relationshipQueryImplementation) GetCreatedAtLte() string { return q.createdAtLte }
+func (q *relationshipQueryImplementation) WithCreatedAtLte(createdAtLte string) RelationshipQueryInterface {
+	q.createdAtLte, q.hasCreatedAtLte = createdAtLte, true
 	return q
 }

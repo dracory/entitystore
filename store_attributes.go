@@ -198,6 +198,9 @@ func (st *storeImplementation) applyAttributeFilters(q orm.Query, query Attribut
 		q = q.Where(st.entityTableName+"."+COLUMN_ENTITY_HANDLE+" = ?", query.GetEntityHandle())
 	}
 
+	q = applyTimeRange(q, st.attributeTableName+"."+COLUMN_CREATED_AT, query.GetCreatedAtGte(), query.GetCreatedAtLte())
+	q = applyTimeRange(q, st.attributeTableName+"."+COLUMN_UPDATED_AT, query.GetUpdatedAtGte(), query.GetUpdatedAtLte())
+
 	return q
 }
 
