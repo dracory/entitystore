@@ -371,10 +371,11 @@ Both bounds are inclusive and can be combined for a closed range.
 
 `WithSearch` matches against entity attributes via an escaped `LIKE` pattern.
 
-`WithPrefetchAttributes(keys)` eagerly loads the given attribute keys for all
-returned entities in a single batch query. The values are stored as in-memory
+`WithPrefetchAttributes(keys...)` eagerly loads attributes for all returned
+entities in a single batch query. The values are stored as in-memory
 attributes on each entity (readable via `GetTempKey(key)`), avoiding an N+1
-query pattern when you know which attributes you will read.
+query pattern. Pass specific keys to load only those attributes, or call it
+with no arguments to load all attributes.
 
 ### AttributeQuery()
 

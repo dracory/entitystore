@@ -133,13 +133,16 @@ type EntityQueryInterface interface {
 
 	// HasPrefetchAttributes reports whether attribute prefetching was set.
 	HasPrefetchAttributes() bool
-	// GetPrefetchAttributes returns the attribute keys to prefetch.
+	// GetPrefetchAttributes returns the attribute keys to prefetch. An empty
+	// slice means "all attributes" when HasPrefetchAttributes() is true.
 	GetPrefetchAttributes() []string
-	// WithPrefetchAttributes eagerly loads the given attribute keys for all
-	// returned entities in a single batch query, populating each entity's
-	// in-memory attributes (readable via GetTempKey). Use it when you know
-	// which attributes you will read, to avoid an N+1 query pattern.
-	WithPrefetchAttributes(attributeKeys []string) EntityQueryInterface
+	// WithPrefetchAttributes eagerly loads attributes for all returned
+	// entities in a single batch query, populating each entity's in-memory
+	// attributes (readable via GetTempKey). Calling it with specific keys
+	// prefetches only those attributes; calling it with no arguments
+	// prefetches all attributes. Use it to avoid an N+1 query pattern when
+	// you know which attributes you will read — or want them all.
+	WithPrefetchAttributes(attributeKeys ...string) EntityQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -222,9 +225,6 @@ func (q *entityQueryImplementation) Validate() error {
 	}
 	if q.hasUpdatedAtLte && q.updatedAtLte == "" {
 		return errors.New("entity query: updated_at_lte cannot be empty")
-	}
-	if q.hasPrefetchAttributes && len(q.prefetchAttributes) < 1 {
-		return errors.New("entity query: prefetch_attributes cannot be empty array")
 	}
 	return nil
 }
@@ -333,7 +333,7 @@ func (q *entityQueryImplementation) HasPrefetchAttributes() bool {
 func (q *entityQueryImplementation) GetPrefetchAttributes() []string {
 	return q.prefetchAttributes
 }
-func (q *entityQueryImplementation) WithPrefetchAttributes(attributeKeys []string) EntityQueryInterface {
+func (q *entityQueryImplementation) WithPrefetchAttributes(attributeKeys ...string) EntityQueryInterface {
 	q.prefetchAttributes, q.hasPrefetchAttributes = attributeKeys, true
 	return q
 }
