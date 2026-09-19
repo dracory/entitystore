@@ -104,3 +104,54 @@ func TestAttributeQueryIntegration(t *testing.T) {
 		t.Fatalf("Expected 2 attributes, got %d", len(list))
 	}
 }
+
+// TestAttributeQueryTimeFilters verifies created_at/updated_at range
+// filtering executes against a real store.
+func TestAttributeQueryTimeFilters(t *testing.T) {
+	db := InitDB("attr_time_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "time_entity",
+		AttributeTableName: "time_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	entity, err := store.EntityCreateWithType(ctx, "character")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, entity.ID(), "name", "Ada"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Future lower bound excludes everything
+	list, err := store.AttributeList(ctx, AttributeQuery().WithCreatedAtGte("2999-01-01 00:00:00"))
+	if err != nil {
+		t.Fatal("AttributeList failed:", err)
+	}
+	if len(list) != 0 {
+		t.Fatalf("Expected 0 attributes after future created_at_gte, got %d", len(list))
+	}
+
+	// Past bounds include the row; combined range works too
+	list, err = store.AttributeList(ctx, AttributeQuery().
+		WithCreatedAtGte("2000-01-01 00:00:00").
+		WithCreatedAtLte("2999-01-01 00:00:00").
+		WithUpdatedAtGte("2000-01-01 00:00:00"))
+	if err != nil {
+		t.Fatal("AttributeList failed:", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("Expected 1 attribute in range, got %d", len(list))
+	}
+
+	// Invalid: set-but-empty bound rejected by Validate
+	if _, err := store.AttributeList(ctx, AttributeQuery().WithCreatedAtGte("")); err == nil {
+		t.Error("Expected validation error for empty created_at_gte")
+	}
+}
