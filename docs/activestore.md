@@ -49,6 +49,7 @@ active.GetStore()    // entitystore.StoreInterface
 - **Deferred errors** — fluent setters can't return `(entity, error)` and still chain, so the first error is accumulated and surfaced by `Save()` or `Err()`. Always check one of them.
 - **`Save()` returns the entity** — `product, err := active.EntityCreate("x").SetString(...).Save()` works as a complete expression.
 - **`Prefetch()`** — loads all attributes in one query into a per-entity cache; subsequent `GetString` reads from memory and setters keep the cache in sync. Without it, every `GetString` is a DB round-trip. Opt-in because the cache can go stale if another process writes directly.
+- **Not found is `(nil, nil)`** — matching the core store convention, `Find*` methods (`EntityFindByID`, `RelationshipFindByID`, `TaxonomyFindByID/Slug`, `TermFindByID/Slug`) and navigation methods (`GetEntity`, `GetRelatedEntity`, `GetTaxonomy`, `Parent`) return `(nil, nil)` when the record doesn't exist — a missing record is not an error. Hydration methods (`Related`, `Terms`, `Entities`) silently skip dangling references whose target was deleted.
 
 ## Relationships
 
