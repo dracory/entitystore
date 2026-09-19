@@ -3,6 +3,7 @@ package activestore
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/dracory/entitystore"
 )
@@ -16,6 +17,7 @@ type ActiveEntityInterface interface {
 	SetFloat(key string, value float64) ActiveEntityInterface
 	GetString(key string) (string, bool, error)
 	GetAttributes() ([]entitystore.AttributeInterface, error)
+	Prefetch() error
 	Save() error
 	Trash() (bool, error)
 	Delete() (bool, error)
@@ -34,7 +36,8 @@ type activeEntityImplementation struct {
 	store      entitystore.StoreInterface
 	persisted  bool
 	pendingOps []pendingOp
-	err        error // first accumulated error, deferred to Save()/Err()
+	cache      map[string]string // populated by Prefetch(); nil = not prefetched
+	err        error             // first accumulated error, deferred to Save()/Err()
 }
 
 // newActiveEntity binds an existing (persisted) entity to a store context.
@@ -66,26 +69,65 @@ func (e *activeEntityImplementation) apply(op pendingOp) ActiveEntityInterface {
 	return e
 }
 
+// setCached records a successful write in the prefetch cache, if active.
+func (e *activeEntityImplementation) setCached(key, value string) {
+	if e.cache != nil {
+		e.cache[key] = value
+	}
+}
+
 func (e *activeEntityImplementation) SetString(key, value string) ActiveEntityInterface {
 	return e.apply(func(ctx context.Context, store entitystore.StoreInterface, entityID string) error {
-		return store.AttributeSetString(ctx, entityID, key, value)
+		if err := store.AttributeSetString(ctx, entityID, key, value); err != nil {
+			return err
+		}
+		e.setCached(key, value)
+		return nil
 	})
 }
 
 func (e *activeEntityImplementation) SetInt(key string, value int64) ActiveEntityInterface {
 	return e.apply(func(ctx context.Context, store entitystore.StoreInterface, entityID string) error {
-		return store.AttributeSetInt(ctx, entityID, key, value)
+		if err := store.AttributeSetInt(ctx, entityID, key, value); err != nil {
+			return err
+		}
+		e.setCached(key, strconv.FormatInt(value, 10))
+		return nil
 	})
 }
 
 func (e *activeEntityImplementation) SetFloat(key string, value float64) ActiveEntityInterface {
 	return e.apply(func(ctx context.Context, store entitystore.StoreInterface, entityID string) error {
-		return store.AttributeSetFloat(ctx, entityID, key, value)
+		if err := store.AttributeSetFloat(ctx, entityID, key, value); err != nil {
+			return err
+		}
+		e.setCached(key, strconv.FormatFloat(value, 'f', -1, 64))
+		return nil
 	})
 }
 
-// GetString gets a string attribute from the entity via the store.
+// Prefetch loads all of the entity's attributes into memory in a single
+// query. Afterwards GetString reads from the cache without hitting the
+// store, and setters keep the cache in sync.
+func (e *activeEntityImplementation) Prefetch() error {
+	attrs, err := e.store.EntityAttributeList(e.ctx, e.entity.ID())
+	if err != nil {
+		return err
+	}
+	e.cache = make(map[string]string, len(attrs))
+	for _, attr := range attrs {
+		e.cache[attr.GetKey()] = attr.GetValue()
+	}
+	return nil
+}
+
+// GetString gets a string attribute — from the prefetch cache when
+// Prefetch() was called, otherwise from the store.
 func (e *activeEntityImplementation) GetString(key string) (string, bool, error) {
+	if e.cache != nil {
+		value, exists := e.cache[key]
+		return value, exists, nil
+	}
 	return e.store.AttributeGetString(e.ctx, e.entity.ID(), key)
 }
 

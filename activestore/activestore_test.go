@@ -155,6 +155,55 @@ func TestTrashAndDelete(t *testing.T) {
 	}
 }
 
+func TestPrefetch(t *testing.T) {
+	ctx := context.Background()
+	store := initStore(t, "activestore_prefetch.db")
+	active, err := New(ctx, store)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	product := active.New("product").
+		SetString("name", "Laptop").
+		SetInt("stock", 50)
+	if err := product.Save(); err != nil {
+		t.Fatal(err)
+	}
+
+	found, err := active.FindByID(product.GetEntity().ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := found.Prefetch(); err != nil {
+		t.Fatal(err)
+	}
+
+	name, exists, err := found.GetString("name")
+	if err != nil || !exists || name != "Laptop" {
+		t.Fatalf("expected name=Laptop, got %q exists=%v err=%v", name, exists, err)
+	}
+
+	stock, exists, _ := found.GetString("stock")
+	if !exists || stock != "50" {
+		t.Fatalf("expected stock=50, got %q exists=%v", stock, exists)
+	}
+
+	missing, exists, _ := found.GetString("nonexistent")
+	if exists || missing != "" {
+		t.Fatalf("expected missing key, got %q exists=%v", missing, exists)
+	}
+
+	// setters keep the cache in sync
+	found.SetString("name", "Tablet")
+	if err := found.Err(); err != nil {
+		t.Fatal(err)
+	}
+	name, _, _ = found.GetString("name")
+	if name != "Tablet" {
+		t.Fatalf("expected cached name=Tablet, got %q", name)
+	}
+}
+
 func TestWrapEntity_Nil(t *testing.T) {
 	active, err := New(context.Background(), initStore(t, "activestore_wrap.db"))
 	if err != nil {

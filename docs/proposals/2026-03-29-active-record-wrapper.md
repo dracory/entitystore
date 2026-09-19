@@ -42,6 +42,7 @@ type ActiveEntityInterface interface {
 	SetFloat(key string, value float64) ActiveEntityInterface
 	GetString(key string) (string, bool, error)
 	GetAttributes() ([]entitystore.AttributeInterface, error)
+	Prefetch() error
 	Save() error
 	Trash() (bool, error)
 	Delete() (bool, error)
@@ -245,6 +246,7 @@ func (e *activeEntityImplementation) GetAttributes() ([]entitystore.AttributeInt
 
 - **Staged Writes for New Entities:** Attributes on an unpersisted entity cannot be written to the store until the entity row exists. `New()` entities must stage attribute writes in memory and flush them inside `Save()` after `EntityCreate` succeeds. Entities obtained via `FindByID`/`WrapEntity`/`List` can write immediately.
 - **Deferred Errors:** The fluent setters accumulate the first error instead of returning it (required for chaining). Developers must check `Save()` or `Err()` — a silent failure mode if they forget.
+- **Prefetch Staleness:** `Prefetch()` caches all attributes in memory so `GetString` avoids per-call DB round-trips. The cache is updated by the wrapper's own setters but goes stale if another process writes to the store directly; it is opt-in per entity.
 - **Package Discoverability:** Developers need to be aware that the `activestore` package exists; otherwise, they might complain the core API is too verbose.
 - **Double API Surface:** The maintainers of this library will effectively support two public APIs. The `ActiveEntityInterface` interface will need roughly the same amount of methods as the core `StoreInterface` simply to delegate them. However, since it consists of simple passthrough methods, testing and maintenance should be trivial.
 
