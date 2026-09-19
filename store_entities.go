@@ -216,7 +216,46 @@ func (st *storeImplementation) EntityList(ctx context.Context, query EntityQuery
 		}))
 	}
 
+	if query.HasPrefetchAttributes() && len(list) > 0 {
+		if err := st.prefetchEntityAttributes(ctx, list, query.GetPrefetchAttributes()); err != nil {
+			return nil, err
+		}
+	}
+
 	return list, nil
+}
+
+// prefetchEntityAttributes batch-loads the given attribute keys for all
+// entities in a single query and stores them as in-memory attributes
+// (readable via GetTempKey).
+func (st *storeImplementation) prefetchEntityAttributes(ctx context.Context, entities []EntityInterface, attributeKeys []string) error {
+	ids := make([]any, 0, len(entities))
+	byID := make(map[string]EntityInterface, len(entities))
+	for _, e := range entities {
+		ids = append(ids, e.ID())
+		byID[e.ID()] = e
+	}
+	keys := make([]any, 0, len(attributeKeys))
+	for _, k := range attributeKeys {
+		keys = append(keys, k)
+	}
+
+	var attrRows []attributeRow
+	err := st.db.Query().Table(st.attributeTableName).
+		Select(COLUMN_ENTITY_ID, COLUMN_ATTRIBUTE_KEY, COLUMN_ATTRIBUTE_VALUE).
+		WhereIn(COLUMN_ENTITY_ID, ids).
+		WhereIn(COLUMN_ATTRIBUTE_KEY, keys).
+		Get(&attrRows)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range attrRows {
+		if e, ok := byID[r.EntityID]; ok {
+			e.SetTempKey(r.AttributeKey, r.AttributeValue)
+		}
+	}
+	return nil
 }
 
 // EntityCount counts entities matching the given fluent query

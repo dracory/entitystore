@@ -130,6 +130,16 @@ type EntityQueryInterface interface {
 	// WithUpdatedAtLte filters to rows updated at or before the given UTC
 	// datetime ("YYYY-MM-DD HH:MM:SS").
 	WithUpdatedAtLte(updatedAtLte string) EntityQueryInterface
+
+	// HasPrefetchAttributes reports whether attribute prefetching was set.
+	HasPrefetchAttributes() bool
+	// GetPrefetchAttributes returns the attribute keys to prefetch.
+	GetPrefetchAttributes() []string
+	// WithPrefetchAttributes eagerly loads the given attribute keys for all
+	// returned entities in a single batch query, populating each entity's
+	// in-memory attributes (readable via GetTempKey). Use it when you know
+	// which attributes you will read, to avoid an N+1 query pattern.
+	WithPrefetchAttributes(attributeKeys []string) EntityQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -170,6 +180,9 @@ type entityQueryImplementation struct {
 	hasUpdatedAtGte bool
 	updatedAtLte    string
 	hasUpdatedAtLte bool
+
+	prefetchAttributes    []string
+	hasPrefetchAttributes bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -209,6 +222,9 @@ func (q *entityQueryImplementation) Validate() error {
 	}
 	if q.hasUpdatedAtLte && q.updatedAtLte == "" {
 		return errors.New("entity query: updated_at_lte cannot be empty")
+	}
+	if q.hasPrefetchAttributes && len(q.prefetchAttributes) < 1 {
+		return errors.New("entity query: prefetch_attributes cannot be empty array")
 	}
 	return nil
 }
@@ -308,5 +324,16 @@ func (q *entityQueryImplementation) HasUpdatedAtLte() bool   { return q.hasUpdat
 func (q *entityQueryImplementation) GetUpdatedAtLte() string { return q.updatedAtLte }
 func (q *entityQueryImplementation) WithUpdatedAtLte(updatedAtLte string) EntityQueryInterface {
 	q.updatedAtLte, q.hasUpdatedAtLte = updatedAtLte, true
+	return q
+}
+
+func (q *entityQueryImplementation) HasPrefetchAttributes() bool {
+	return q.hasPrefetchAttributes
+}
+func (q *entityQueryImplementation) GetPrefetchAttributes() []string {
+	return q.prefetchAttributes
+}
+func (q *entityQueryImplementation) WithPrefetchAttributes(attributeKeys []string) EntityQueryInterface {
+	q.prefetchAttributes, q.hasPrefetchAttributes = attributeKeys, true
 	return q
 }
