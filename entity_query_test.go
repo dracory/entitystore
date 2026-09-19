@@ -152,14 +152,22 @@ func TestEntityQuery_PrefetchAttributes(t *testing.T) {
 	}
 
 	byID := map[string]EntityInterface{list[0].ID(): list[0], list[1].ID(): list[1]}
-	if got := byID[e1.ID()].GetTempKey("name"); got != "Laptop" {
+	gotE1, ok := byID[e1.ID()]
+	if !ok {
+		t.Fatalf("Expected entity %s in result", e1.ID())
+	}
+	gotE2, ok := byID[e2.ID()]
+	if !ok {
+		t.Fatalf("Expected entity %s in result", e2.ID())
+	}
+	if got := gotE1.GetTempKey("name"); got != "Laptop" {
 		t.Fatalf("Expected prefetched name Laptop, got %q", got)
 	}
-	if got := byID[e2.ID()].GetTempKey("name"); got != "Phone" {
+	if got := gotE2.GetTempKey("name"); got != "Phone" {
 		t.Fatalf("Expected prefetched name Phone, got %q", got)
 	}
 	// sku was not in the prefetch list — must not be loaded
-	if got := byID[e1.ID()].GetTempKey("sku"); got != "" {
+	if got := gotE1.GetTempKey("sku"); got != "" {
 		t.Fatalf("Expected sku to not be prefetched, got %q", got)
 	}
 
@@ -211,6 +219,9 @@ func TestEntityQuery_PrefetchAll(t *testing.T) {
 	list2, err := store.EntityList(ctx, EntityQuery().WithEntityType("product"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(list2) != 1 {
+		t.Fatalf("Expected 1 entity, got %d", len(list2))
 	}
 	if got := list2[0].GetTempKey("name"); got != "" {
 		t.Fatalf("Expected no prefetch, got %q", got)

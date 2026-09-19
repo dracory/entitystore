@@ -59,12 +59,18 @@ func TestAssignTermAndEntities(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cat, _ := active.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
-	laptops, _ := active.TermCreate(entitystore.TaxonomyTermOptions{
+	cat, err := active.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	laptops, err := active.TermCreate(entitystore.TaxonomyTermOptions{
 		TaxonomyID: cat.GetTaxonomy().GetID(),
 		Name:       "Laptops",
 		Slug:       "laptops",
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	product := active.EntityCreate("product")
 	if _, err := product.Save(); err != nil {
@@ -103,14 +109,23 @@ func TestTermHierarchy(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cat, _ := active.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
-	parent, _ := active.TermCreate(entitystore.TaxonomyTermOptions{
+	cat, err := active.TaxonomyCreate(entitystore.TaxonomyOptions{Name: "Categories", Slug: "categories"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent, err := active.TermCreate(entitystore.TaxonomyTermOptions{
 		TaxonomyID: cat.GetTaxonomy().GetID(), Name: "Computers", Slug: "computers",
 	})
-	child, _ := active.TermCreate(entitystore.TaxonomyTermOptions{
+	if err != nil {
+		t.Fatal(err)
+	}
+	child, err := active.TermCreate(entitystore.TaxonomyTermOptions{
 		TaxonomyID: cat.GetTaxonomy().GetID(), Name: "Laptops", Slug: "laptops",
 		ParentID: parent.GetTerm().GetID(),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	gotParent, err := child.Parent()
 	if err != nil || gotParent == nil {
@@ -128,6 +143,9 @@ func TestTermHierarchy(t *testing.T) {
 	orphan, err := active.TermCreate(entitystore.TaxonomyTermOptions{
 		TaxonomyID: cat.GetTaxonomy().GetID(), Name: "Phones", Slug: "phones",
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	noParent, err := orphan.Parent()
 	if err != nil || noParent != nil {
 		t.Fatalf("expected nil parent, got %v err=%v", noParent, err)

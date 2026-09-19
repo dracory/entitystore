@@ -209,6 +209,9 @@ func (e *activeEntityImplementation) GetEntity() entitystore.EntityInterface {
 
 // RelateTo creates a relationship from this entity to the related entity.
 func (e *activeEntityImplementation) RelateTo(related ActiveEntityInterface, relationshipType string) error {
+	if related == nil || related.GetEntity() == nil {
+		return errors.New("related entity cannot be nil")
+	}
 	return e.RelateToID(related.GetEntity().ID(), relationshipType)
 }
 
@@ -225,6 +228,9 @@ func (e *activeEntityImplementation) RelateToID(relatedEntityID, relationshipTyp
 
 // RelateToOrdered creates a relationship with an explicit sort order.
 func (e *activeEntityImplementation) RelateToOrdered(related ActiveEntityInterface, relationshipType string, sequence int) error {
+	if related == nil || related.GetEntity() == nil {
+		return errors.New("related entity cannot be nil")
+	}
 	return e.RelateToOrderedID(related.GetEntity().ID(), relationshipType, sequence)
 }
 
@@ -243,6 +249,9 @@ func (e *activeEntityImplementation) RelateToOrderedID(relatedEntityID, relation
 // Unrelate deletes the relationship between this entity and the related
 // entity of the given type, if it exists.
 func (e *activeEntityImplementation) Unrelate(related ActiveEntityInterface, relationshipType string) error {
+	if related == nil || related.GetEntity() == nil {
+		return errors.New("related entity cannot be nil")
+	}
 	return e.UnrelateID(related.GetEntity().ID(), relationshipType)
 }
 
@@ -292,6 +301,12 @@ func (e *activeEntityImplementation) Related(relationshipType string) ([]ActiveE
 
 // AssignTerm assigns this entity to a taxonomy term.
 func (e *activeEntityImplementation) AssignTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error {
+	if taxonomy == nil || taxonomy.GetTaxonomy() == nil {
+		return errors.New("taxonomy cannot be nil")
+	}
+	if term == nil || term.GetTerm() == nil {
+		return errors.New("term cannot be nil")
+	}
 	return e.AssignTermByID(taxonomy.GetTaxonomy().GetID(), term.GetTerm().GetID())
 }
 
@@ -303,6 +318,12 @@ func (e *activeEntityImplementation) AssignTermByID(taxonomyID, termID string) e
 
 // RemoveTerm removes this entity from a taxonomy term.
 func (e *activeEntityImplementation) RemoveTerm(taxonomy ActiveTaxonomyInterface, term ActiveTaxonomyTermInterface) error {
+	if taxonomy == nil || taxonomy.GetTaxonomy() == nil {
+		return errors.New("taxonomy cannot be nil")
+	}
+	if term == nil || term.GetTerm() == nil {
+		return errors.New("term cannot be nil")
+	}
 	return e.RemoveTermByID(taxonomy.GetTaxonomy().GetID(), term.GetTerm().GetID())
 }
 
@@ -314,6 +335,9 @@ func (e *activeEntityImplementation) RemoveTermByID(taxonomyID, termID string) e
 // Terms returns the taxonomy terms this entity is assigned to within the
 // given taxonomy — resolved and wrapped as ActiveTaxonomyTermInterface.
 func (e *activeEntityImplementation) Terms(taxonomy ActiveTaxonomyInterface) ([]ActiveTaxonomyTermInterface, error) {
+	if taxonomy == nil || taxonomy.GetTaxonomy() == nil {
+		return nil, errors.New("taxonomy cannot be nil")
+	}
 	return e.TermsByID(taxonomy.GetTaxonomy().GetID())
 }
 

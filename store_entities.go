@@ -205,7 +205,7 @@ func (st *storeImplementation) EntityList(ctx context.Context, query EntityQuery
 		return nil, err
 	}
 
-	var list []EntityInterface
+	list := []EntityInterface{}
 	for _, r := range rows {
 		list = append(list, NewEntityFromExistingData(map[string]string{
 			COLUMN_ID:            r.ID,
@@ -322,7 +322,7 @@ func (st *storeImplementation) EntityListByAttribute(ctx context.Context, entity
 		return nil, err
 	}
 
-	var list []EntityInterface
+	list := []EntityInterface{}
 	for _, r := range rows {
 		list = append(list, NewEntityFromExistingData(map[string]string{
 			COLUMN_ID:            r.ID,
