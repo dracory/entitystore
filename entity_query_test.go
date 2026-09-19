@@ -109,3 +109,110 @@ func TestEntityQueryIntegration(t *testing.T) {
 		t.Fatalf("Expected count 2, got %d", count)
 	}
 }
+
+func TestEntityQuery_PrefetchAttributes(t *testing.T) {
+	db := InitDB("test_entity_query_prefetch.db")
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "entity",
+		AttributeTableName: "attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	e1, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e2, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, e1.ID(), "name", "Laptop"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, e1.ID(), "sku", "LAP-1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, e2.ID(), "name", "Phone"); err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := store.EntityList(ctx, EntityQuery().
+		WithEntityType("product").
+		WithPrefetchAttributes("name"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("Expected 2 entities, got %d", len(list))
+	}
+
+	byID := map[string]EntityInterface{list[0].ID(): list[0], list[1].ID(): list[1]}
+	if got := byID[e1.ID()].GetTempKey("name"); got != "Laptop" {
+		t.Fatalf("Expected prefetched name Laptop, got %q", got)
+	}
+	if got := byID[e2.ID()].GetTempKey("name"); got != "Phone" {
+		t.Fatalf("Expected prefetched name Phone, got %q", got)
+	}
+	// sku was not in the prefetch list — must not be loaded
+	if got := byID[e1.ID()].GetTempKey("sku"); got != "" {
+		t.Fatalf("Expected sku to not be prefetched, got %q", got)
+	}
+
+}
+
+func TestEntityQuery_PrefetchAll(t *testing.T) {
+	db := InitDB("test_entity_query_prefetchall.db")
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "entity",
+		AttributeTableName: "attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	e1, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, e1.ID(), "name", "Laptop"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, e1.ID(), "sku", "LAP-1"); err != nil {
+		t.Fatal(err)
+	}
+
+	// no keys = prefetch all attributes
+	list, err := store.EntityList(ctx, EntityQuery().
+		WithEntityType("product").
+		WithPrefetchAttributes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("Expected 1 entity, got %d", len(list))
+	}
+	// all attributes must be loaded — both name and sku
+	if got := list[0].GetTempKey("name"); got != "Laptop" {
+		t.Fatalf("Expected prefetched name Laptop, got %q", got)
+	}
+	if got := list[0].GetTempKey("sku"); got != "LAP-1" {
+		t.Fatalf("Expected prefetched sku LAP-1, got %q", got)
+	}
+
+	// not setting prefetch at all must not prefetch
+	list2, err := store.EntityList(ctx, EntityQuery().WithEntityType("product"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := list2[0].GetTempKey("name"); got != "" {
+		t.Fatalf("Expected no prefetch, got %q", got)
+	}
+}

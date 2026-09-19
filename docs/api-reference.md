@@ -367,9 +367,15 @@ Both bounds are inclusive and can be combined for a closed range.
 
 `WithID`, `WithIDs`, `WithEntityType`, `WithEntityHandle`, `WithSearch`,
 `WithLimit`, `WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`,
-`WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`
+`WithCreatedAtGte/Lte`, `WithUpdatedAtGte/Lte`, `WithPrefetchAttributes`
 
 `WithSearch` matches against entity attributes via an escaped `LIKE` pattern.
+
+`WithPrefetchAttributes(keys...)` eagerly loads attributes for all returned
+entities in a single batch query. The values are stored as in-memory
+attributes on each entity (readable via `GetTempKey(key)`), avoiding an N+1
+query pattern. Pass specific keys to load only those attributes, or call it
+with no arguments to load all attributes.
 
 ### AttributeQuery()
 

@@ -130,6 +130,19 @@ type EntityQueryInterface interface {
 	// WithUpdatedAtLte filters to rows updated at or before the given UTC
 	// datetime ("YYYY-MM-DD HH:MM:SS").
 	WithUpdatedAtLte(updatedAtLte string) EntityQueryInterface
+
+	// HasPrefetchAttributes reports whether attribute prefetching was set.
+	HasPrefetchAttributes() bool
+	// GetPrefetchAttributes returns the attribute keys to prefetch. An empty
+	// slice means "all attributes" when HasPrefetchAttributes() is true.
+	GetPrefetchAttributes() []string
+	// WithPrefetchAttributes eagerly loads attributes for all returned
+	// entities in a single batch query, populating each entity's in-memory
+	// attributes (readable via GetTempKey). Calling it with specific keys
+	// prefetches only those attributes; calling it with no arguments
+	// prefetches all attributes. Use it to avoid an N+1 query pattern when
+	// you know which attributes you will read — or want them all.
+	WithPrefetchAttributes(attributeKeys ...string) EntityQueryInterface
 }
 
 // == CONSTRUCTOR ============================================================
@@ -170,6 +183,9 @@ type entityQueryImplementation struct {
 	hasUpdatedAtGte bool
 	updatedAtLte    string
 	hasUpdatedAtLte bool
+
+	prefetchAttributes    []string
+	hasPrefetchAttributes bool
 }
 
 // == INTERFACE VERIFICATION =================================================
@@ -308,5 +324,16 @@ func (q *entityQueryImplementation) HasUpdatedAtLte() bool   { return q.hasUpdat
 func (q *entityQueryImplementation) GetUpdatedAtLte() string { return q.updatedAtLte }
 func (q *entityQueryImplementation) WithUpdatedAtLte(updatedAtLte string) EntityQueryInterface {
 	q.updatedAtLte, q.hasUpdatedAtLte = updatedAtLte, true
+	return q
+}
+
+func (q *entityQueryImplementation) HasPrefetchAttributes() bool {
+	return q.hasPrefetchAttributes
+}
+func (q *entityQueryImplementation) GetPrefetchAttributes() []string {
+	return q.prefetchAttributes
+}
+func (q *entityQueryImplementation) WithPrefetchAttributes(attributeKeys ...string) EntityQueryInterface {
+	q.prefetchAttributes, q.hasPrefetchAttributes = attributeKeys, true
 	return q
 }
