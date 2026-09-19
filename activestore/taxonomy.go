@@ -11,8 +11,8 @@ import (
 // lifecycle helpers.
 type ActiveTaxonomyInterface interface {
 	GetTaxonomy() entitystore.TaxonomyInterface
-	Terms() ([]ActiveTaxonomyTermInterface, error)  // terms in this taxonomy
-	Entities() ([]ActiveEntityInterface, error)     // assigned entities
+	Terms() ([]ActiveTaxonomyTermInterface, error) // terms in this taxonomy
+	Entities() ([]ActiveEntityInterface, error)    // assigned entities
 	Trash(deletedBy string) (bool, error)
 	Restore() (bool, error)
 	Delete() (bool, error)
@@ -23,9 +23,9 @@ type ActiveTaxonomyInterface interface {
 type ActiveTaxonomyTermInterface interface {
 	GetTerm() entitystore.TaxonomyTermInterface
 	GetTaxonomy() (ActiveTaxonomyInterface, error)
-	Parent() (ActiveTaxonomyTermInterface, error)   // hierarchical nav
+	Parent() (ActiveTaxonomyTermInterface, error) // hierarchical nav
 	Children() ([]ActiveTaxonomyTermInterface, error)
-	Entities() ([]ActiveEntityInterface, error)     // entities tagged with this term
+	Entities() ([]ActiveEntityInterface, error) // entities tagged with this term
 	Trash(deletedBy string) (bool, error)
 	Restore() (bool, error)
 	Delete() (bool, error)

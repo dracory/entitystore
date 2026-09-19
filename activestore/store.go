@@ -22,6 +22,38 @@ type ActiveStoreInterface interface {
 	EntityDelete(entityID string) (bool, error)
 	EntityWrap(entity entitystore.EntityInterface) (ActiveEntityInterface, error)
 	GetStore() entitystore.StoreInterface
+
+	// Relationships (requires RelationshipsEnabled)
+	RelationshipCreate(options entitystore.RelationshipOptions) (ActiveRelationshipInterface, error)
+	RelationshipFindByID(relationshipID string) (ActiveRelationshipInterface, error)
+	RelationshipList(query entitystore.RelationshipQueryInterface) ([]ActiveRelationshipInterface, error)
+	RelationshipCount(query entitystore.RelationshipQueryInterface) (int64, error)
+	RelationshipTrash(relationshipID, deletedBy string) (bool, error)
+	RelationshipRestore(relationshipID string) (bool, error)
+	RelationshipDelete(relationshipID string) (bool, error)
+	RelationshipDeleteAll(entityID string) error
+
+	// Taxonomies (requires TaxonomiesEnabled)
+	TaxonomyCreate(options entitystore.TaxonomyOptions) (ActiveTaxonomyInterface, error)
+	TaxonomyFindByID(taxonomyID string) (ActiveTaxonomyInterface, error)
+	TaxonomyFindBySlug(slug string) (ActiveTaxonomyInterface, error)
+	TaxonomyList(query entitystore.TaxonomyQueryInterface) ([]ActiveTaxonomyInterface, error)
+	TaxonomyCount(query entitystore.TaxonomyQueryInterface) (int64, error)
+	TaxonomyUpdate(taxonomy entitystore.TaxonomyInterface) error
+	TaxonomyTrash(taxonomyID, deletedBy string) (bool, error)
+	TaxonomyRestore(taxonomyID string) (bool, error)
+	TaxonomyDelete(taxonomyID string) (bool, error)
+
+	// Taxonomy terms (requires TaxonomiesEnabled)
+	TermCreate(options entitystore.TaxonomyTermOptions) (ActiveTaxonomyTermInterface, error)
+	TermFindByID(termID string) (ActiveTaxonomyTermInterface, error)
+	TermFindBySlug(taxonomyID, slug string) (ActiveTaxonomyTermInterface, error)
+	TermList(query entitystore.TaxonomyTermQueryInterface) ([]ActiveTaxonomyTermInterface, error)
+	TermCount(query entitystore.TaxonomyTermQueryInterface) (int64, error)
+	TermUpdate(term entitystore.TaxonomyTermInterface) error
+	TermTrash(termID, deletedBy string) (bool, error)
+	TermRestore(termID string) (bool, error)
+	TermDelete(termID string) (bool, error)
 }
 
 // activeStoreImplementation is the concrete store wrapper.
