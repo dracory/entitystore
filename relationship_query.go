@@ -1,6 +1,9 @@
 package entitystore
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // relationship_query.go defines RelationshipQueryInterface — the fluent
 // query type accepted by StoreInterface.RelationshipList, RelationshipCount
@@ -316,7 +319,7 @@ func (q *relationshipQueryImplementation) WithSortBy(sortBy string) Relationship
 func (q *relationshipQueryImplementation) HasSortOrder() bool   { return q.hasSortOrder }
 func (q *relationshipQueryImplementation) GetSortOrder() string { return q.sortOrder }
 func (q *relationshipQueryImplementation) WithSortOrder(sortOrder string) RelationshipQueryInterface {
-	q.sortOrder, q.hasSortOrder = sortOrder, true
+	q.sortOrder, q.hasSortOrder = strings.ToLower(sortOrder), true
 	return q
 }
 

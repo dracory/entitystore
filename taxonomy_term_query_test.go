@@ -69,6 +69,22 @@ func TestTaxonomyTermQueryValidate(t *testing.T) {
 	}
 }
 
+func TestTaxonomyTermQuerySortOrderCase(t *testing.T) {
+	for _, sortOrder := range []string{"desc", "DESC", "Desc", "asc", "ASC", "Asc"} {
+		q := TaxonomyTermQuery().WithSortOrder(sortOrder)
+		if err := q.Validate(); err != nil {
+			t.Errorf("WithSortOrder(%q) failed validation: %v", sortOrder, err)
+		}
+		expected := "asc"
+		if sortOrder == "desc" || sortOrder == "DESC" || sortOrder == "Desc" {
+			expected = "desc"
+		}
+		if q.GetSortOrder() != expected {
+			t.Errorf("WithSortOrder(%q): expected %q, got %q", sortOrder, expected, q.GetSortOrder())
+		}
+	}
+}
+
 // TestTaxonomyTermQueryIntegration runs the fluent query against a real store.
 func TestTaxonomyTermQueryIntegration(t *testing.T) {
 	db := InitDB("taxonomy_term_fluent_test")

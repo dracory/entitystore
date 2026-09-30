@@ -1,6 +1,9 @@
 package entitystore
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // attribute_query.go defines AttributeQueryInterface — the fluent query type
 // accepted by StoreInterface.AttributeList and AttributeCount — and its
@@ -442,7 +445,7 @@ func (q *attributeQueryImplementation) WithSortBy(sortBy string) AttributeQueryI
 func (q *attributeQueryImplementation) HasSortOrder() bool   { return q.hasSortOrder }
 func (q *attributeQueryImplementation) GetSortOrder() string { return q.sortOrder }
 func (q *attributeQueryImplementation) WithSortOrder(sortOrder string) AttributeQueryInterface {
-	q.sortOrder, q.hasSortOrder = sortOrder, true
+	q.sortOrder, q.hasSortOrder = strings.ToLower(sortOrder), true
 	return q
 }
 

@@ -63,6 +63,22 @@ func TestEntityQueryValidate(t *testing.T) {
 	}
 }
 
+func TestEntityQuerySortOrderCase(t *testing.T) {
+	for _, sortOrder := range []string{"desc", "DESC", "Desc", "asc", "ASC", "Asc"} {
+		q := EntityQuery().WithSortOrder(sortOrder)
+		if err := q.Validate(); err != nil {
+			t.Errorf("WithSortOrder(%q) failed validation: %v", sortOrder, err)
+		}
+		expected := "asc"
+		if sortOrder == "desc" || sortOrder == "DESC" || sortOrder == "Desc" {
+			expected = "desc"
+		}
+		if q.GetSortOrder() != expected {
+			t.Errorf("WithSortOrder(%q): expected %q, got %q", sortOrder, expected, q.GetSortOrder())
+		}
+	}
+}
+
 // TestEntityQueryIntegration runs the fluent query against a real store.
 func TestEntityQueryIntegration(t *testing.T) {
 	db := InitDB("entity_fluent_test")
