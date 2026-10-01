@@ -64,6 +64,22 @@ func TestAttributeQueryValidate(t *testing.T) {
 	}
 }
 
+func TestAttributeQuerySortOrderCase(t *testing.T) {
+	for _, sortOrder := range []string{"desc", "DESC", "Desc", "asc", "ASC", "Asc"} {
+		q := AttributeQuery().WithSortOrder(sortOrder)
+		if err := q.Validate(); err != nil {
+			t.Errorf("WithSortOrder(%q) failed validation: %v", sortOrder, err)
+		}
+		expected := "asc"
+		if sortOrder == "desc" || sortOrder == "DESC" || sortOrder == "Desc" {
+			expected = "desc"
+		}
+		if q.GetSortOrder() != expected {
+			t.Errorf("WithSortOrder(%q): expected %q, got %q", sortOrder, expected, q.GetSortOrder())
+		}
+	}
+}
+
 // TestAttributeQueryIntegration runs the fluent query against a real store.
 func TestAttributeQueryIntegration(t *testing.T) {
 	db := InitDB("attr_fluent_test")

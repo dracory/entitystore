@@ -1,6 +1,9 @@
 package entitystore
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // entity_query.go defines EntityQueryInterface — the fluent query type
 // accepted by StoreInterface.EntityList and EntityCount — and its
@@ -288,7 +291,7 @@ func (q *entityQueryImplementation) WithSortBy(sortBy string) EntityQueryInterfa
 func (q *entityQueryImplementation) HasSortOrder() bool   { return q.hasSortOrder }
 func (q *entityQueryImplementation) GetSortOrder() string { return q.sortOrder }
 func (q *entityQueryImplementation) WithSortOrder(sortOrder string) EntityQueryInterface {
-	q.sortOrder, q.hasSortOrder = sortOrder, true
+	q.sortOrder, q.hasSortOrder = strings.ToLower(sortOrder), true
 	return q
 }
 

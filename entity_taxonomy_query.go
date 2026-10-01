@@ -1,6 +1,9 @@
 package entitystore
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // entity_taxonomy_query.go defines EntityTaxonomyQueryInterface — the
 // fluent query type accepted by StoreInterface.EntityTaxonomyList and
@@ -270,7 +273,7 @@ func (q *entityTaxonomyQueryImplementation) WithSortBy(sortBy string) EntityTaxo
 func (q *entityTaxonomyQueryImplementation) HasSortOrder() bool   { return q.hasSortOrder }
 func (q *entityTaxonomyQueryImplementation) GetSortOrder() string { return q.sortOrder }
 func (q *entityTaxonomyQueryImplementation) WithSortOrder(sortOrder string) EntityTaxonomyQueryInterface {
-	q.sortOrder, q.hasSortOrder = sortOrder, true
+	q.sortOrder, q.hasSortOrder = strings.ToLower(sortOrder), true
 	return q
 }
 

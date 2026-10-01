@@ -1,6 +1,9 @@
 package entitystore
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 // taxonomy_term_query.go defines TaxonomyTermQueryInterface — the fluent
 // query type accepted by StoreInterface.TaxonomyTermList, TaxonomyTermCount
@@ -277,7 +280,7 @@ func (q *taxonomyTermQueryImplementation) WithSortBy(sortBy string) TaxonomyTerm
 func (q *taxonomyTermQueryImplementation) HasSortOrder() bool   { return q.hasSortOrder }
 func (q *taxonomyTermQueryImplementation) GetSortOrder() string { return q.sortOrder }
 func (q *taxonomyTermQueryImplementation) WithSortOrder(sortOrder string) TaxonomyTermQueryInterface {
-	q.sortOrder, q.hasSortOrder = sortOrder, true
+	q.sortOrder, q.hasSortOrder = strings.ToLower(sortOrder), true
 	return q
 }
 
