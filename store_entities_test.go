@@ -129,6 +129,65 @@ func TestStoreEntityListByAttributeErrorPropagation(t *testing.T) {
 	}
 }
 
+func TestStoreEntityDeleteCleansUpAttributes(t *testing.T) {
+	db := InitDB("store_entity_delete_attr_test")
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "delete_entity",
+		AttributeTableName: "delete_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	entity, err := store.EntityCreateWithTypeAndAttributes(ctx, "product", map[string]string{
+		"title": "Test Product",
+		"sku":   "SKU-123",
+	})
+	if err != nil {
+		t.Fatal("EntityCreateWithTypeAndAttributes failed:", err)
+	}
+
+	// Verify attributes were created
+	attrs, err := store.EntityAttributeList(ctx, entity.ID())
+	if err != nil {
+		t.Fatal("EntityAttributeList failed:", err)
+	}
+	if len(attrs) != 2 {
+		t.Fatalf("Expected 2 attributes, got %d", len(attrs))
+	}
+
+	// Perform hard delete on entity
+	deleted, err := store.EntityDelete(ctx, entity.ID())
+	if err != nil {
+		t.Fatal("EntityDelete failed:", err)
+	}
+	if !deleted {
+		t.Fatal("Expected EntityDelete to return true")
+	}
+
+	// Verify entity is deleted
+	found, err := store.EntityFindByID(ctx, entity.ID())
+	if err != nil {
+		t.Fatal("EntityFindByID failed:", err)
+	}
+	if found != nil {
+		t.Fatal("Entity should no longer exist")
+	}
+
+	// Verify attributes are also deleted (no orphaned attributes)
+	attrsAfter, err := store.EntityAttributeList(ctx, entity.ID())
+	if err != nil {
+		t.Fatal("EntityAttributeList after delete failed:", err)
+	}
+	if len(attrsAfter) != 0 {
+		t.Fatalf("Expected 0 attributes after EntityDelete, got %d orphaned attributes", len(attrsAfter))
+	}
+}
+
 func TestStoreEntityListByAttributeJoin(t *testing.T) {
 	db := InitDB("entity_list_by_attr_join_test")
 
