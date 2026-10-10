@@ -172,6 +172,8 @@ func (st *storeImplementation) entityTableCreate() error {
 		table.String(COLUMN_ENTITY_HANDLE, 60)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
+		table.Index(COLUMN_ENTITY_TYPE)
+		table.Index(COLUMN_ENTITY_HANDLE)
 	})
 }
 
@@ -187,6 +189,8 @@ func (st *storeImplementation) attributeTableCreate() error {
 		table.Text(COLUMN_ATTRIBUTE_VALUE)
 		table.DateTime(COLUMN_CREATED_AT)
 		table.DateTime(COLUMN_UPDATED_AT)
+		table.Index(COLUMN_ENTITY_ID)
+		table.Unique(COLUMN_ENTITY_ID, COLUMN_ATTRIBUTE_KEY)
 	})
 }
 
@@ -203,6 +207,8 @@ func (st *storeImplementation) entityTrashTableCreate() error {
 		table.DateTime(COLUMN_UPDATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
 		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
+		table.Index(COLUMN_ENTITY_TYPE)
+		table.Index(COLUMN_ENTITY_HANDLE)
 	})
 }
 
@@ -220,6 +226,8 @@ func (st *storeImplementation) attributeTrashTableCreate() error {
 		table.DateTime(COLUMN_UPDATED_AT)
 		table.DateTime(COLUMN_DELETED_AT)
 		table.String(COLUMN_DELETED_BY, ID_COLUMN_LENGTH)
+		table.Index(COLUMN_ENTITY_ID)
+		table.Unique(COLUMN_ENTITY_ID, COLUMN_ATTRIBUTE_KEY)
 	})
 }
 
