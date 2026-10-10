@@ -80,8 +80,12 @@ func (st *storeImplementation) EntityUpdate(ctx context.Context, entity EntityIn
 	return err
 }
 
-// EntityDelete permanently removes an entity record by ID
+// EntityDelete permanently removes an entity record and its associated attributes by ID
 func (st *storeImplementation) EntityDelete(ctx context.Context, id string) (bool, error) {
+	if err := st.AttributesDeleteByEntityID(ctx, id); err != nil {
+		return false, err
+	}
+
 	result, err := st.db.Query().Table(st.entityTableName).Where(COLUMN_ID+" = ?", id).Delete()
 	if err != nil {
 		return false, err
