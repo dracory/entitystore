@@ -3,14 +3,14 @@ package entitystore
 import (
 	"fmt"
 
-	neatuid "github.com/dracory/neat/support/uid"
+	"github.com/dracory/uid"
 )
 
-// GenerateShortID delegates to neat/support/uid which produces 11-character
-// lowercase Crockford Base32 IDs from a microsecond timestamp + 4-bit counter.
+// GenerateShortID delegates to github.com/dracory/uid which produces 14-character
+// lowercase vowel-free IDs from a microsecond timestamp + 4-bit counter via SafeShortID.
 // Thread-safe via internal mutex.
 func GenerateShortID() string {
-	return neatuid.GenerateShortID()
+	return uid.SafeShortID()
 }
 
 // validateIDLength checks that an ID does not exceed ID_COLUMN_LENGTH.
