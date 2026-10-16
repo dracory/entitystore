@@ -28,8 +28,8 @@ func TestEntityCreateWithType(t *testing.T) {
 		t.Fatal("Entity could not be created:", err)
 	}
 
-	if len(entity.ID()) < 9 || len(entity.ID()) > 15 {
-		t.Fatal("Entity ID is not a short ID (expected 9-15 chars):", entity.ID(), "len:", len(entity.ID()))
+	if len(entity.ID()) != 36 {
+		t.Fatal("Entity ID is not a UUID v7 (expected 36 chars):", entity.ID(), "len:", len(entity.ID()))
 	}
 
 	// CreatedAt() is now a string — use CreatedAtCarbon() for time comparisons
