@@ -1,8 +1,8 @@
 package entitystore
 
 // ID_COLUMN_LENGTH is the VARCHAR length used for all id-type columns in
-// schema definitions. GenerateShortID() must produce IDs that fit within
-// this length, otherwise inserts fail on MySQL/MariaDB/PostgreSQL.
+// schema definitions. Generated UUID v7 strings (36 characters) fit within
+// this length.
 const ID_COLUMN_LENGTH = 40
 
 // Column constants

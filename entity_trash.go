@@ -1,6 +1,8 @@
 package entitystore
 
 import (
+	"uuid"
+
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
 )
@@ -19,12 +21,12 @@ var _ EntityTrashInterface = (*entityTrashImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewEntityTrash creates a new entity trash record with default values
-// Generates a new short ID and sets timestamps to the current time
+// Generates a new UUID v7 and sets timestamps to the current time
 func NewEntityTrash() EntityTrashInterface {
 	o := &entityTrashImplementation{}
 	o.SetType("")
 	o.SetHandle("")
-	o.SetID(GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetDeletedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))

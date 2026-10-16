@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"strconv"
+	"uuid"
 
 	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
@@ -27,7 +28,7 @@ func (st *storeImplementation) AttributeCreate(ctx context.Context, attribute At
 	}
 
 	if attribute.ID() == "" {
-		attribute.SetID(GenerateShortID())
+		attribute.SetID(uuid.NewV7().String())
 	}
 
 	if err := validateIDLength(attribute.ID(), COLUMN_ID); err != nil {
@@ -524,7 +525,7 @@ func (st *storeImplementation) AttributesSet(ctx context.Context, entityID strin
 				}
 			} else {
 				err := tx.Table(st.attributeTableName).Create(map[string]any{
-					COLUMN_ID:              GenerateShortID(),
+					COLUMN_ID:              uuid.NewV7().String(),
 					COLUMN_ENTITY_ID:       entityID,
 					COLUMN_ATTRIBUTE_KEY:   key,
 					COLUMN_ATTRIBUTE_VALUE: value,

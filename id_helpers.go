@@ -2,13 +2,7 @@ package entitystore
 
 import (
 	"fmt"
-	"uuid"
 )
-
-// GenerateShortID produces UUID v7 strings using standard library uuid.NewV7().
-func GenerateShortID() string {
-	return uuid.NewV7().String()
-}
 
 // validateIDLength checks that an ID does not exceed ID_COLUMN_LENGTH.
 // Returns an error if the ID is too long, nil otherwise.

@@ -2,6 +2,7 @@ package entitystore
 
 import (
 	"strconv"
+	"uuid"
 
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
@@ -21,10 +22,10 @@ var _ TaxonomyTermInterface = (*taxonomyTermImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewTaxonomyTerm creates a new taxonomy term with default values
-// Generates a new short ID and sets timestamps to the current time
+// Generates a new UUID v7 and sets timestamps to the current time
 func NewTaxonomyTerm() TaxonomyTermInterface {
 	o := &taxonomyTermImplementation{}
-	o.SetID(GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetTaxonomyID("")
 	o.SetName("")
 	o.SetSlug("")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"uuid"
 
 	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
@@ -25,7 +26,7 @@ func (st *storeImplementation) EntityCreate(ctx context.Context, entity EntityIn
 	}
 
 	if entity.ID() == "" {
-		entity.SetID(GenerateShortID())
+		entity.SetID(uuid.NewV7().String())
 	}
 
 	if err := validateIDLength(entity.ID(), COLUMN_ID); err != nil {
