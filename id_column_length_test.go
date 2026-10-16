@@ -5,16 +5,17 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"uuid"
 )
 
-// TestGenerateShortID_FitsColumnWidth is half 1 of the proof:
-// GenerateShortID() must produce IDs that fit within ID_COLUMN_LENGTH.
+// TestUUIDV7_FitsColumnWidth is half 1 of the proof:
+// uuid.NewV7().String() must produce IDs that fit within ID_COLUMN_LENGTH.
 // If this fails, the generated IDs are longer than the declared column width.
-func TestGenerateShortID_FitsColumnWidth(t *testing.T) {
+func TestUUIDV7_FitsColumnWidth(t *testing.T) {
 	for i := 0; i < 1000; i++ {
-		id := GenerateShortID()
+		id := uuid.NewV7().String()
 		if len(id) > ID_COLUMN_LENGTH {
-			t.Errorf("GenerateShortID() returned %q (length %d) which exceeds ID_COLUMN_LENGTH (%d) — "+
+			t.Errorf("uuid.NewV7().String() returned %q (length %d) which exceeds ID_COLUMN_LENGTH (%d) — "+
 				"inserts will fail on MySQL/MariaDB/PostgreSQL with 'Data too long for column'",
 				id, len(id), ID_COLUMN_LENGTH)
 			return
@@ -25,7 +26,7 @@ func TestGenerateShortID_FitsColumnWidth(t *testing.T) {
 // TestStoreSchema_UsesIDColumnLength is half 2 of the proof:
 // store.go must use ID_COLUMN_LENGTH for all id-type column definitions.
 // This verifies the schema side — the columns are declared with the same
-// constant that TestGenerateShortID_FitsColumnWidth checks against.
+// constant that TestUUIDV7_FitsColumnWidth checks against.
 func TestStoreSchema_UsesIDColumnLength(t *testing.T) {
 	src, err := os.ReadFile("store.go")
 	if err != nil {

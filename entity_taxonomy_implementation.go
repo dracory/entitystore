@@ -1,6 +1,8 @@
 package entitystore
 
 import (
+	"uuid"
+
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
 )
@@ -19,10 +21,10 @@ var _ EntityTaxonomyInterface = (*entityTaxonomyImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewEntityTaxonomy creates a new entity-taxonomy assignment with default values
-// Generates a new short ID and sets timestamps to the current time
+// Generates a new UUID v7 and sets timestamps to the current time
 func NewEntityTaxonomy() EntityTaxonomyInterface {
 	o := &entityTaxonomyImplementation{}
-	o.SetID(GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetEntityID("")
 	o.SetTaxonomyID("")
 	o.SetTermID("")

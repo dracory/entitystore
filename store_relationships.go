@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"strconv"
+	"uuid"
 
 	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
@@ -45,7 +46,7 @@ func (st *storeImplementation) RelationshipCreate(ctx context.Context, relations
 	}
 
 	if relationship.ID() == "" {
-		relationship.SetID(GenerateShortID())
+		relationship.SetID(uuid.NewV7().String())
 	}
 
 	if err := validateIDLength(relationship.ID(), COLUMN_ID); err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"strconv"
+	"uuid"
 
 	"github.com/dracory/neat/contracts/database/orm"
 	"github.com/dromara/carbon/v2"
@@ -43,7 +44,7 @@ func (st *storeImplementation) TaxonomyTermCreate(ctx context.Context, term Taxo
 	}
 
 	if term.ID() == "" {
-		term.SetID(GenerateShortID())
+		term.SetID(uuid.NewV7().String())
 	}
 
 	if err := validateIDLength(term.ID(), COLUMN_ID); err != nil {

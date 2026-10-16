@@ -2,6 +2,7 @@ package entitystore
 
 import (
 	"encoding/json"
+	"uuid"
 
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
@@ -23,7 +24,7 @@ var _ TaxonomyInterface = (*taxonomyImplementation)(nil)
 // NewTaxonomy creates a new taxonomy with default values
 func NewTaxonomy() TaxonomyInterface {
 	o := &taxonomyImplementation{}
-	o.SetID(GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetName("")
 	o.SetSlug("")
 	o.SetDescription("")

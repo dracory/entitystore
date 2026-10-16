@@ -2,16 +2,7 @@ package entitystore
 
 import (
 	"fmt"
-
-	"github.com/dracory/uid"
 )
-
-// GenerateShortID delegates to github.com/dracory/uid which produces 14-character
-// lowercase vowel-free IDs from a microsecond timestamp + 4-bit counter via SafeShortID.
-// Thread-safe via internal mutex.
-func GenerateShortID() string {
-	return uid.SafeShortID()
-}
 
 // validateIDLength checks that an ID does not exceed ID_COLUMN_LENGTH.
 // Returns an error if the ID is too long, nil otherwise.

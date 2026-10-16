@@ -1,6 +1,8 @@
 package entitystore
 
 import (
+	"uuid"
+
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
 )
@@ -19,12 +21,12 @@ var _ EntityInterface = (*entityImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewEntity creates a new entity with default values
-// Generates a new short ID and sets timestamps to the current time
+// Generates a new UUID v7 and sets timestamps to the current time
 func NewEntity() EntityInterface {
 	o := &entityImplementation{}
 	o.SetType("")
 	o.SetHandle("")
-	o.SetID(GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetCreatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	o.SetUpdatedAt(carbon.Now(carbon.UTC).ToDateTimeString(carbon.UTC))
 	return o

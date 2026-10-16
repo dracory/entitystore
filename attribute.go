@@ -1,6 +1,8 @@
 package entitystore
 
 import (
+	"uuid"
+
 	"github.com/dracory/dataobject"
 	"github.com/dromara/carbon/v2"
 	"github.com/spf13/cast"
@@ -20,10 +22,10 @@ var _ AttributeInterface = (*attributeImplementation)(nil)
 // == CONSTRUCTORS ===========================================================
 
 // NewAttribute creates a new attribute with default values
-// Generates a new short ID and sets timestamps to the current time
+// Generates a new UUID v7 and sets timestamps to the current time
 func NewAttribute() AttributeInterface {
 	o := &attributeImplementation{}
-	o.SetID(GenerateShortID())
+	o.SetID(uuid.NewV7().String())
 	o.SetEntityID("")
 	o.SetKey("")
 	o.SetValue("")
