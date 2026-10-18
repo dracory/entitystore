@@ -2,7 +2,10 @@ package entitystore
 
 import (
 	"context"
+	"errors"
 	"testing"
+
+	"github.com/dracory/neat/contracts/database/orm"
 )
 
 func TestStoreAttributeFind(t *testing.T) {
@@ -594,5 +597,76 @@ func TestStoreAttributeCount(t *testing.T) {
 	}
 	if count != 1 {
 		t.Fatalf("Expected count 1 for single entity, got %d", count)
+	}
+}
+
+func TestStoreAttributesSetDuplicateKeyFallback(t *testing.T) {
+	db := InitDB("attr_dup_fallback_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "dup_entity",
+		AttributeTableName: "dup_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("NewStore failed:", err)
+	}
+
+	ctx := context.Background()
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+
+	// Seed an existing attribute so the (entity_id, attribute_key) unique index is populated.
+	if err := store.AttributeSetString(ctx, entity.ID(), "color", "red"); err != nil {
+		t.Fatal("initial AttributeSetString failed:", err)
+	}
+
+	// Force the insert branch inside a transaction: insert a fresh key, then hit the
+	// unique constraint on "color" (which must roll back to the savepoint without
+	// losing "size" and fall back to UPDATE), then insert a third key.
+	impl := store.(*storeImplementation)
+	now := "2026-10-18 12:00:00"
+	err = impl.db.Transaction(func(tx orm.Query) error {
+		if err := impl.attributeInsertWithFallback(tx, entity.ID(), "size", "large", now); err != nil {
+			return err
+		}
+		if err := impl.attributeInsertWithFallback(tx, entity.ID(), "color", "blue", now); err != nil {
+			return err
+		}
+		return impl.attributeInsertWithFallback(tx, entity.ID(), "weight", "200", now)
+	})
+	if err != nil {
+		t.Fatalf("attributeInsertWithFallback transaction failed: %v", err)
+	}
+
+	for key, want := range map[string]string{"size": "large", "color": "blue", "weight": "200"} {
+		got, exists, err := store.AttributeGetString(ctx, entity.ID(), key)
+		if err != nil {
+			t.Fatalf("AttributeGetString(%q) failed: %v", key, err)
+		}
+		if !exists || got != want {
+			t.Fatalf("AttributeGetString(%q) = (%q, %v), want (%q, true)", key, got, exists, want)
+		}
+	}
+}
+
+func TestIsDuplicateKeyError(t *testing.T) {
+	if isDuplicateKeyError(nil) {
+		t.Error("nil error should not be classified as duplicate key")
+	}
+	if isDuplicateKeyError(errors.New("connection refused on port 1062")) {
+		t.Error("unrelated error containing '1062' should not be classified as duplicate key")
+	}
+	for _, msg := range []string{
+		"Error 1062 (23000): Duplicate entry 'e1-k1' for key 'uniq'",
+		"constraint failed: UNIQUE constraint failed: attributes.entity_id, attributes.attribute_key",
+		"pq: duplicate key value violates unique constraint \"attributes_entity_id_attribute_key_unique\" (SQLSTATE 23505)",
+	} {
+		if !isDuplicateKeyError(errors.New(msg)) {
+			t.Errorf("expected duplicate key match for %q", msg)
+		}
 	}
 }

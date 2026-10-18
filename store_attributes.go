@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"strconv"
+	"strings"
 	"uuid"
 
 	"github.com/dracory/neat/contracts/database/orm"
@@ -415,18 +416,7 @@ func (st *storeImplementation) AttributeGroupBy(ctx context.Context, query Attri
 
 // AttributeSetString creates or updates a string attribute value for an entity
 func (st *storeImplementation) AttributeSetString(ctx context.Context, entityID string, attributeKey string, attributeValue string) error {
-	attr, err := st.AttributeFind(ctx, entityID, attributeKey)
-	if err != nil {
-		return err
-	}
-
-	if attr == nil {
-		_, err := st.AttributeCreateWithKeyAndValue(ctx, entityID, attributeKey, attributeValue)
-		return err
-	}
-
-	attr.SetValue(attributeValue)
-	return st.AttributeUpdate(ctx, attr)
+	return st.AttributesSet(ctx, entityID, map[string]string{attributeKey: attributeValue})
 }
 
 // AttributeSetInt creates or updates an integer attribute value for an entity
@@ -495,6 +485,13 @@ func (st *storeImplementation) AttributeCreateWithKeyAndValue(ctx context.Contex
 // All writes are wrapped in a single database transaction — if any attribute
 // fails, the entire operation is rolled back and no partial writes persist.
 func (st *storeImplementation) AttributesSet(ctx context.Context, entityID string, attributes map[string]string) error {
+	if entityID == "" {
+		return errors.New("entity id cannot be empty")
+	}
+	if err := validateIDLength(entityID, COLUMN_ENTITY_ID); err != nil {
+		return err
+	}
+
 	return st.db.Transaction(func(tx orm.Query) error {
 		for key, value := range attributes {
 			if key == "" {
@@ -524,19 +521,64 @@ func (st *storeImplementation) AttributesSet(ctx context.Context, entityID strin
 					return err
 				}
 			} else {
-				err := tx.Table(st.attributeTableName).Create(map[string]any{
-					COLUMN_ID:              uuid.NewV7().String(),
-					COLUMN_ENTITY_ID:       entityID,
-					COLUMN_ATTRIBUTE_KEY:   key,
-					COLUMN_ATTRIBUTE_VALUE: value,
-					COLUMN_CREATED_AT:      now,
-					COLUMN_UPDATED_AT:      now,
-				})
-				if err != nil {
+				if err := st.attributeInsertWithFallback(tx, entityID, key, value, now); err != nil {
 					return err
 				}
 			}
 		}
 		return nil
 	})
+}
+
+func (st *storeImplementation) attributeInsertWithFallback(tx orm.Query, entityID, key, value, now string) error {
+	if err := tx.SavePoint("sp_attr_insert"); err != nil {
+		return err
+	}
+
+	err := tx.Table(st.attributeTableName).Create(map[string]any{
+		COLUMN_ID:              uuid.NewV7().String(),
+		COLUMN_ENTITY_ID:       entityID,
+		COLUMN_ATTRIBUTE_KEY:   key,
+		COLUMN_ATTRIBUTE_VALUE: value,
+		COLUMN_CREATED_AT:      now,
+		COLUMN_UPDATED_AT:      now,
+	})
+	if err == nil {
+		return nil
+	}
+
+	// The find-then-insert can miss an existing row — under a concurrent
+	// AttributesSet for the same key, or when the in-transaction SELECT is
+	// served from a stale snapshot — and the unique (entity_id, attribute_key)
+	// key rejects the INSERT. Roll back to the savepoint (required on
+	// PostgreSQL where a failed statement aborts the transaction block) and
+	// fall back to the update the row was always meant to get.
+	if !isDuplicateKeyError(err) {
+		return err
+	}
+	if rbErr := tx.RollbackTo("sp_attr_insert"); rbErr != nil {
+		return rbErr
+	}
+	_, err = tx.Table(st.attributeTableName).
+		Where(COLUMN_ENTITY_ID+" = ?", entityID).
+		Where(COLUMN_ATTRIBUTE_KEY+" = ?", key).
+		Update(map[string]any{
+			COLUMN_ATTRIBUTE_VALUE: value,
+			COLUMN_UPDATED_AT:      now,
+		})
+	return err
+}
+
+// isDuplicateKeyError reports whether err is a unique-constraint violation
+// from any supported driver: MySQL Duplicate entry, SQLite UNIQUE constraint,
+// PostgreSQL duplicate key / SQLSTATE 23505.
+func isDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "Duplicate entry") ||
+		strings.Contains(msg, "UNIQUE constraint") ||
+		strings.Contains(msg, "23505") ||
+		strings.Contains(msg, "duplicate key")
 }
