@@ -292,3 +292,17 @@ Every operation validates:
 **Solution:** Full docs sweep — updated signatures, converted all examples to fluent builders, corrected getter names (`GetID`/`GetKey`/`GetValue`), marked the stale proposal as historical, added `AGENTS.md` and this lessons file.
 
 **Lesson:** After a breaking API change, grep docs for the removed identifiers AND for fictional helpers that were never real — docs rot compounds. `docs/api-reference.md` must mirror `interfaces.go`.
+
+## Mutable Query Builder Inside Transactions (2026-10-25)
+
+**Status:** Fixed
+
+**Problem:** `AttributesSet` documented "update every key in one transaction" but in practice wrote only ~ONE attribute per call under SQLite. Root cause: neat's `orm.Query` is a *mutable* builder — `Table()`, `Where()`, and `Limit()` mutate the receiver and return it. The transaction callback reused a single `tx` for every statement in the loop, so each iteration's WHERE clauses accumulated on top of the previous ones. The first iterated key's find-then-update succeeded; every later key's find matched zero rows (contradictory `attribute_key = k1 AND attribute_key = k2`), fell into the insert path, hit the `UNIQUE (entity_id, attribute_key)` constraint, rolled back to `sp_attr_insert`, and ran a fallback UPDATE that again matched zero rows — all without error. Because map iteration order is random, a different key was "the one that worked" on each run, and freshly seeded tables masked the bug entirely (INSERTs ignore accumulated WHEREs, so all inserts succeed).
+
+**Solution:** `store_attributes.go` now clones the transaction query per statement via `cloneTxQuery` (type-asserts `Clone() orm.Query`, which neat's `*query.Query` implements). `tx` itself is never mutated, so every clone starts from a clean builder bound to the same `*sql.Tx`. `SavePoint`/`RollbackTo` still run on `tx` directly since they carry no builder state. Regression test: `TestStoreAttributesSetUpdatesAllKeys` asserts stored *values* (not just `updated_at`) after a second `AttributesSet` on all keys.
+
+**Lesson:** Any multi-statement loop inside `db.Transaction(func(tx orm.Query) ...)` MUST use a fresh clone per statement — never chain `tx.Table(...).Where(...)` twice on the same tx. When verifying "did the update happen", assert on stored values: `updated_at` bumps even when only one row actually changed.
+
+### Update (2026-10-25, neat v0.58.0)
+
+The root cause was fixed upstream: neat's terminal ops (`Get`, `Create`, `Update`, `Delete`, `First`, aggregates, etc.) now call `resetStatement()` after executing on a transaction-bound query — `wheres`/`selects`/`joins`/`limit`/`offset`/`orders` are cleared per statement (`table`/`model` preserved). The `cloneTxQuery` workaround was removed from `store_attributes.go` and `store_relationships_trash.go`; the regression tests `TestStoreAttributesSetUpdatesAllKeys` and `TestRelationshipTrashRestoreRepeated` remain as guards and now exercise the upstream fix directly. Requires neat ≥ v0.58.0 — do not downgrade.

@@ -653,6 +653,118 @@ func TestRelationshipTrashAndRestore(t *testing.T) {
 	}
 }
 
+// TestRelationshipTrashRestoreRepeated verifies that trash and restore
+// transactions run cleanly when repeated and across multiple relationships.
+// Regression coverage for the mutable tx query builder: statements inside a
+// transaction must not leak WHERE/builder state into each other (fixed
+// upstream in neat v0.58.0 — the tx builder resets per statement). If they
+// did, a delete scoped to one relationship could silently match zero rows
+// or the wrong rows.
+func TestRelationshipTrashRestoreRepeated(t *testing.T) {
+	db := InitDB("relationship_trash_restore_repeated")
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	store, err := NewStore(NewStoreOptions{
+		DB:                         db,
+		EntityTableName:            "entities",
+		AttributeTableName:         "attributes",
+		RelationshipsEnabled:       true,
+		RelationshipTableName:      "relationships",
+		RelationshipTrashTableName: "relationships_trash",
+		AutomigrateEnabled:         true,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create store: %v", err)
+	}
+
+	entity1, err := store.EntityCreateWithType(ctx, "post")
+	if err != nil {
+		t.Fatalf("Failed to create entity1: %v", err)
+	}
+	entity2, err := store.EntityCreateWithType(ctx, "user")
+	if err != nil {
+		t.Fatalf("Failed to create entity2: %v", err)
+	}
+	entity3, err := store.EntityCreateWithType(ctx, "tag")
+	if err != nil {
+		t.Fatalf("Failed to create entity3: %v", err)
+	}
+
+	rel1, err := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+		EntityID:         entity1.ID(),
+		RelatedEntityID:  entity2.ID(),
+		RelationshipType: RELATIONSHIP_TYPE_BELONGS_TO,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create rel1: %v", err)
+	}
+	rel2, err := store.RelationshipCreateByOptions(ctx, RelationshipOptions{
+		EntityID:         entity1.ID(),
+		RelatedEntityID:  entity3.ID(),
+		RelationshipType: RELATIONSHIP_TYPE_HAS_MANY,
+	})
+	if err != nil {
+		t.Fatalf("Failed to create rel2: %v", err)
+	}
+
+	assertInMain := func(step, id string, want bool) {
+		found, err := store.RelationshipFind(ctx, id)
+		if err != nil {
+			t.Fatalf("%s: RelationshipFind(%q) failed: %v", step, id, err)
+		}
+		if (found != nil) != want {
+			t.Fatalf("%s: RelationshipFind(%q): in main table = %v, want %v", step, id, found != nil, want)
+		}
+	}
+	assertInTrash := func(step, id string, want bool) {
+		items, err := store.RelationshipTrashList(ctx, RelationshipQuery().WithID(id).WithLimit(1))
+		if err != nil {
+			t.Fatalf("%s: RelationshipTrashList(%q) failed: %v", step, id, err)
+		}
+		if (len(items) == 1) != want {
+			t.Fatalf("%s: RelationshipTrashList(%q): in trash = %v, want %v", step, id, len(items) == 1, want)
+		}
+	}
+
+	assertInMain("before cycle", rel1.ID(), true)
+	assertInMain("before cycle", rel2.ID(), true)
+
+	// Trash rel1 twice is not possible; instead cycle trash→restore twice and
+	// trash rel2 in between, so every transaction path runs more than once.
+	for cycle := 0; cycle < 2; cycle++ {
+		trashed, err := store.RelationshipTrash(ctx, rel1.ID(), "tester")
+		if err != nil || !trashed {
+			t.Fatalf("cycle %d: RelationshipTrash(rel1) = (%v, %v)", cycle, trashed, err)
+		}
+		// rel2 sits in trash during cycle 1 (trashed at the end of cycle 0
+		// and not yet restored); assert accordingly.
+		rel2InMain := cycle == 0
+		assertInMain("after trash rel1", rel1.ID(), false)
+		assertInTrash("after trash rel1", rel1.ID(), true)
+		assertInMain("after trash rel1", rel2.ID(), rel2InMain) // untouched
+		assertInTrash("after trash rel1", rel2.ID(), !rel2InMain)
+
+		restored, err := store.RelationshipRestore(ctx, rel1.ID())
+		if err != nil || !restored {
+			t.Fatalf("cycle %d: RelationshipRestore(rel1) = (%v, %v)", cycle, restored, err)
+		}
+		assertInMain("after restore rel1", rel1.ID(), true)
+		assertInTrash("after restore rel1", rel1.ID(), false)
+		assertInMain("after restore rel1", rel2.ID(), rel2InMain)
+
+		if cycle == 0 {
+			trashed2, err := store.RelationshipTrash(ctx, rel2.ID(), "tester")
+			if err != nil || !trashed2 {
+				t.Fatalf("cycle %d: RelationshipTrash(rel2) = (%v, %v)", cycle, trashed2, err)
+			}
+			assertInMain("after trash rel2", rel2.ID(), false)
+			assertInTrash("after trash rel2", rel2.ID(), true)
+			assertInMain("after trash rel2", rel1.ID(), true) // untouched
+		}
+	}
+}
+
 func TestRelationshipDuplicatePrevention(t *testing.T) {
 	db := InitDB("relationship_duplicate_prevention")
 	defer func() { _ = db.Close() }()

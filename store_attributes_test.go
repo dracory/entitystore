@@ -670,3 +670,73 @@ func TestIsDuplicateKeyError(t *testing.T) {
 		}
 	}
 }
+
+// TestStoreAttributesSetUpdatesAllKeys verifies that a second AttributesSet call
+// updates EVERY key, not just the first one iterated. Regression test for a bug
+// where the transaction query's WHERE clauses accumulated across loop
+// iterations: the first key's find-then-update ran correctly, but every
+// subsequent key matched zero rows (contradictory accumulated wheres), fell
+// into the insert path, hit the unique (entity_id, attribute_key) constraint,
+// rolled back to the savepoint, and ran a fallback update that again matched
+// zero rows — silently updating only one attribute per call.
+func TestStoreAttributesSetUpdatesAllKeys(t *testing.T) {
+	db := InitDB("attr_set_updates_all_keys_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "updall_entity",
+		AttributeTableName: "updall_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal("NewStore failed:", err)
+	}
+
+	ctx := context.Background()
+
+	entity, err := store.EntityCreateWithType(ctx, "product")
+	if err != nil {
+		t.Fatal("EntityCreateWithType failed:", err)
+	}
+
+	initial := map[string]string{
+		"color":    "red",
+		"size":     "small",
+		"material": "cotton",
+	}
+	if err := store.AttributesSet(ctx, entity.ID(), initial); err != nil {
+		t.Fatal("initial AttributesSet failed:", err)
+	}
+
+	for k, want := range initial {
+		got, exists, err := store.AttributeGetString(ctx, entity.ID(), k)
+		if err != nil {
+			t.Fatalf("AttributeGetString(%q) failed: %v", k, err)
+		}
+		if !exists || got != want {
+			t.Fatalf("after initial set: key %q = %q (exists=%v), want %q", k, got, exists, want)
+		}
+	}
+
+	updated := map[string]string{
+		"color":    "blue",
+		"size":     "large",
+		"material": "wool",
+	}
+	if err := store.AttributesSet(ctx, entity.ID(), updated); err != nil {
+		t.Fatal("second AttributesSet failed:", err)
+	}
+
+	for k, want := range updated {
+		got, exists, err := store.AttributeGetString(ctx, entity.ID(), k)
+		if err != nil {
+			t.Fatalf("AttributeGetString(%q) failed: %v", k, err)
+		}
+		if !exists {
+			t.Fatalf("after update: key %q does not exist", k)
+		}
+		if got != want {
+			t.Fatalf("after update: key %q = %q, want %q — only one attribute was actually updated", k, got, want)
+		}
+	}
+}

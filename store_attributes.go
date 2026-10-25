@@ -498,6 +498,9 @@ func (st *storeImplementation) AttributesSet(ctx context.Context, entityID strin
 				return errors.New("attribute key cannot be empty")
 			}
 
+			// Statements on tx are isolated per execution — neat resets the
+			// builder's statement state after each terminal op (v0.58.0), so
+			// this loop's wheres cannot leak into the next key's statement.
 			var rows []attributeRow
 			err := tx.Table(st.attributeTableName).
 				Where(COLUMN_ENTITY_ID+" = ?", entityID).
