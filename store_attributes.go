@@ -193,15 +193,17 @@ func (st *storeImplementation) applyAttributeFilters(q orm.Query, query Attribut
 	}
 
 	keyCol := st.attributeTableName + "." + COLUMN_ATTRIBUTE_KEY
-	q = applyLike(q, keyCol, query.GetAttributeKeyLike())
+	if query.GetAttributeKeyLike() != "" {
+		q = q.WhereLike(keyCol, query.GetAttributeKeyLike())
+	}
 	if query.GetAttributeKeyStartsWith() != "" {
-		q = applyLike(q, keyCol, escapeLike(query.GetAttributeKeyStartsWith())+"%")
+		q = q.WhereStartsWith(keyCol, query.GetAttributeKeyStartsWith())
 	}
 	if query.GetAttributeKeyEndsWith() != "" {
-		q = applyLike(q, keyCol, "%"+escapeLike(query.GetAttributeKeyEndsWith()))
+		q = q.WhereEndsWith(keyCol, query.GetAttributeKeyEndsWith())
 	}
 	if query.GetAttributeKeyContains() != "" {
-		q = applyLike(q, keyCol, "%"+escapeLike(query.GetAttributeKeyContains())+"%")
+		q = q.WhereContains(keyCol, query.GetAttributeKeyContains())
 	}
 
 	if query.GetEntityType() != "" {
