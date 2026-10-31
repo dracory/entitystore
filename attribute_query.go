@@ -53,6 +53,13 @@ type AttributeQueryInterface interface {
 	GetEntityID() string
 	// WithEntityID filters by associated entity ID.
 	WithEntityID(entityID string) AttributeQueryInterface
+	// HasEntityIDs reports whether the EntityIDs filter was set.
+	HasEntityIDs() bool
+	// GetEntityIDs returns the entity IDs filter.
+	GetEntityIDs() []string
+	// WithEntityIDs filters by multiple associated entity IDs — the
+	// batch counterpart to WithEntityID for avoiding N+1 attribute loads.
+	WithEntityIDs(entityIDs []string) AttributeQueryInterface
 
 	// HasEntityType reports whether the EntityType filter was set.
 	HasEntityType() bool
@@ -225,6 +232,8 @@ type attributeQueryImplementation struct {
 	hasIDs                    bool
 	entityID                  string
 	hasEntityID               bool
+	entityIDs                 []string
+	hasEntityIDs              bool
 	entityType                string
 	hasEntityType             bool
 	entityHandle              string
@@ -279,6 +288,9 @@ func (q *attributeQueryImplementation) Validate() error {
 	}
 	if q.hasEntityID && q.entityID == "" {
 		return errors.New("attribute query: entity_id cannot be empty")
+	}
+	if q.hasEntityIDs && len(q.entityIDs) < 1 {
+		return errors.New("attribute query: entity_ids cannot be empty array")
 	}
 	if q.hasEntityType && q.entityType == "" {
 		return errors.New("attribute query: entity_type cannot be empty")
@@ -350,6 +362,15 @@ func (q *attributeQueryImplementation) HasEntityID() bool   { return q.hasEntity
 func (q *attributeQueryImplementation) GetEntityID() string { return q.entityID }
 func (q *attributeQueryImplementation) WithEntityID(entityID string) AttributeQueryInterface {
 	q.entityID, q.hasEntityID = entityID, true
+	return q
+}
+
+func (q *attributeQueryImplementation) HasEntityIDs() bool { return q.hasEntityIDs }
+func (q *attributeQueryImplementation) GetEntityIDs() []string {
+	return q.entityIDs
+}
+func (q *attributeQueryImplementation) WithEntityIDs(entityIDs []string) AttributeQueryInterface {
+	q.entityIDs, q.hasEntityIDs = entityIDs, true
 	return q
 }
 

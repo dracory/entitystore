@@ -380,7 +380,7 @@ with no arguments to load all attributes.
 
 ### AttributeQuery()
 
-`WithID`, `WithIDs`, `WithEntityID`, `WithEntityType`, `WithEntityHandle`,
+`WithID`, `WithIDs`, `WithEntityID`, `WithEntityIDs`, `WithEntityType`, `WithEntityHandle`,
 `WithAttributeKey`, `WithAttributeKeys`, `WithAttributeKeyLike`,
 `WithAttributeKeyStartsWith`, `WithAttributeKeyEndsWith`,
 `WithAttributeKeyContains`, `WithLimit`, `WithOffset`,

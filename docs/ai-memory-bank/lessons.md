@@ -306,3 +306,7 @@ Every operation validates:
 ### Update (2026-10-25, neat v0.58.0)
 
 The root cause was fixed upstream: neat's terminal ops (`Get`, `Create`, `Update`, `Delete`, `First`, aggregates, etc.) now call `resetStatement()` after executing on a transaction-bound query — `wheres`/`selects`/`joins`/`limit`/`offset`/`orders` are cleared per statement (`table`/`model` preserved). The `cloneTxQuery` workaround was removed from `store_attributes.go` and `store_relationships_trash.go`; the regression tests `TestStoreAttributesSetUpdatesAllKeys` and `TestRelationshipTrashRestoreRepeated` remain as guards and now exercise the upstream fix directly. Requires neat ≥ v0.58.0 — do not downgrade.
+
+### AttributeQuery.WithEntityIDs (2026-10-31)
+
+Batch counterpart to `WithEntityID` for killing N+1 attribute loads (e.g. a hub page fetching attrs for ~95 guides). Implemented exactly like `ids`/`attributeKeys` slices: `entityIDs`/`hasEntityIDs` fields, `Get/Has/With` accessors, `Validate` rejects an explicitly-empty slice, `applyAttributeFilters` emits `WhereIn(entity_id, ...)`. When modifying query impl structs, do NOT lose the neighboring `With*` method bodies — an edit that removes a method breaks interface conformance everywhere it's asserted.

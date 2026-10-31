@@ -170,7 +170,7 @@ attrs, err := store.AttributeList(ctx, entitystore.AttributeQuery().
     WithLimit(10))
 ```
 
-Available filters: `WithID`, `WithIDs`, `WithEntityID`, `WithEntityType`,
+Available filters: `WithID`, `WithIDs`, `WithEntityID`, `WithEntityIDs`, `WithEntityType`,
 `WithEntityHandle`, `WithAttributeKey`, `WithAttributeKeys`, `WithLimit`,
 `WithOffset`, `WithSortBy`, `WithSortOrder`, `WithCountOnly`, and inclusive
 UTC time bounds `WithCreatedAtGte/Lte` and `WithUpdatedAtGte/Lte` in

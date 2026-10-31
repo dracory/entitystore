@@ -230,3 +230,64 @@ func TestAttributeQueryKeyPatterns(t *testing.T) {
 		t.Errorf("Like %%_thumb: expected 1 key, got %v", got)
 	}
 }
+
+// TestAttributeQueryEntityIDs verifies the batch entity-ID filter: fluent
+// presence, Validate rejection of an empty slice, and a real-store query
+// returning attributes across multiple entities in one call (the N+1 fix).
+func TestAttributeQueryEntityIDs(t *testing.T) {
+	empty := AttributeQuery().WithEntityIDs([]string{})
+	if err := empty.Validate(); err == nil {
+		t.Fatal("expected Validate to reject empty entity_ids slice")
+	}
+
+	db := InitDB("attr_entity_ids_test")
+
+	store, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		EntityTableName:    "eids_entity",
+		AttributeTableName: "eids_attribute",
+		AutomigrateEnabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	entityA, err := store.EntityCreateWithType(ctx, "character")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entityB, err := store.EntityCreateWithType(ctx, "character")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entityC, err := store.EntityCreateWithType(ctx, "character")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, entityA.ID(), "k", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, entityB.ID(), "k", "b"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.AttributeSetString(ctx, entityC.ID(), "k", "c"); err != nil {
+		t.Fatal(err)
+	}
+
+	query := AttributeQuery().WithEntityIDs([]string{entityA.ID(), entityB.ID()})
+	if !query.HasEntityIDs() {
+		t.Fatal("WithEntityIDs should set HasEntityIDs")
+	}
+	if err := query.Validate(); err != nil {
+		t.Fatal("Validate failed:", err)
+	}
+
+	list, err := store.AttributeList(ctx, query)
+	if err != nil {
+		t.Fatal("AttributeList failed:", err)
+	}
+	if len(list) != 2 {
+		t.Fatalf("expected 2 attributes across 2 entities, got %d", len(list))
+	}
+}

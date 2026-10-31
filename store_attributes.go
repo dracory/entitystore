@@ -180,6 +180,14 @@ func (st *storeImplementation) applyAttributeFilters(q orm.Query, query Attribut
 		q = q.Where(st.attributeTableName+"."+COLUMN_ENTITY_ID+" = ?", query.GetEntityID())
 	}
 
+	if len(query.GetEntityIDs()) > 0 {
+		ids := make([]any, len(query.GetEntityIDs()))
+		for i, id := range query.GetEntityIDs() {
+			ids[i] = id
+		}
+		q = q.WhereIn(st.attributeTableName+"."+COLUMN_ENTITY_ID, ids)
+	}
+
 	if query.GetAttributeKey() != "" {
 		q = q.Where(st.attributeTableName+"."+COLUMN_ATTRIBUTE_KEY+" = ?", query.GetAttributeKey())
 	}
