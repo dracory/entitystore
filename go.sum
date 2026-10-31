@@ -6,8 +6,8 @@ github.com/coder/websocket v1.8.15 h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNU
 github.com/coder/websocket v1.8.15/go.mod h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg=
 github.com/dracory/dataobject v1.7.0 h1:vbk1SO4sZTmOQruO8XoFSQ1jFC6AbMJ4FmF76ILMzmw=
 github.com/dracory/dataobject v1.7.0/go.mod h1:/Dbjmrg9VOoWDZumWfM5Gp/8E2fFAa3gnR2wCwixJk4=
-github.com/dracory/neat v0.60.0 h1:g1RJbH810+u7dfINYxVMcLqOPsxOI9lBlORmXPJuk/M=
-github.com/dracory/neat v0.60.0/go.mod h1:Nbkp2Y2FjMK1K53hQLQmw3h8FRdWwFnwv3466YONbOc=
+github.com/dracory/neat v0.60.1 h1:fTrt/x9KIDtkJ4CUNWIw/qp/FI8Vvpgvxa5PZmvqvy0=
+github.com/dracory/neat v0.60.1/go.mod h1:G+QJ+FAV3AGok8+cImKIt6kGKSNkrzrggK+9D6zJDjk=
 github.com/dracory/uid v1.14.0 h1:lou3jIYobFNiu/Xn1zyD6Hzelnkz9OuQ0mCg2E+dA4Q=
 github.com/dracory/uid v1.14.0/go.mod h1:ldOjQLmGsQO4/oRIp5dpgajX3Qf1FI4QMPD34lXSIMI=
 github.com/dromara/carbon/v2 v2.7.0 h1:AIROgPOmhpJgwtHM9FYv0s/a3HI4x8UBBWxJ1uo+QFM=
