@@ -578,12 +578,18 @@ func (st *storeImplementation) attributeInsertWithFallback(tx orm.Query, entityI
 // from any supported driver: MySQL Duplicate entry, SQLite UNIQUE constraint,
 // PostgreSQL duplicate key / SQLSTATE 23505.
 func isDuplicateKeyError(err error) bool {
-	if err == nil {
-		return false
+	// Walk the unwrap chain: neat >= v0.61.0 wraps driver errors in a
+	// redacted error whose message is just "database operation failed",
+	// so the driver message must be reached via Unwrap.
+	for err != nil {
+		msg := err.Error()
+		if strings.Contains(msg, "Duplicate entry") ||
+			strings.Contains(msg, "UNIQUE constraint") ||
+			strings.Contains(msg, "23505") ||
+			strings.Contains(msg, "duplicate key") {
+			return true
+		}
+		err = errors.Unwrap(err)
 	}
-	msg := err.Error()
-	return strings.Contains(msg, "Duplicate entry") ||
-		strings.Contains(msg, "UNIQUE constraint") ||
-		strings.Contains(msg, "23505") ||
-		strings.Contains(msg, "duplicate key")
+	return false
 }
